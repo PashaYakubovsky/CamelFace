@@ -11,66 +11,11 @@
 	let canvasElement: HTMLCanvasElement;
 	let sectionsElements: HTMLElement[] = [];
 	let pageWrapperElement: HTMLDivElement | null = null;
-	let currentIndex = 0;
 	let element: HTMLDivElement;
 	let attractMode = false;
 	let attractTo = 0;
 	let rots: THREE.Euler[] = [];
 	let scene: Scene;
-
-	onMount(async () => {
-		// if (pageWrapperElement) {
-		// 	pageWrapperElement.style.backgroundColor = scene.backgroundColors[0];
-		// 	sectionsElements[0].style.color = scene.textColors[0];
-		// }
-		// gsap.to(sectionsElements, {
-		// 	scrollTrigger: {
-		// 		trigger: pageWrapperElement,
-		// 		start: 'min',
-		// 		end: 'max',
-		// 		scrub: true,
-		// 		toggleActions: 'play none none reverse',
-		// 		onUpdate: (tween) => {
-		// 			const progress = tween.progress;
-		// 			const _currentIndex = Math.round(progress * (sectionsElements.length - 1));
-		// 			scene.groups.forEach((mesh) => {
-		// 				gsap.to(mesh.position, {
-		// 					y: tween.direction ? '+' : '-' + '=0.01'
-		// 				});
-		// 			});
-		// 			if (currentIndex !== _currentIndex && pageWrapperElement && sectionsElements) {
-		// 				currentIndex = _currentIndex;
-		// 				pageWrapperElement.style.backgroundColor = scene.backgroundColors[currentIndex];
-		// 				sectionsElements[currentIndex].style.color = scene.textColors[currentIndex];
-		// 			}
-		// 		},
-		// 		snap: {
-		// 			snapTo: 1 / (sectionsElements.length - 1),
-		// 			duration: 0.3,
-		// 			delay: 0.1,
-		// 			ease: 'power1.inOut'
-		// 		}
-		// 	}
-		// });
-		// scene.meshes.forEach((mesh, index) => {
-		// 	let dist = 0.02;
-		// 	dist = 1 - dist ** 2;
-		// 	gsap.to(mesh.scale, {
-		// 		duration: 1,
-		// 		x: 1.8,
-		// 		y: 1.8,
-		// 		z: 1.8,
-		// 		scrollTrigger: {
-		// 			trigger: sectionsElements[index],
-		// 			start: 'top 0%',
-		// 			end: '50%',
-		// 			scrub: true,
-		// 			toggleActions: 'play none none reverse',
-		// 			markers: true
-		// 		}
-		// 	});
-		// });
-	});
 
 	onMount(async () => {
 		gsap.registerPlugin(ScrollTrigger);
@@ -137,6 +82,18 @@
 		};
 
 		raf();
+
+		window.addEventListener('keydown', (e) => {
+			attractMode = true;
+			setTimeout(() => {
+				attractMode = false;
+			}, 1000);
+			if (e.key === 'ArrowUp') {
+				attractTo = attractTo + 1 > db.posts.length - 1 ? db.posts.length - 1 : attractTo + 1;
+			} else if (e.key === 'ArrowDown') {
+				attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0;
+			}
+		});
 	});
 </script>
 
@@ -154,9 +111,9 @@
 			attractMode = true;
 
 			gsap.to(rots, {
-				duration: 0.3,
-				ease: 'power4.inOut',
-				x: 0,
+				duration: 0.6,
+				ease: 'power0.inOut',
+				x: -0.5,
 				y: 0,
 				z: 0
 			});
@@ -165,7 +122,7 @@
 			attractMode = false;
 
 			gsap.to(rots, {
-				duration: 0.3,
+				duration: 0.6,
 				ease: 'power0.inOut',
 				x: scene.eulerValues.x,
 				y: scene.eulerValues.y,
@@ -231,7 +188,7 @@
 		position: relative;
 		align-items: flex-end;
 		height: 100%;
-		z-index: 20;
+		z-index: 9;
 	}
 	canvas {
 		width: 100%;
@@ -239,10 +196,5 @@
 		position: fixed;
 		top: 0;
 		left: 0;
-	}
-	.anchor {
-		width: 50%;
-		height: 0.5rem;
-		background-color: blue;
 	}
 </style>
