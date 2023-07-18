@@ -74,7 +74,7 @@
 			if (attractMode) {
 				position += -(position - attractTo) * 0.1;
 			} else {
-				position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.15;
+				position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.09;
 				if (element) element.style.transform = `translateY(${-position * 100}px)`;
 			}
 
