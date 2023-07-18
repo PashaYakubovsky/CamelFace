@@ -1,0 +1,124 @@
+{
+	"posts": [
+		{
+			"id": 1,
+			"title": "Super travel 1",
+			"author": {
+				"name": "John Doe",
+				"email": "JohnDoe@gmail.com",
+				"avatarUrl": "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+				"phone": "123456789"
+			},
+			"content": {
+				"tags": ["tag1", "tag2", "tag3"],
+				"images": [
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50"
+				],
+				"location": "The location of the travel experience",
+				"date": "22.12.2017"
+			}
+		},
+		{
+			"id": 2,
+			"title": "Super travel 2",
+			"author": {
+				"name": "John Doe",
+				"email": "JohnDoe@gmail.com",
+				"avatarUrl": "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+				"phone": "123456789"
+			},
+			"content": {
+				"tags": ["tag1", "tag2", "tag3"],
+				"images": [
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50"
+				],
+				"location": "The location of the travel experience",
+				"date": "22.12.2017"
+			}
+		},
+		{
+			"id": 3,
+			"title": "Super travel 3",
+			"author": {
+				"name": "John Doe",
+				"email": "JohnDoe@gmail.com",
+				"avatarUrl": "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+				"phone": "123456789"
+			},
+			"content": {
+				"tags": ["tag1", "tag2", "tag3"],
+				"images": [
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50"
+				],
+				"location": "The location of the travel experience",
+				"date": "22.12.2017"
+			}
+		},
+		{
+			"id": 4,
+			"title": "Super travel 3",
+			"author": {
+				"name": "John Doe",
+				"email": "JohnDoe@gmail.com",
+				"avatarUrl": "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+				"phone": "123456789"
+			},
+			"content": {
+				"tags": ["tag1", "tag2", "tag3"],
+				"images": [
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50"
+				],
+				"location": "The location of the travel experience",
+				"date": "22.12.2017"
+			}
+		},
+		{
+			"id": 5,
+			"title": "Super travel 3",
+			"author": {
+				"name": "John Doe",
+				"email": "JohnDoe@gmail.com",
+				"avatarUrl": "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+				"phone": "123456789"
+			},
+			"content": {
+				"tags": ["tag1", "tag2", "tag3"],
+				"images": [
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50"
+				],
+				"location": "The location of the travel experience",
+				"date": "22.12.2017"
+			}
+		},
+		{
+			"id": 6,
+			"title": "Super travel 3",
+			"author": {
+				"name": "John Doe",
+				"email": "JohnDoe@gmail.com",
+				"avatarUrl": "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+				"phone": "123456789"
+			},
+			"content": {
+				"tags": ["tag1", "tag2", "tag3"],
+				"images": [
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
+					"https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50"
+				],
+				"location": "The location of the travel experience",
+				"date": "22.12.2017"
+			}
+		}
+	]
+}
