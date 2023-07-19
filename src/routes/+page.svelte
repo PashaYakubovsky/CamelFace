@@ -15,8 +15,26 @@
 	let attractMode = false;
 	let attractTo = 0;
 	let rots: THREE.Euler[] = [];
+	let positions: THREE.Vector3[] = [];
 	let scene: Scene;
 	let navElements: HTMLButtonElement[] = [];
+	let currentIndex = 0;
+	let direction: 1 | -1 = 1;
+
+	// scroll over bottom handle
+	$: if (currentIndex < 0 && direction === -1) {
+		attractMode = true;
+		attractTo = 0;
+	}
+	// scroll over top handle
+	$: if (currentIndex > db.posts.length - 1 && direction === 1) {
+		attractMode = true;
+		attractTo = db.posts.length - 1;
+	}
+	// disable attract mode when we scrolled to the right section
+	$: if (currentIndex === attractTo) {
+		setTimeout(() => (attractMode = false), 700);
+	}
 
 	onMount(async () => {
 		gsap.registerPlugin(ScrollTrigger);
@@ -31,6 +49,7 @@
 		let position = 0;
 		let rounded = 0;
 		rots = scene.groups.map((g) => g.rotation);
+		positions = scene.meshes.map((g) => g.position);
 
 		const objs = Array(db.posts.length)
 			.fill(null)
@@ -42,28 +61,39 @@
 
 		window.addEventListener('wheel', (e) => {
 			speed += e.deltaY * 0.0003;
+			direction = Math.sign(e.deltaY) as 1 | -1;
+		});
+		let lastY = 0;
+		window.addEventListener('touchmove', (e) => {
+			const currentY = e.touches[0].clientY;
+			if (currentY > lastY) {
+				direction = -1;
+			} else if (currentY < lastY) {
+				direction = 1;
+			}
+			lastY = currentY;
+
+			speed += e.touches[0].clientY * 0.0001 * direction;
 		});
 
 		const raf = () => {
 			position += speed;
 			speed *= 0.8;
-
 			rounded = Math.round(position);
 
 			let diff = rounded - position;
+			// get current index of anchor
+			currentIndex = +position.toFixed(0);
 
 			objs.forEach((obj, i) => {
 				obj.dist = Math.min(Math.abs(position - i), 1);
 				obj.dist = 1 - obj.dist ** 2;
 
-				// get current index of anchor
-				const index = Math.round(position);
-
 				if (pageWrapperElement) {
 					// set color animated for canvas
-					pageWrapperElement.style.backgroundColor = scene.backgroundColors[index];
+					pageWrapperElement.style.backgroundColor = scene.backgroundColors[currentIndex];
 					navElements.forEach((navElement, i) => {
-						if (i === index) {
+						if (i === currentIndex) {
 							navElement.style.backgroundColor = scene.backgroundColors[i];
 						} else {
 							navElement.style.backgroundColor = '';
@@ -76,14 +106,14 @@
 					const scale = 1 + 0.4 * obj.dist;
 					mesh.scale.set(scale, scale, scale);
 					(mesh.material as THREE.ShaderMaterial).uniforms.distanceFromCenter.value = obj.dist;
-					mesh.position.y = i * 2 + -(position * 2);
+					mesh.position.y = i * 2.5 + -(position * 2.5);
 				}
 			});
 
 			if (attractMode) {
 				position += -(position - attractTo) * 0.1;
 			} else {
-				position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.09;
+				position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
 				if (element) element.style.transform = `translateY(${-position * 100}px)`;
 			}
 
@@ -99,11 +129,11 @@
 
 			setTimeout(() => {
 				attractMode = false;
-			}, 1000);
+			}, 700);
 
-			if (e.key === 'ArrowUp') {
+			if (e.key === 'ArrowUp' && attractTo <= db.posts.length - 1) {
 				attractTo = attractTo + 1 > db.posts.length - 1 ? db.posts.length - 1 : attractTo + 1;
-			} else if (e.key === 'ArrowDown') {
+			} else if (e.key === 'ArrowDown' && attractTo >= 0) {
 				attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0;
 			}
 		});
@@ -124,22 +154,34 @@
 			attractMode = true;
 
 			gsap.to(rots, {
-				duration: 0.6,
+				duration: 0.3,
 				ease: 'power0.inOut',
 				x: -0.5,
 				y: 0,
 				z: 0
+			});
+
+			gsap.to(positions, {
+				duration: 0.3,
+				ease: 'power0.inOut',
+				x: 0
 			});
 		}}
 		on:mouseleave={() => {
 			attractMode = false;
 
 			gsap.to(rots, {
-				duration: 0.6,
+				duration: 0.3,
 				ease: 'power0.inOut',
 				x: scene.eulerValues.x,
 				y: scene.eulerValues.y,
 				z: scene.eulerValues.z
+			});
+
+			gsap.to(positions, {
+				duration: 0.3,
+				ease: 'power0.inOut',
+				x: scene.positionValues.x
 			});
 		}}
 	>
@@ -169,16 +211,16 @@
 	nav {
 		list-style: none;
 		display: flex;
-		align-items: flex-start;
+		align-items: flex-end;
 		flex-direction: column-reverse;
 		width: fit-content;
 		gap: 1rem;
-		margin-left: 0.5rem;
-		margin-top: 0.5rem;
 		position: absolute;
 		z-index: 10;
-		right: 2rem;
+		right: 0;
+		padding-right: 2rem;
 		top: 50%;
+		width: 10vw;
 		transform: translateY(-50%);
 	}
 	nav > button {
