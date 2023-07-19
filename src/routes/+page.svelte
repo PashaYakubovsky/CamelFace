@@ -16,12 +16,14 @@
 	let attractTo = 0;
 	let rots: THREE.Euler[] = [];
 	let scene: Scene;
+	let navElements: HTMLButtonElement[] = [];
 
 	onMount(async () => {
 		gsap.registerPlugin(ScrollTrigger);
 		scene = new Scene(canvasElement);
 
 		sectionsElements = Array.from(document.querySelectorAll('section')) as HTMLElement[];
+		navElements = Array.from(document.querySelectorAll('nav > button')) as HTMLButtonElement[];
 
 		await scene.addGallery();
 
@@ -60,6 +62,13 @@
 				if (pageWrapperElement) {
 					// set color animated for canvas
 					pageWrapperElement.style.backgroundColor = scene.backgroundColors[index];
+					navElements.forEach((navElement, i) => {
+						if (i === index) {
+							navElement.style.backgroundColor = scene.backgroundColors[i];
+						} else {
+							navElement.style.backgroundColor = '';
+						}
+					});
 				}
 
 				const mesh = scene.meshes[i];
@@ -84,10 +93,14 @@
 		raf();
 
 		window.addEventListener('keydown', (e) => {
+			if (attractMode) return;
+
 			attractMode = true;
+
 			setTimeout(() => {
 				attractMode = false;
 			}, 1000);
+
 			if (e.key === 'ArrowUp') {
 				attractTo = attractTo + 1 > db.posts.length - 1 ? db.posts.length - 1 : attractTo + 1;
 			} else if (e.key === 'ArrowDown') {
@@ -132,11 +145,12 @@
 	>
 		{#each posts as post, index (post.id)}
 			<button
+				class={`button-active-${index}`}
 				on:click={() => {
 					attractTo = index;
 				}}
 			>
-				{post.title}
+				<!-- {post.title} -->
 			</button>
 		{/each}
 	</nav>
@@ -161,8 +175,11 @@
 		gap: 1rem;
 		margin-left: 0.5rem;
 		margin-top: 0.5rem;
-		position: relative;
+		position: absolute;
 		z-index: 10;
+		right: 2rem;
+		top: 50%;
+		transform: translateY(-50%);
 	}
 	nav > button {
 		list-style: none;

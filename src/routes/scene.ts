@@ -15,12 +15,12 @@ const fragmentShader = `
 		vec4 t = texture2D(texture1, vUv);
 
 		float bw = (t.r + t.g + t.b) / 3.0;
-		vec4 another = vec4(bw, bw, bw, 1.0);
+		vec4 another = vec4(bw, bw, bw, 2.0);
 
 		gl_FragColor = t;
 
 		gl_FragColor = mix(another, t, distanceFromCenter);
-		gl_FragColor.a = clamp(distanceFromCenter, 0.2, 1.0);
+		gl_FragColor.a = clamp(distanceFromCenter, 0.5, 1.0);
 	}
 `;
 
@@ -76,7 +76,6 @@ class TravelGalleryScene {
 		'#230c75',
 		'#140c0b'
 	];
-	public textColors = ['#e5e5e5', '#e5e5e5', '#fff'];
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -92,10 +91,6 @@ class TravelGalleryScene {
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		window.addEventListener('resize', () => this.resize());
-
-		// this.addLights();
-
-		// this.addOrbitControls();
 
 		this.addObjects();
 
