@@ -1,50 +1,9 @@
 import * as THREE from 'three';
 import db from '../lib/posts.json';
 import { getPhoto } from '$lib/api';
-import { gsap } from 'gsap/all';
-
-const fragmentShader = `
-	uniform float time;
-	uniform sampler2D texture1;
-	uniform float distanceFromCenter;
-	uniform vec4 resolution;
-	varying vec2 vUv;
-	varying vec3 vPosition;
-	float PI = 3.141592653589793238;
-
-	void main() {
-		vec4 t = texture2D(texture1, vUv);
-
-		float bw = (t.r + t.g + t.b) / 3.0;
-		vec4 another = vec4(bw, bw, bw, 2.0);
-
-		gl_FragColor = t;
-
-		gl_FragColor = mix(another, t, distanceFromCenter);
-		gl_FragColor.a = clamp(distanceFromCenter, 0.5, 1.0);
-	}
-`;
-
-const vertexShader = `
-	uniform float time;
-	varying vec2 vUv;
-	varying vec3 vPosition;
-	uniform vec2 pixels;
-	float PI = 3.141592653589793238;
-	uniform float distanceFromCenter;
-
-	void main() {
-		vUv = (uv - vec2(0.5))*(0.8 - 0.2*distanceFromCenter*(2. - distanceFromCenter)) + vec2(0.5);
-		vec3 pos = position;
-		pos.y += sin(PI*uv.x)*0.1;
-		pos.z += sin(PI*uv.y)*0.09;
-		
-		pos.y += sin(time*0.3)*0.03;
-		vUv.y -= sin(time*0.3)*0.02;
-
-		gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-	}
-`;
+import vertexShader from './vertexShader.glsl';
+import fragmentShader from './fragmentShader.glsl';
+import GUI from 'lil-gui';
 
 class TravelGalleryScene {
 	private isMobile = window.innerWidth < 768;
@@ -55,8 +14,8 @@ class TravelGalleryScene {
 		0.1,
 		1000
 	);
+	private light: THREE.Light | null = null;
 	private raycaster = new THREE.Raycaster();
-	private textureLoader = new THREE.TextureLoader();
 	public renderer: THREE.WebGLRenderer | null = null;
 	private materials: THREE.ShaderMaterial[] = [];
 	private material: THREE.ShaderMaterial | null = null;
@@ -66,6 +25,9 @@ class TravelGalleryScene {
 		20,
 		20
 	);
+	private gui = new GUI();
+	public loaderManager = new THREE.LoadingManager();
+	private textureLoader = new THREE.TextureLoader(this.loaderManager);
 	public groups: THREE.Group[] = [];
 	public meshes: THREE.Mesh[] = [];
 	public mouse = new THREE.Vector2();
@@ -113,11 +75,9 @@ class TravelGalleryScene {
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-		this.camera.position.set(0, 0, 3);
-
+		this.camera.position.set(0, 0, 4);
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		window.addEventListener('resize', () => this.resize());
 
 		this.addObjects();
 
@@ -127,6 +87,20 @@ class TravelGalleryScene {
 
 		window.addEventListener('mousemove', (e) => this.onMouseMove(e));
 		window.addEventListener('click', () => this.onClick());
+		window.addEventListener('resize', () => this.resize());
+
+		this.light = new THREE.PointLight(new THREE.Color('red'));
+
+		this.light.intensity = 10;
+		this.light.position.set(0, 0, 0);
+		this.scene.add(this.light);
+
+		// const sphere = new THREE.SphereGeometry(1, 32, 32);
+		// const sphereMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color('red') });
+		// sphereMaterial.roughness = 0.2;
+		// sphereMaterial.metalness = 0.5;
+		// const sphereMesh = new THREE.Mesh(sphere, sphereMaterial);
+		// this.scene.add(sphereMesh);
 	}
 
 	public onClick() {
@@ -149,7 +123,12 @@ class TravelGalleryScene {
 				texture1: { value: null, type: 't' } as THREE.IUniform,
 				resolutions: { value: new THREE.Vector4(), type: 'v4' } as THREE.IUniform,
 				distanceFromCenter: { value: 0, type: 'f' } as THREE.IUniform,
-				pixels: { value: new THREE.Vector2(1, 1), type: 'v2' } as THREE.IUniform
+				pixels: { value: new THREE.Vector2(1, 1), type: 'v2' } as THREE.IUniform,
+				mouse: { value: new THREE.Vector2(0, 0), type: 'v2' } as THREE.IUniform,
+				iResolution: { value: new THREE.Vector3(1, 1, 1), type: 'v3' } as THREE.IUniform,
+				u_resolution: { value: new THREE.Vector2(1, 1), type: 'v2' } as THREE.IUniform,
+				u_mouse: { value: new THREE.Vector2(0, 0), type: 'v2' } as THREE.IUniform,
+				u_time: { value: 0, type: 'f' } as THREE.IUniform
 			},
 			vertexShader,
 			fragmentShader,
@@ -170,6 +149,7 @@ class TravelGalleryScene {
 			const texture = this.textureLoader.load(img.src, (texture) => {
 				this.setBackground(texture);
 			});
+
 			textures.push(texture);
 		}
 
@@ -182,8 +162,20 @@ class TravelGalleryScene {
 
 			const group = new THREE.Group();
 
+			group.receiveShadow = true;
+			group.castShadow = true;
+
 			material.uniforms.texture1.value = texture;
 			material.uniforms.texture1.value.needsUpdate = true;
+			material.uniforms.texture1.value.wrapS = THREE.RepeatWrapping;
+			material.uniforms.texture1.value.wrapT = THREE.RepeatWrapping;
+			material.uniforms.texture1.value.repeat.set(1, 1);
+
+			material.uniforms.u_resolution.value = new THREE.Vector3(
+				window.innerWidth,
+				window.innerHeight,
+				1
+			);
 
 			const mesh = new THREE.Mesh(this.geometry, material);
 
@@ -264,7 +256,24 @@ class TravelGalleryScene {
 			if (!this.hovered[hit.object.uuid]) {
 				this.hovered[hit.object.uuid] = hit;
 			}
+			const obj = hit.object as THREE.Mesh;
+			if (obj.material instanceof THREE.ShaderMaterial) {
+				obj.material.uniforms.mouse.value = this.mouse;
+				obj.material.uniforms.u_mouse.value = this.mouse;
+			}
 		});
+
+		// Update the mouse variable
+		e.preventDefault();
+
+		// Make the sphere follow the mouse
+		const vector = new THREE.Vector3(this.mouse.x, this.mouse.y, 0.5);
+		vector.unproject(this.camera);
+		const dir = vector.sub(this.camera.position).normalize();
+		const distance = -this.camera.position.z / dir.z;
+		const pos = this.camera.position.clone().add(dir.multiplyScalar(distance));
+
+		if (this.light) this.light.position.copy(new THREE.Vector3(pos.x, pos.y, pos.z + 2));
 	}
 
 	private animate() {
@@ -272,10 +281,11 @@ class TravelGalleryScene {
 
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 
-		this.time += 0.05;
+		this.time += 0.005;
 
 		this.materials.forEach((material) => {
 			material.uniforms.time.value = this.time;
+			material.uniforms.u_time.value = this.time;
 		});
 	}
 }

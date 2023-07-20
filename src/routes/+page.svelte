@@ -5,6 +5,7 @@
 	import type { TravelBlogPost } from '../types';
 	import { gsap } from 'gsap';
 	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
+	import { loading } from '$lib/loading';
 
 	let posts = db.posts as TravelBlogPost[];
 
@@ -39,6 +40,14 @@
 	$: if (currentIndex === attractTo && disableAttractMode) {
 		setTimeout(() => (attractMode = false), 700);
 		disableAttractMode = false;
+	}
+
+	$: if (scene) {
+		scene.loaderManager.onLoad = () => {
+			setTimeout(() => {
+				loading.set(false);
+			}, 1000);
+		};
 	}
 
 	onMount(async () => {
