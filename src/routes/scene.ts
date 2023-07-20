@@ -210,13 +210,10 @@ class TravelGalleryScene {
 	}
 
 	public resize() {
-		this.camera.aspect = window.innerWidth / window.innerHeight;
-		this.camera.updateProjectionMatrix();
-
 		this.width = window.innerWidth;
 		this.height = window.innerHeight;
 		this.camera.aspect = this.width / this.height;
-
+		this.camera.updateProjectionMatrix();
 		this.isMobile = window.innerWidth < 768;
 
 		this.eulerValues = this.isMobile

@@ -20,20 +20,25 @@
 	let navElements: HTMLButtonElement[] = [];
 	let currentIndex = 0;
 	let direction: 1 | -1 = 1;
+	let disableAttractMode = false;
+	let disableBackground = false;
 
 	// scroll over bottom handle
 	$: if (currentIndex < 0 && direction === -1) {
 		attractMode = true;
 		attractTo = 0;
+		disableAttractMode = true;
 	}
 	// scroll over top handle
 	$: if (currentIndex > db.posts.length - 1 && direction === 1) {
 		attractMode = true;
 		attractTo = db.posts.length - 1;
+		disableAttractMode = true;
 	}
 	// disable attract mode when we scrolled to the right section
-	$: if (currentIndex === attractTo) {
+	$: if (currentIndex === attractTo && disableAttractMode) {
 		setTimeout(() => (attractMode = false), 700);
+		disableAttractMode = false;
 	}
 
 	onMount(async () => {
@@ -73,7 +78,7 @@
 			}
 			lastY = currentY;
 
-			speed += e.touches[0].clientY * 0.0001 * direction;
+			speed += e.touches[0].clientY * 0.0001 * -direction;
 		});
 
 		const raf = () => {
@@ -91,7 +96,9 @@
 
 				if (pageWrapperElement) {
 					// set color animated for canvas
-					pageWrapperElement.style.backgroundColor = scene.backgroundColors[currentIndex];
+					if (!disableBackground) {
+						pageWrapperElement.style.backgroundColor = scene.backgroundColors[currentIndex];
+					}
 					navElements.forEach((navElement, i) => {
 						if (i === currentIndex) {
 							navElement.style.backgroundColor = scene.backgroundColors[i];
@@ -152,6 +159,7 @@
 	<nav
 		on:mouseenter={() => {
 			attractMode = true;
+			disableBackground = true;
 
 			gsap.to(rots, {
 				duration: 0.3,
@@ -166,9 +174,16 @@
 				ease: 'power0.inOut',
 				x: 0
 			});
+
+			gsap.to(pageWrapperElement, {
+				backgroundColor: '#000000',
+				duration: 0.3,
+				ease: 'power0.inOut'
+			});
 		}}
 		on:mouseleave={() => {
 			attractMode = false;
+			disableBackground = false;
 
 			gsap.to(rots, {
 				duration: 0.3,
@@ -188,6 +203,9 @@
 		{#each posts as post, index (post.id)}
 			<button
 				class={`button-active-${index}`}
+				on:mouseenter={() => {
+					attractTo = index;
+				}}
 				on:click={() => {
 					attractTo = index;
 				}}
