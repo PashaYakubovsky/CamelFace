@@ -6,7 +6,7 @@ uniform vec2 u_resolution;
 uniform float u_time;
 uniform float time;
 uniform sampler2D texture1;
-uniform vec2 mouse;
+uniform vec2 u_mouse;
 precision highp float;
 uniform float distanceFromCenter;
 uniform vec4 resolution;
@@ -59,7 +59,7 @@ float fbm ( in vec2 _st) {
 
 void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy*3.;
-    st += st * abs(sin(mouse.x*0.1)*3.0);
+    st += st * abs(sin(u_time*0.1)*3.0);
     vec3 color = vec3(0.0);
 
     vec2 q = vec2(0.);
@@ -67,8 +67,8 @@ void main() {
     q.y = fbm( st + vec2(1.0));
 
     vec2 r = vec2(0.);
-    r.x = fbm( st + 1.0*q + vec2(1.7,9.2)+ 0.15*u_time );
-    r.y = fbm( st + 1.0*q + vec2(8.3,2.8)+ 0.126*u_time);
+    r.x = fbm( st + 1.0*q + vec2(1.7,9.2)+ 0.0015*u_mouse );
+    r.y = fbm( st + 1.0*q + vec2(8.3,2.8)+ 0.00126*u_mouse);
 
     float f = fbm(st+r);
 
