@@ -1,3 +1,5 @@
+precision mediump float;
+
 uniform vec2 u_resolution;
 uniform float u_time;
 uniform float time;
@@ -10,14 +12,27 @@ varying vec2 vUv;
 varying vec3 vPosition;
 float PI = 3.141592653589793238;
 
-
+float random (vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
+}
 void main() {
-    vec4 t = texture2D(texture1, vUv);
+    vec2 uv = vUv;
 
+    vec4 t = texture2D(texture1, uv);
+
+    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+
+    st *= 100.0; // Scale the coordinate system by 10
+    vec2 ipos = floor(st);  // get the integer coords
+    vec2 fpos = fract(st);  // get the fractional coords
+  
     float bw = (t.r + t.g + t.b) / 3.0;
-    vec4 another = vec4(bw, bw, bw, 2.0);
 
-    gl_FragColor = t;
+    // Assign a random value based on the integer coord
+    vec3 color = vec3(random( ipos ));
+    vec4 another = mix(vec4(bw, bw, bw, 1.0), vec4(color / 2., 1.0), 0.1);
 
     gl_FragColor = mix(another, t, distanceFromCenter);
     gl_FragColor.a = clamp(distanceFromCenter, 0.5, 1.0);

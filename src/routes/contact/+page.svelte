@@ -4,7 +4,7 @@
 	import { loading } from '$lib/loading';
 
 	onMount(async () => {
-		loading.set(false);
+		loading.update((state) => ({ ...state, loading: false }));
 	});
 
 	let canvasElement: HTMLCanvasElement;

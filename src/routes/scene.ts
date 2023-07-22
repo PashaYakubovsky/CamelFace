@@ -1,31 +1,55 @@
+import { handleHoverIn } from './../lib/pageTransition';
 import * as THREE from 'three';
-import db from '../lib/posts.json';
-import { getPhoto } from '$lib/api';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
-import GUI from 'lil-gui';
+// import GUI from 'lil-gui';
+import type { Media, Post } from '../types';
+// import { gsap } from 'gsap/all';
+
+const calculateEuler = (isMobile: boolean) => {
+	return isMobile
+		? { y: 0, x: -0.4, z: 0 }
+		: {
+				x: -0.1,
+				y: -0.7,
+				z: -0.2
+		  };
+};
+const calculatePosition = (isMobile: boolean) => {
+	return isMobile
+		? { y: 0, x: 0, z: 0 }
+		: {
+				x: window.innerWidth * 0.0012,
+				y: 0,
+				z: 0
+		  };
+};
+
+const createGeometry = (isMobile: boolean) => {
+	return new THREE.PlaneGeometry(
+		isMobile ? 1.4 : window.innerWidth * 0.0016,
+		isMobile ? 1.5 : window.innerWidth * 0.0014,
+		20,
+		20
+	);
+};
 
 class TravelGalleryScene {
 	private isMobile = window.innerWidth < 768;
 	private scene: THREE.Scene = new THREE.Scene();
 	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
-		75,
+		55,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	private light: THREE.Light | null = null;
+	// private light: THREE.Light | null = null;
 	private raycaster = new THREE.Raycaster();
 	public renderer: THREE.WebGLRenderer | null = null;
 	private materials: THREE.ShaderMaterial[] = [];
 	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry = new THREE.PlaneGeometry(
-		this.isMobile ? 1.4 : 2,
-		this.isMobile ? 1.5 : 1.9,
-		20,
-		20
-	);
-	private gui = new GUI();
+	public geometry: THREE.PlaneGeometry = createGeometry(this.isMobile);
+	// private gui = new GUI();
 	public loaderManager = new THREE.LoadingManager();
 	private textureLoader = new THREE.TextureLoader(this.loaderManager);
 	public groups: THREE.Group[] = [];
@@ -33,36 +57,17 @@ class TravelGalleryScene {
 	public mouse = new THREE.Vector2();
 	private width = window.innerWidth;
 	private height = window.innerHeight;
-	private intersected: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = [];
+	public intersected: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = [];
 	private hovered: Record<string, THREE.Intersection> = {};
 
-	public eulerValues = this.isMobile
-		? { y: 0, x: -0.4, z: 0 }
-		: {
-				y: -0.5,
-				x: -0.3,
-				z: -0.2
-		  };
-
-	public positionValues = this.isMobile
-		? { y: 0, x: 0, z: 0 }
-		: {
-				x: 1.2,
-				y: 0,
-				z: 0
-		  };
+	public eulerValues = calculateEuler(this.isMobile);
+	public positionValues = calculatePosition(this.isMobile);
 	private time = 0;
-	public backgroundColors = [
-		'#c19ce9',
-		'#230c75',
-		'#140c0b',
-		'#c19ce9',
-		'#230c75',
-		'#140c0b',
-		'#c19ce9',
-		'#230c75',
-		'#140c0b'
-	];
+	public backgroundColors: string[] = [];
+	public textColors: string[] = [];
+	public onClickEvent: (() => void) | null = null;
+	public handleHoverIn: (() => void) | null = null;
+	public handleHoverOut: (() => void) | null = null;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -75,7 +80,7 @@ class TravelGalleryScene {
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-		this.camera.position.set(0, 0, 4);
+		this.camera.position.set(0, 0, 6);
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -86,32 +91,51 @@ class TravelGalleryScene {
 		this.scene.add(this.camera);
 
 		window.addEventListener('mousemove', (e) => this.onMouseMove(e));
-		window.addEventListener('click', () => this.onClick());
 		window.addEventListener('resize', () => this.resize());
-
-		this.light = new THREE.PointLight(new THREE.Color('red'));
-
-		this.light.intensity = 10;
-		this.light.position.set(0, 0, 0);
-		this.scene.add(this.light);
-
-		// const sphere = new THREE.SphereGeometry(1, 32, 32);
-		// const sphereMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color('red') });
-		// sphereMaterial.roughness = 0.2;
-		// sphereMaterial.metalness = 0.5;
-		// const sphereMesh = new THREE.Mesh(sphere, sphereMaterial);
-		// this.scene.add(sphereMesh);
+		window.addEventListener('click', () => this.onClick());
 	}
 
 	public onClick() {
-		this.intersected.forEach((hit) => {
-			const mesh = hit.object as THREE.Mesh;
+		// this.intersected.forEach((hit) => {
+		// 	const mesh = hit.object as THREE.Mesh;
+		// 	const group = mesh.parent as THREE.Group;
+		// 	let prev = true;
+		// 	this.groups.forEach((g) => {
+		// 		if (g.uuid === group.uuid) {
+		// 			prev = false;
+		// 			return;
+		// 		}
+		// 		gsap.to(g.position, {
+		// 			y: prev ? -6 : 6,
+		// 			duration: 0.5
+		// 		});
+		// 	});
+		// 	mesh.geometry = new THREE.PlaneGeometry(
+		// 		window.innerWidth * 0.004,
+		// 		window.innerWidth * 0.0025,
+		// 		10,
+		// 		10
+		// 	);
 
-			// gsap.to(mesh.position, {
-			// 	x: -1.5,
-			// 	duration: 3,
-			// 	ease: 'power0'
-			// });
+		// 	gsap.to(mesh.position, {
+		// 		x: 0,
+		// 		duration: 0.5,
+		// 		ease: 'power0'
+		// 	});
+		// 	gsap.to(group.rotation, {
+		// 		x: 0,
+		// 		y: 0,
+		// 		z: 0,
+		// 		duration: 0.5,
+		// 		ease: 'power0'
+		// 	});
+		// });
+
+		this.intersected.forEach((hit) => {
+			const obj = hit.object as THREE.Mesh;
+			if (obj.material instanceof THREE.ShaderMaterial) {
+				if (this.onClickEvent) this.onClickEvent();
+			}
 		});
 	}
 
@@ -136,19 +160,16 @@ class TravelGalleryScene {
 		});
 	}
 
-	public async addGallery() {
-		const images = [];
+	public async addGallery({ posts }: { posts: Post[] }) {
 		const textures = [];
 
-		for (let i = 0; i < db.posts.length; i++) {
-			const img = document.createElement('img');
-			img.src = await getPhoto();
-			img.crossOrigin = 'anonymous';
-			images.push(img);
-
-			const texture = this.textureLoader.load(img.src, (texture) => {
-				this.setBackground(texture);
-			});
+		for (let i = 0; i < posts.length; i++) {
+			const texture = this.textureLoader.load(
+				(posts[i].backgroundImage as Media).url ?? '',
+				(texture) => {
+					this.setBackground(texture);
+				}
+			);
 
 			textures.push(texture);
 		}
@@ -162,14 +183,8 @@ class TravelGalleryScene {
 
 			const group = new THREE.Group();
 
-			group.receiveShadow = true;
-			group.castShadow = true;
-
 			material.uniforms.texture1.value = texture;
 			material.uniforms.texture1.value.needsUpdate = true;
-			material.uniforms.texture1.value.wrapS = THREE.RepeatWrapping;
-			material.uniforms.texture1.value.wrapT = THREE.RepeatWrapping;
-			material.uniforms.texture1.value.repeat.set(1, 1);
 
 			material.uniforms.u_resolution.value = new THREE.Vector3(
 				window.innerWidth,
@@ -182,7 +197,7 @@ class TravelGalleryScene {
 			group.add(mesh);
 
 			group.rotation.set(this.eulerValues.x, this.eulerValues.y, this.eulerValues.z);
-			mesh.position.set(this.positionValues.x, this.positionValues.y, this.positionValues.z);
+			mesh.position.set(this.positionValues.x, -20, this.positionValues.z);
 
 			this.scene.add(group);
 
@@ -208,29 +223,25 @@ class TravelGalleryScene {
 		this.camera.updateProjectionMatrix();
 		this.isMobile = window.innerWidth < 768;
 
-		this.eulerValues = this.isMobile
-			? { y: 0, x: 0, z: 0 }
-			: {
-					y: -0.5,
-					x: -0.3,
-					z: -0.2
-			  };
+		this.positionValues = calculatePosition(this.isMobile);
+		this.eulerValues = calculateEuler(this.isMobile);
+		this.geometry = createGeometry(this.isMobile);
 
-		this.positionValues = this.isMobile
-			? { y: 0, x: 0, z: 0 }
-			: {
-					x: 1.2,
-					y: 0,
-					z: 0
-			  };
+		const newPositions: [x: number, y: number, z: number] = [
+			this.positionValues.x,
+			this.positionValues.y,
+			this.positionValues.z
+		];
+		const newEuler: [x: number, y: number, z: number] = [
+			this.eulerValues.x,
+			this.eulerValues.y,
+			this.eulerValues.z
+		];
 
 		this.groups.forEach((group, idx) => {
-			group.rotation.set(this.eulerValues.x, this.eulerValues.y, this.eulerValues.z);
-			this.meshes[idx].position.set(
-				this.positionValues.x,
-				this.positionValues.y,
-				this.positionValues.z
-			);
+			group.rotation.set(...newEuler);
+			this.meshes[idx].position.set(...newPositions);
+			this.meshes[idx].geometry = this.geometry;
 		});
 
 		if (this.renderer) this.renderer.setSize(this.width, this.height);
@@ -246,15 +257,24 @@ class TravelGalleryScene {
 		Object.keys(this.hovered).forEach((key) => {
 			const hit = this.intersected.find((hit) => hit.object.uuid === key);
 			if (hit === undefined) {
+				document.body.style.cursor = '';
+				if (this.handleHoverOut) {
+					this.handleHoverOut();
+				}
 				// const hoveredItem = this.hovered[key];
 				delete this.hovered[key];
 			}
 		});
 
 		this.intersected.forEach((hit) => {
+			document.body.style.cursor = 'pointer';
 			// If a hit has not been flagged as hovered we must call onPointerOver
 			if (!this.hovered[hit.object.uuid]) {
 				this.hovered[hit.object.uuid] = hit;
+
+				if (this.handleHoverIn) {
+					this.handleHoverIn();
+				}
 			}
 			const obj = hit.object as THREE.Mesh;
 			if (obj.material instanceof THREE.ShaderMaterial) {
@@ -262,18 +282,6 @@ class TravelGalleryScene {
 				obj.material.uniforms.u_mouse.value = this.mouse;
 			}
 		});
-
-		// Update the mouse variable
-		e.preventDefault();
-
-		// Make the sphere follow the mouse
-		const vector = new THREE.Vector3(this.mouse.x, this.mouse.y, 0.5);
-		vector.unproject(this.camera);
-		const dir = vector.sub(this.camera.position).normalize();
-		const distance = -this.camera.position.z / dir.z;
-		const pos = this.camera.position.clone().add(dir.multiplyScalar(distance));
-
-		if (this.light) this.light.position.copy(new THREE.Vector3(pos.x, pos.y, pos.z + 2));
 	}
 
 	private animate() {
@@ -281,7 +289,7 @@ class TravelGalleryScene {
 
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 
-		this.time += 0.005;
+		this.time += 0.05;
 
 		this.materials.forEach((material) => {
 			material.uniforms.time.value = this.time;

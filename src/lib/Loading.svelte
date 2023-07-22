@@ -3,9 +3,9 @@
 	import { Clock } from 'svelte-loading-spinners';
 </script>
 
-{#if $loading}
+{#if $loading.loading}
 	<div>
-		<Clock size="50" color="#c19ce9" unit="vw" duration="10s" />
+		<Clock size="50" color={$loading.color} unit="vw" duration="10s" />
 	</div>
 {/if}
 
