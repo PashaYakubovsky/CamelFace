@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { posts } from '$lib/posts';
 	import { loading } from '$lib/loading';
 	import { onMount } from 'svelte';
 	import { getPost } from '$lib/api';
