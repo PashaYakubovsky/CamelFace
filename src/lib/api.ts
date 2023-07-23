@@ -2,6 +2,7 @@ import axios, { type AxiosResponse } from 'axios';
 import { posts } from './posts.ts';
 import { PUBLIC_CMS_API } from '$env/static/public';
 import type { PayloadCMSResponse, Post } from '../types.ts';
+import { loading } from '$lib/loading';
 
 export const mock = {
 	docs: [
@@ -164,6 +165,8 @@ export const getPhoto = async () => {
 };
 
 export const getPosts = async () => {
+	loading.update((state) => ({ ...state, loading: true }));
+
 	try {
 		const response: AxiosResponse<PayloadCMSResponse<Post[]>> = await axios.get(
 			`${PUBLIC_CMS_API}/posts`,
@@ -180,9 +183,13 @@ export const getPosts = async () => {
 		posts.set(mock.docs as Post[]);
 		console.log(error);
 	}
+
+	loading.update((state) => ({ ...state, loading: false }));
 };
 
 export const getPost = async ({ postId }: { postId: string }) => {
+	loading.update((state) => ({ ...state, loading: true }));
+
 	try {
 		const response: AxiosResponse<Post> = await axios.get(`${PUBLIC_CMS_API}/posts/${postId}`, {
 			headers: {
@@ -194,6 +201,8 @@ export const getPost = async ({ postId }: { postId: string }) => {
 	} catch (error) {
 		console.log(error);
 	}
+
+	loading.update((state) => ({ ...state, loading: false }));
 
 	return null;
 };
