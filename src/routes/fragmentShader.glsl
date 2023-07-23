@@ -27,7 +27,7 @@ void main() {
     st *= 100.0; // Scale the coordinate system by 10
     vec2 ipos = floor(st);  // get the integer coords
     vec2 fpos = fract(st);  // get the fractional coords
-  
+
     float bw = (t.r + t.g + t.b) / 3.0;
 
     // Assign a random value based on the integer coord

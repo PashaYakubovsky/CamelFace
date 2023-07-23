@@ -2,18 +2,20 @@ import { goto } from '$app/navigation';
 import { gsap } from 'gsap/all';
 import { writable } from 'svelte/store';
 
-export const pageTransition = writable<{ start: boolean; toPage: string }>({
-	start: false,
-	toPage: ''
-});
+export const pageTransition = writable<{ start: boolean; toPage: string; backgroundColor: string }>(
+	{
+		start: false,
+		toPage: '',
+		backgroundColor: '#fff'
+	}
+);
 
-export const transitionIn = ({ toPage }: { toPage: string }): gsap.core.Tween => {
+export const transitionIn = ({ toPage }: { toPage: string }): gsap.core.Tween | null => {
 	const transitionElement = document.querySelector('#transition') as HTMLDivElement;
+	const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
-	const tween = gsap.fromTo(
-		transitionElement,
-		{ xPercent: -100, duration: 0.3 },
-		{
+	if (!isMobile) {
+		const tween = gsap.to(transitionElement, {
 			opacity: 1,
 			xPercent: 0,
 			duration: 0.8,
@@ -22,10 +24,14 @@ export const transitionIn = ({ toPage }: { toPage: string }): gsap.core.Tween =>
 			onComplete: () => {
 				goto(toPage);
 			}
-		}
-	);
+		});
 
-	return tween;
+		return tween;
+	} else {
+		goto(toPage);
+	}
+
+	return null;
 };
 
 export const transitionOut = (): gsap.core.Tween => {
@@ -34,7 +40,7 @@ export const transitionOut = (): gsap.core.Tween => {
 	const tween = gsap.to(transitionElement, {
 		filter: 'blur(3px)',
 		duration: 0.3,
-		xPercent: -99,
+		xPercent: -100,
 		onComplete: () => {
 			pageTransition.update((v) => ({ ...v, start: false }));
 		}
@@ -49,7 +55,7 @@ export const handleHoverIn = ({ start, color }: { start: boolean; color: string 
 
 	if (transitionElement && !start) {
 		gsap.to(transitionElement, {
-			xPercent: '-98.5',
+			xPercent: -98.5,
 			borderRadius: '0.5rem',
 			duration: 0.3,
 			backgroundColor: color,
@@ -58,7 +64,10 @@ export const handleHoverIn = ({ start, color }: { start: boolean; color: string 
 	}
 	// trigger hover effect on post title
 	if (postTitleElem) {
-		postTitleElem.forEach((title) => title.classList.add('hover'));
+		postTitleElem.forEach((title) => {
+			title.classList.add('hover');
+			title.classList.remove('hover-out');
+		});
 	}
 };
 
@@ -68,7 +77,7 @@ export const handleHoverOut = ({ start }: { start: boolean }) => {
 
 	if (transitionElement && !start) {
 		gsap.to(transitionElement, {
-			xPercent: '-99.5',
+			xPercent: -99.5,
 			borderRadius: '0rem',
 			duration: 0.3,
 			ease: 'power0'
@@ -76,6 +85,9 @@ export const handleHoverOut = ({ start }: { start: boolean }) => {
 	}
 	// trigger hover effect on post title
 	if (postTitleElem) {
-		postTitleElem.forEach((title) => title.classList.remove('hover'));
+		postTitleElem.forEach((title) => {
+			title.classList.remove('hover');
+			title.classList.add('hover-out');
+		});
 	}
 };

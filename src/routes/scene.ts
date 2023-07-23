@@ -1,4 +1,3 @@
-import { handleHoverIn } from './../lib/pageTransition';
 import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
@@ -8,7 +7,7 @@ import type { Media, Post } from '../types';
 
 const calculateEuler = (isMobile: boolean) => {
 	return isMobile
-		? { y: 0, x: -0.4, z: 0 }
+		? { y: 0, x: 0, z: 0 }
 		: {
 				x: -0.1,
 				y: -0.7,
@@ -17,7 +16,7 @@ const calculateEuler = (isMobile: boolean) => {
 };
 const calculatePosition = (isMobile: boolean) => {
 	return isMobile
-		? { y: 0, x: 0, z: 0 }
+		? { y: -0.02, x: 0, z: -1 }
 		: {
 				x: window.innerWidth * 0.0012,
 				y: 0,
@@ -27,15 +26,15 @@ const calculatePosition = (isMobile: boolean) => {
 
 const createGeometry = (isMobile: boolean) => {
 	return new THREE.PlaneGeometry(
-		isMobile ? 1.4 : window.innerWidth * 0.0016,
-		isMobile ? 1.5 : window.innerWidth * 0.0014,
-		20,
-		20
+		isMobile ? 0.58 : window.innerWidth * 0.0016,
+		isMobile ? 1.05 : window.innerWidth * 0.0014,
+		10,
+		10
 	);
 };
 
 class TravelGalleryScene {
-	private isMobile = window.innerWidth < 768;
+	public isMobile = window.innerWidth < 768;
 	private scene: THREE.Scene = new THREE.Scene();
 	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		55,
@@ -65,7 +64,7 @@ class TravelGalleryScene {
 	private time = 0;
 	public backgroundColors: string[] = [];
 	public textColors: string[] = [];
-	public onClickEvent: (() => void) | null = null;
+	public onClickEvent: ((meshIndex: number) => void) | null = null;
 	public handleHoverIn: (() => void) | null = null;
 	public handleHoverOut: (() => void) | null = null;
 
@@ -77,11 +76,15 @@ class TravelGalleryScene {
 			powerPreference: 'high-performance',
 			precision: 'highp'
 		});
+
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-		this.camera.position.set(0, 0, 6);
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+		this.camera.position.set(0, 0, this.isMobile ? 0 : 4);
+		this.renderer.setSize(
+			window.innerWidth,
+			this.isMobile ? window.innerHeight * 0.35 : window.innerHeight
+		);
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 		this.addObjects();
@@ -92,49 +95,19 @@ class TravelGalleryScene {
 
 		window.addEventListener('mousemove', (e) => this.onMouseMove(e));
 		window.addEventListener('resize', () => this.resize());
-		window.addEventListener('click', () => this.onClick());
+		window.addEventListener('click', (e) => this.onClick(e));
 	}
 
-	public onClick() {
-		// this.intersected.forEach((hit) => {
-		// 	const mesh = hit.object as THREE.Mesh;
-		// 	const group = mesh.parent as THREE.Group;
-		// 	let prev = true;
-		// 	this.groups.forEach((g) => {
-		// 		if (g.uuid === group.uuid) {
-		// 			prev = false;
-		// 			return;
-		// 		}
-		// 		gsap.to(g.position, {
-		// 			y: prev ? -6 : 6,
-		// 			duration: 0.5
-		// 		});
-		// 	});
-		// 	mesh.geometry = new THREE.PlaneGeometry(
-		// 		window.innerWidth * 0.004,
-		// 		window.innerWidth * 0.0025,
-		// 		10,
-		// 		10
-		// 	);
-
-		// 	gsap.to(mesh.position, {
-		// 		x: 0,
-		// 		duration: 0.5,
-		// 		ease: 'power0'
-		// 	});
-		// 	gsap.to(group.rotation, {
-		// 		x: 0,
-		// 		y: 0,
-		// 		z: 0,
-		// 		duration: 0.5,
-		// 		ease: 'power0'
-		// 	});
-		// });
-
+	public onClick(e: MouseEvent) {
 		this.intersected.forEach((hit) => {
 			const obj = hit.object as THREE.Mesh;
+			const meshIndex = this.meshes.findIndex((mesh) => mesh.uuid === obj.uuid);
 			if (obj.material instanceof THREE.ShaderMaterial) {
-				if (this.onClickEvent) this.onClickEvent();
+				if (e.target instanceof HTMLElement && e.target.closest('nav')) {
+					return;
+				}
+
+				if (this.onClickEvent) this.onClickEvent(meshIndex);
 			}
 		});
 	}
@@ -152,7 +125,8 @@ class TravelGalleryScene {
 				iResolution: { value: new THREE.Vector3(1, 1, 1), type: 'v3' } as THREE.IUniform,
 				u_resolution: { value: new THREE.Vector2(1, 1), type: 'v2' } as THREE.IUniform,
 				u_mouse: { value: new THREE.Vector2(0, 0), type: 'v2' } as THREE.IUniform,
-				u_time: { value: 0, type: 'f' } as THREE.IUniform
+				u_time: { value: 0, type: 'f' } as THREE.IUniform,
+				isMobile: { value: this.isMobile, type: 'b' } as THREE.IUniform
 			},
 			vertexShader,
 			fragmentShader,
@@ -177,7 +151,6 @@ class TravelGalleryScene {
 		textures.forEach((t) => {
 			if (!this.material || !this.geometry) return;
 
-			// const texture = new THREE.Texture(t);
 			const texture = t;
 			const material = this.material.clone();
 
@@ -197,7 +170,7 @@ class TravelGalleryScene {
 			group.add(mesh);
 
 			group.rotation.set(this.eulerValues.x, this.eulerValues.y, this.eulerValues.z);
-			mesh.position.set(this.positionValues.x, -20, this.positionValues.z);
+			mesh.position.set(this.positionValues.x, this.positionValues.y, this.positionValues.z);
 
 			this.scene.add(group);
 
@@ -217,11 +190,11 @@ class TravelGalleryScene {
 	}
 
 	public resize() {
-		this.width = window.innerWidth;
-		this.height = window.innerHeight;
-		this.camera.aspect = this.width / this.height;
-		this.camera.updateProjectionMatrix();
 		this.isMobile = window.innerWidth < 768;
+
+		this.width = window.innerWidth;
+		this.height = this.isMobile ? window.innerHeight * 0.35 : window.innerHeight;
+		this.camera.aspect = this.width / this.height;
 
 		this.positionValues = calculatePosition(this.isMobile);
 		this.eulerValues = calculateEuler(this.isMobile);
@@ -259,6 +232,9 @@ class TravelGalleryScene {
 			if (hit === undefined) {
 				document.body.style.cursor = '';
 				if (this.handleHoverOut) {
+					if (e.target instanceof HTMLElement && e.target.closest('nav')) {
+						return;
+					}
 					this.handleHoverOut();
 				}
 				// const hoveredItem = this.hovered[key];

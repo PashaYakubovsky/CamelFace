@@ -3,7 +3,7 @@ import { posts } from './posts.ts';
 import { PUBLIC_CMS_API } from '$env/static/public';
 import type { PayloadCMSResponse, Post } from '../types.ts';
 
-const mock = {
+export const mock = {
 	docs: [
 		{
 			id: '64ba79026db4f2ef37742891',
@@ -175,10 +175,9 @@ export const getPosts = async () => {
 		);
 		if (response.status === 200) {
 			posts.set(response.data.docs);
-		} else {
-			posts.set(mock.docs as Post[]);
 		}
 	} catch (error) {
+		posts.set(mock.docs as Post[]);
 		console.log(error);
 	}
 };

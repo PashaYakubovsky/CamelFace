@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&family=Maven+Pro:wght@400;500;700&family=Playfair+Display+SC:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap');
 
 :root {
 	--mainColor: #e6e6e6;
@@ -13,6 +13,7 @@ html {
 	line-height: 22px;
 	color: var(--mainColor);
 	background-color: var(--secondaryColor);
+	overflow: hidden;
 }
 body {
 	min-height: 100vh;
@@ -20,7 +21,7 @@ body {
 }
 
 * {
-	font-family: 'Playfair Display SC', serif;
+	font-family: 'Gloria Hallelujah', cursive;
 	font-weight: 400;
 	transition: 0.3s ease-in-out color, 0.6s ease-in-out background-color;
 }
@@ -34,4 +35,34 @@ h6,
 p {
 	margin: 0;
 	padding: 0;
+}
+
+.hover-out::before,
+.hover::before {
+	position: absolute;
+	content: attr(data-content);
+	color: currentColor;
+	-webkit-text-fill-color: currentColor;
+}
+.hover-out::before {
+	animation: clipPathOut 0.5s ease-in-out forwards;
+}
+.hover::before {
+	animation: clipPathIn 0.5s ease-in-out forwards;
+}
+@keyframes clipPathIn {
+	0% {
+		clip-path: polygon(0 0, 0 0, 0% 100%, 0 100%);
+	}
+	100% {
+		clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+	}
+}
+@keyframes clipPathOut {
+	0% {
+		clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+	}
+	100% {
+		clip-path: polygon(0 0, 0 0, 0% 100%, 0 100%);
+	}
 }

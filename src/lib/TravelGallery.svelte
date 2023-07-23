@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import Scene from '../routes/scene';
 	import { gsap } from 'gsap';
-	import * as THREE from 'three';
+	import type * as THREE from 'three';
 	import { handleHoverIn, handleHoverOut, pageTransition } from '$lib/pageTransition';
 	import { loading } from './loading';
 
@@ -17,18 +17,22 @@
 	let attractTo = 0;
 	let rots: THREE.Euler[] = [];
 	let positions: THREE.Vector3[] = [];
+	let scales: THREE.Vector3[] = [];
 	let scene: Scene;
 	let navElements: HTMLButtonElement[] = [];
 	let currentIndex = 0;
 	let direction: 1 | -1 = 1;
-	let disableAttractMode = false;
 	let disableBackground = false;
-	let timeline: gsap.core.Timeline = gsap.timeline({});
 	let initAnimation = false;
-	let transitionElement: HTMLDivElement;
 	let goBackButtonElement: HTMLButtonElement;
 
-	$: if (contentElements.length > 0 && contentElements[currentIndex] && !attractMode) {
+	$: console.log(attractMode);
+
+	$: if (
+		contentElements.length > 0 &&
+		contentElements[currentIndex] &&
+		(!attractMode || scene.isMobile)
+	) {
 		contentElements.forEach((content, idx) => {
 			if (idx !== currentIndex) {
 				content.classList.add('hidden');
@@ -71,7 +75,7 @@
 	// }
 
 	$: {
-		if (scene) {
+		if (scene && !scene.isMobile) {
 			scene.handleHoverIn = () => {
 				handleHoverIn({ color: scene.textColors[currentIndex], start: $pageTransition.start });
 			};
@@ -80,8 +84,14 @@
 				handleHoverOut({ start: $pageTransition.start });
 			};
 
-			scene.onClickEvent = () => {
-				pageTransition.set({ start: true, toPage: '/posts/' + blogPost[currentIndex].id || '/' });
+			scene.onClickEvent = (meshIndex: number) => {
+				if (meshIndex === currentIndex) {
+					pageTransition.update((state) => ({
+						...state,
+						start: true,
+						toPage: '/posts/' + blogPost[currentIndex].id || '/'
+					}));
+				}
 			};
 		}
 	}
@@ -92,7 +102,6 @@
 		scene.textColors = blogPost.map((post) => post.textColor);
 		scene.backgroundColors = blogPost.map((post) => post.backgroundColor);
 
-		transitionElement = document.querySelector('#transition') as HTMLDivElement;
 		goBackButtonElement = document.querySelector('#goBackButton') as HTMLButtonElement;
 
 		navElements = Array.from(document.querySelectorAll('nav > button')) as HTMLButtonElement[];
@@ -104,6 +113,7 @@
 
 		rots = scene.groups.map((g) => g.rotation);
 		positions = scene.meshes.map((g) => g.position);
+		scales = scene.groups.map((g) => g.scale);
 
 		let speed = 0;
 		let position = 0;
@@ -118,20 +128,10 @@
 			});
 
 		window.addEventListener('wheel', (e) => {
-			speed += e.deltaY * 0.0003;
-			direction = Math.sign(e.deltaY) as 1 | -1;
-		});
-		let lastY = 0;
-		window.addEventListener('touchmove', (e) => {
-			const currentY = e.touches[0].clientY;
-			if (currentY > lastY) {
-				direction = -1;
-			} else if (currentY < lastY) {
-				direction = 1;
+			if (!scene.isMobile) {
+				speed += e.deltaY * 0.0003;
+				direction = Math.sign(e.deltaY) as 1 | -1;
 			}
-			lastY = currentY;
-
-			speed += e.touches[0].clientY * 0.0001 * -direction;
 		});
 
 		const raf = () => {
@@ -174,13 +174,17 @@
 
 				if (mesh) {
 					(mesh.material as THREE.ShaderMaterial).uniforms.distanceFromCenter.value = obj.dist;
-					const scale = 1 + 0.2 * obj.dist;
-					mesh.scale.set(scale, scale, scale);
 					const delta =
 						(mesh.geometry as unknown as { parameters: { height: number } }).parameters.height *
 						1.15;
 
-					mesh.position.y = i * delta + -(position * delta);
+					if (scene.isMobile) {
+						mesh.position.x = i * 3.1 + -(position * 3.1);
+					} else {
+						const scale = 1 + 0.2 * obj.dist;
+						mesh.scale.set(scale, scale, scale);
+						mesh.position.y = i * delta + -(position * delta);
+					}
 				}
 			});
 
@@ -218,40 +222,52 @@
 	<canvas bind:this={canvasElement} />
 
 	<nav
-		on:mouseenter={() => {
+		class="max-md:flex-row max-md:w-full absolute left-2 max-md:right-0 top-2 max-md:top-[auto] max-md:bottom-2 max-md:justify-center transform flex flex-col-reverse z-[10]"
+		on:mouseenter={(e) => {
+			e.stopPropagation();
 			if (initAnimation) return;
 			attractMode = true;
-			disableBackground = true;
 
-			contentElements.forEach((content) => {
-				content.classList.add('hidden');
-			});
+			if (!scene.isMobile) {
+				disableBackground = true;
 
-			const geometry = new THREE.PlaneGeometry(
-				window.innerWidth * 0.004,
-				window.innerWidth * 0.0025,
-				10,
-				10
-			);
+				contentElements.forEach((content) => {
+					content.classList.add('hidden');
+				});
 
-			scene.meshes.forEach((mesh) => {
-				// change with and height of mesh
-				mesh.geometry = geometry;
-			});
+				gsap.to(scales, {
+					duration: 0.3,
+					ease: 'power0.inOut',
+					x: 2.5,
+					y: 2,
+					z: 2
+				});
 
-			gsap.to(rots, {
-				duration: 0.3,
-				ease: 'power0.inOut',
-				x: -0.5,
-				y: 0,
-				z: 0
-			});
+				// const geometry = new THREE.PlaneGeometry(
+				// 	window.innerWidth * 0.004,
+				// 	window.innerWidth * 0.0025,
+				// 	10,
+				// 	10
+				// );
 
-			gsap.to(positions, {
-				duration: 0.3,
-				ease: 'power0.inOut',
-				x: 0
-			});
+				// scene.meshes.forEach((mesh) => {
+				// 	// change with and height of mesh
+				// 	mesh.geometry = geometry;
+				// });
+
+				gsap.to(rots, {
+					duration: 0.3,
+					ease: 'power0.inOut',
+					x: -0.5,
+					y: 0,
+					z: 0
+				});
+				gsap.to(positions, {
+					duration: 0.3,
+					ease: 'power0.inOut',
+					x: 0
+				});
+			}
 
 			gsap.to(pageWrapperElement, {
 				backgroundColor: '#000000',
@@ -259,46 +275,58 @@
 				ease: 'power0.inOut'
 			});
 		}}
-		on:mouseleave={() => {
+		on:mouseleave={(e) => {
+			e.stopPropagation();
 			if (initAnimation) return;
 			attractMode = false;
-			disableBackground = false;
 
-			contentElements.forEach((content, idx) => {
-				if (idx === currentIndex) {
-					content.classList.remove('hidden');
-				}
-			});
+			if (!scene.isMobile) {
+				disableBackground = false;
 
-			scene.meshes.forEach((mesh) => {
-				// change with and height of mesh
-				mesh.geometry = scene.geometry;
-			});
+				contentElements.forEach((content, idx) => {
+					if (idx === currentIndex) {
+						content.classList.remove('hidden');
+					}
+				});
 
-			gsap.to(rots, {
-				duration: 0.3,
-				ease: 'power0.inOut',
-				x: scene.eulerValues.x,
-				y: scene.eulerValues.y,
-				z: scene.eulerValues.z
-			});
+				// scene.meshes.forEach((mesh) => {
+				// 	// change with and height of mesh
+				// 	mesh.geometry = scene.geometry;
+				// });
+				gsap.to(scales, {
+					duration: 0.3,
+					ease: 'power0.inOut',
+					x: 1,
+					y: 1,
+					z: 1
+				});
 
-			gsap.to(positions, {
-				duration: 0.3,
-				ease: 'power0.inOut',
-				x: scene.positionValues.x
-			});
+				gsap.to(rots, {
+					duration: 0.3,
+					ease: 'power0.inOut',
+					x: scene.eulerValues.x,
+					y: scene.eulerValues.y,
+					z: scene.eulerValues.z
+				});
+				gsap.to(positions, {
+					duration: 0.3,
+					ease: 'power0.inOut',
+					x: scene.positionValues.x
+				});
+			}
 		}}
 	>
 		{#each blogPost as post, index (post.id)}
 			<button
-				class={`button-active-${index}`}
+				on:click={() => {
+					if (scene.isMobile) {
+						currentIndex = index;
+					}
+				}}
 				on:mouseenter={() => {
 					attractTo = index;
 				}}
-				on:click={() => {
-					attractTo = index;
-				}}
+				class="bg-white mt-1 max-md:ml-1 min-w-[2vw] max-md:min-w-[4vw] min-h-[2vw] max-md:min-h-[4vw] h-4 rounded-full border border-gray-700 cursor-pointer"
 			>
 				<!-- {post.title} -->
 			</button>
@@ -308,19 +336,24 @@
 	<!-- loop over posts -->
 	{#each blogPost as post, index (post.id)}
 		<section
-			class="post-info absolute left-0 h-screen w-1/2 text-inherit transition duration-300 ease-in-out hidden mt-[5rem] pl-5 flex-col justify-center"
+			class="post-info absolute left-0 h-screen w-1/2 max-md:w-full text-inherit transition duration-300 ease-in-out hidden mt-[5rem] pl-5 max-md:pl-0 flex-col justify-center max-md:bottom-0 max-md:h-[60%]"
 		>
-			<div class="post-info__content h-[fit-content] flex flex-col gap-[1rem] py-8 px-4">
+			<div
+				class="post-info__content h-[fit-content] flex flex-col gap-[1rem] py-8 px-4 max-md:py-0 max-md:px-4"
+			>
 				<h2
 					id="postTitle"
 					data-content={post.title}
 					style={`color:${scene?.textColors?.[index]}`}
-					class="text-[5vw] leading-normal font-bold"
+					class="text-[7.2vw] leading-normal font-bold"
 				>
 					{post.title}
 				</h2>
 
-				<p style={`color:${scene?.textColors?.[index]}`} class="text-[1rem] leading-7">
+				<p
+					style={`color:${scene?.textColors?.[index]}`}
+					class="text-[1rem] leading-7 max-md:h-[30vh] overflow-ellipsis overflow-hidden break-words"
+				>
 					{post.content}
 				</p>
 				<button
@@ -331,13 +364,14 @@
 						handleHoverOut({ start: $pageTransition.start });
 					}}
 					on:click={() => {
-						pageTransition.set({
-							toPage: '/posts/' + post.id,
-							start: true
-						});
+						pageTransition.update((state) => ({
+							...state,
+							start: true,
+							toPage: '/posts/' + post.id
+						}));
 					}}
 					style={`color:${scene?.textColors?.[index]}`}
-					class="bg-transparent border-none cursor-pointer p-0 text-lg leading-5 w-1/2 flex items-center justify-start gap-4 uppercase"
+					class="bg-transparent border-none cursor-pointer p-0 text-lg leading-5 flex items-center justify-start gap-4 uppercase w-fit"
 				>
 					Read more
 					<svg
@@ -372,50 +406,9 @@
 		transition: clip-path 0.3s ease-in-out;
 		position: relative;
 		display: inline-block;
-		/* make text transparent with border */
 		-webkit-text-fill-color: transparent;
 		-webkit-text-stroke-width: 1px;
 		-webkit-text-stroke-color: currentColor;
-	}
-	.hover::before {
-		position: absolute;
-		content: attr(data-content);
-		-webkit-text-fill-color: currentColor;
-		color: currentColor;
-		clip-path: polygon(0 0, 0 0, 0% 100%, 0 100%);
-		transition: clip-path 0.3s ease-in-out;
-		animation: clipPathIn 0.3s ease-in-out forwards;
-	}
-	@keyframes clipPathIn {
-		0% {
-			clip-path: polygon(0 0, 0 0, 0% 100%, 0 100%);
-		}
-		100% {
-			clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-		}
-	}
-
-	nav {
-		list-style: none;
-		display: flex;
-		align-items: flex-end;
-		flex-direction: column-reverse;
-		width: fit-content;
-		gap: 1rem;
-		position: absolute;
-		z-index: 2;
-		right: 0;
-		padding-right: 2rem;
-		top: 50%;
-		width: 10vw;
-		transform: translateY(-50%);
-	}
-	nav > button {
-		list-style: none;
-		padding: 0.5rem;
-		cursor: pointer;
-		border: 1px solid #e5e5e5;
-		border-radius: 0.5rem;
 	}
 	.pageWrapper {
 		transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) background-color;
@@ -427,20 +420,19 @@
 		width: 100%;
 		height: 100%;
 	}
-	.scrollWrapper {
-		display: flex;
-		flex-direction: column;
-		gap: 10rem;
-		position: relative;
-		align-items: flex-end;
-		height: 100%;
-		z-index: 1;
-	}
 	canvas {
 		width: 100%;
 		height: 100%;
 		position: fixed;
 		top: 0;
 		left: 0;
+	}
+	@media (max-width: 768px) {
+		h2 {
+			-webkit-text-fill-color: currentColor;
+		}
+		canvas {
+			height: 35% !important;
+		}
 	}
 </style>
