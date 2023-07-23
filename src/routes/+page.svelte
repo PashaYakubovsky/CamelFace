@@ -16,6 +16,8 @@
 	});
 </script>
 
+<title>Jet Set Together</title>
+
 {#if blogPost.length > 0}
 	<TravelGallery {blogPost} />
 {/if}

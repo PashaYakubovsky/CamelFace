@@ -40,6 +40,10 @@
 	});
 </script>
 
+<meta
+	name="alonatunina@gmail.com. Instagram. @jetsettogether. About Me! Hello and welcome to my page! I am Alona Tiunina and I absolutely love traveling the world."
+/>
+
 <Loading />
 
 <!-- go back button -->
