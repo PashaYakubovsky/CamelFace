@@ -40,6 +40,8 @@
 	});
 </script>
 
+<title>Contact us</title>
+
 <form
 	class="placeholder:text-gray-900 text-black max-md:ml-2 max-md:mr-2"
 	on:submit|preventDefault={(e) => handleSubmit(e)}
