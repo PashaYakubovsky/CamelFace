@@ -1,33 +1,43 @@
 <script lang="ts">
+	import { gsap } from 'gsap/all';
 	import { onMount } from 'svelte';
 
 	onMount(() => {
-		const element = document.getElementById('cursor') as HTMLElement;
+		const element = document.getElementById('cursorP') as HTMLElement;
 
 		window.addEventListener('mousemove', (e) => {
-			element.setAttribute(
-				'style',
-				`transform:translate(${e.clientX}px,${e.clientY}px);${
-					document.body.style.cursor === 'pointer' ? 'z-index:10;' : ''
-				}`
-			);
+			if (document.body.style.cursor === 'pointer') {
+				gsap.to(element, {
+					duration: 0.3,
+					x: e.clientX,
+					y: e.clientY,
+					zIndex: 10,
+					ease: 'power2.out'
+				});
+			} else {
+				element.style.zIndex = '0';
+			}
 		});
 	});
 </script>
 
-<div id="cursor" class="max-md:hidden" />
+<div id="cursorP" class="max-md:hidden">
+	<div id="cursor" />
+</div>
 
 <style>
-	div {
+	#cursorP {
 		position: fixed;
-		width: 4rem;
-		height: 4rem;
-		border-radius: 50%;
-		left: -2rem;
-		top: -2rem;
-		box-shadow: 0 0 0.5rem 1.5rem #fff;
+		width: 1rem;
+		height: 1rem;
 		opacity: 0.2;
-		background-color: #fff;
 		transition: 0.3s ease-in-out opacity;
+	}
+	#cursor {
+		border-radius: 50%;
+		width: 100%;
+		height: 100%;
+		box-shadow: 0 0 1.5rem 2rem #fff;
+		background-color: #fff;
 	}
 </style>

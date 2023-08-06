@@ -1,23 +1,45 @@
 <script lang="ts">
-	import TravelGallery from '$lib/TravelGallery.svelte';
-	import { posts } from '$lib/posts';
 	import { onMount } from 'svelte';
-	import type { Post } from '../types';
-	import { getPosts } from '$lib/api';
+	import Scene from './scene';
+	import { goto } from '$app/navigation';
 
-	let blogPost: Post[] = [];
+	let canvasElem: HTMLCanvasElement;
+	let scene: Scene;
+	let loadingAnimation = false;
 
-	posts.subscribe((value) => {
-		blogPost = value;
-	});
-
-	onMount(async () => {
-		await getPosts();
+	onMount(() => {
+		scene = new Scene(canvasElem);
 	});
 </script>
 
-<title>Jet Set Together</title>
+<title>Jet set together</title>
 
-{#if blogPost.length > 0}
-	<TravelGallery {blogPost} />
-{/if}
+<canvas bind:this={canvasElem} />
+
+<button
+	on:click={() => {
+		scene.fadeOut(scene);
+		loadingAnimation = true;
+		setTimeout(() => {
+			loadingAnimation = false;
+			goto('/home');
+		}, 6000);
+	}}
+	class={`absolute hover:scale-110 hover:shadow-lg shadow-slate-100 transition-all left-[50%] bottom-5 translate-x-[-50%] z-10 rounded px-4 py-2 cursor-pointer bg-gray-50 text-slate-950 ${
+		loadingAnimation ? 'cursor-progress' : ''
+	}`}>Explore</button
+>
+
+<style>
+	canvas {
+		width: 100vw;
+		height: 100vh;
+		position: absolute;
+		left: 0;
+		top: 0;
+		z-index: 10;
+	}
+	:global(#cursorP) {
+		display: none;
+	}
+</style>

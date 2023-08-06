@@ -29,7 +29,6 @@
 		});
 		const result = await response.json();
 		if (result.success) {
-			console.log(result);
 			status = result.message || 'Success';
 		}
 	};

@@ -48,14 +48,14 @@
 
 <!-- go back button -->
 <div
-	class={`absolute top-[4rem] max-md:top-[1rem] right-[4rem] max-md:right-[1rem] z-[10] ${
+	class={`absolute top-[2rem] max-md:top-[1rem] right-[4rem] max-md:right-[1rem] z-[10] ${
 		$loading.loading ? 'cursor-progress' : ''
 	}`}
-	style={`opacity:${previousPage ? 1 : 0}`}
+	style={`opacity:${previousPage || window.location.pathname !== '/' ? 1 : 0}`}
 >
 	<button
 		id="goBackButton"
-		class="bg-transparent hover:scale-110 transition ease-in-out border border-[currentColor] rounded-full w-[2.5rem] h-[2.5rem] flex justify-center items-center text-sky-500"
+		class="bg-transparent hover:scale-110 transition ease-in-out border border-[currentColor] rounded-full w-[2.5rem] h-[2.5rem] flex justify-center items-center text-[var(--secondary)]"
 		on:click={() => {
 			pageTransition.update((state) => ({ ...state, start: true, toPage: previousPage || '/' }));
 		}}

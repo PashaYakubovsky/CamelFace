@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Post } from '../types';
 	import { onMount } from 'svelte';
-	import Scene from '../routes/scene';
+	import Scene from '../routes/home/scene';
 	import { gsap } from 'gsap';
 	import type * as THREE from 'three';
 	import { handleHoverIn, handleHoverOut, pageTransition } from '$lib/pageTransition';
@@ -25,8 +25,6 @@
 	let disableBackground = false;
 	let initAnimation = false;
 	let goBackButtonElement: HTMLButtonElement;
-
-	$: console.log(attractMode);
 
 	$: if (
 		contentElements.length > 0 &&
@@ -96,125 +94,141 @@
 		}
 	}
 
-	onMount(async () => {
-		scene = new Scene(canvasElement);
+	onMount(() => {
+		const init = async () => {
+			scene = new Scene(canvasElement);
 
-		scene.textColors = blogPost.map((post) => post.textColor);
-		scene.backgroundColors = blogPost.map((post) => post.backgroundColor);
+			scene.textColors = blogPost.map((post) => post.textColor);
+			scene.backgroundColors = blogPost.map((post) => post.backgroundColor);
 
-		goBackButtonElement = document.querySelector('#goBackButton') as HTMLButtonElement;
+			goBackButtonElement = document.querySelector('#goBackButton') as HTMLButtonElement;
 
-		navElements = Array.from(document.querySelectorAll('nav > button')) as HTMLButtonElement[];
-		contentElements = Array.from(
-			document.querySelectorAll('.post-info')
-		).reverse() as HTMLElement[];
+			navElements = Array.from(document.querySelectorAll('nav > button')) as HTMLButtonElement[];
+			contentElements = Array.from(
+				document.querySelectorAll('.post-info')
+			).reverse() as HTMLElement[];
 
-		await scene.addGallery({ posts: blogPost });
+			await scene.addGallery({ posts: blogPost });
 
-		rots = scene.groups.map((g) => g.rotation);
-		positions = scene.meshes.map((g) => g.position);
-		scales = scene.groups.map((g) => g.scale);
+			rots = scene.groups.map((g) => g.rotation);
+			positions = scene.meshes.map((g) => g.position);
+			scales = scene.groups.map((g) => g.scale);
 
-		let speed = 0;
-		let position = 0;
-		let rounded = 0;
+			let speed = 0;
+			let position = 0;
+			let rounded = 0;
 
-		const objs = Array(blogPost.length)
-			.fill(null)
-			.map(() => {
-				return {
-					dist: 0
-				};
+			const objs = Array(blogPost.length)
+				.fill(null)
+				.map(() => {
+					return {
+						dist: 0
+					};
+				});
+
+			window.addEventListener('wheel', (e) => {
+				if (!scene.isMobile) {
+					speed += e.deltaY * 0.0003;
+					direction = Math.sign(e.deltaY) as 1 | -1;
+
+					if (direction === -1 && Math.abs(currentIndex) === 0) {
+						speed += e.deltaY * -0.0003;
+					}
+					if (direction === 1 && currentIndex === blogPost.length - 1) {
+						speed += e.deltaY * -0.0003;
+					}
+				}
 			});
 
-		window.addEventListener('wheel', (e) => {
-			if (!scene.isMobile) {
-				speed += e.deltaY * 0.0003;
-				direction = Math.sign(e.deltaY) as 1 | -1;
-			}
-		});
+			const raf = () => {
+				position += speed;
+				speed *= 0.8;
+				rounded = Math.round(position);
+				let diff = rounded - position;
+				const nextIndex = +position.toFixed(0);
 
-		const raf = () => {
-			position += speed;
-			speed *= 0.8;
-			rounded = Math.round(position);
-			let diff = rounded - position;
-			const nextIndex = +position.toFixed(0);
+				// get current index of anchor
+				currentIndex = nextIndex;
 
-			// get current index of anchor
-			currentIndex = nextIndex;
+				if (pageWrapperElement) {
+					// set color animated for canvas
+					if (!disableBackground) {
+						pageWrapperElement.style.backgroundColor = scene.backgroundColors[currentIndex];
+						if (goBackButtonElement)
+							goBackButtonElement.style.color = scene.textColors[currentIndex];
+						loading.update((state) => ({ ...state, color: scene.textColors[currentIndex] }));
+					}
 
-			if (pageWrapperElement) {
-				// set color animated for canvas
-				if (!disableBackground) {
-					pageWrapperElement.style.backgroundColor = scene.backgroundColors[currentIndex];
-					if (goBackButtonElement) goBackButtonElement.style.color = scene.textColors[currentIndex];
-					loading.update((state) => ({ ...state, color: scene.textColors[currentIndex] }));
+					navElements.forEach((navElement, i) => {
+						if (i === currentIndex) {
+							navElement.style.backgroundColor = scene.backgroundColors[i];
+						} else {
+							navElement.style.backgroundColor = scene.textColors[currentIndex];
+						}
+					});
 				}
 
-				navElements.forEach((navElement, i) => {
-					if (i === currentIndex) {
-						navElement.style.backgroundColor = scene.backgroundColors[i];
-					} else {
-						navElement.style.backgroundColor = scene.textColors[currentIndex];
+				if (initAnimation) {
+					requestAnimationFrame(raf);
+					return;
+				}
+
+				objs.forEach((obj, i) => {
+					obj.dist = Math.min(Math.abs(position - i), 1);
+					obj.dist = 1 - obj.dist ** 2;
+
+					const mesh = scene.meshes[i];
+
+					if (mesh) {
+						(mesh.material as THREE.ShaderMaterial).uniforms.distanceFromCenter.value = obj.dist;
+						const delta =
+							(mesh.geometry as unknown as { parameters: { height: number } }).parameters.height *
+							1.15;
+
+						if (scene.isMobile) {
+							mesh.position.x = i * 3.1 + -(position * 3.1);
+						} else {
+							const scale = 1 + 0.2 * obj.dist;
+							mesh.scale.set(scale, scale, scale);
+							mesh.position.y = i * delta + -(position * delta);
+						}
 					}
 				});
-			}
 
-			if (initAnimation) {
+				if (attractMode) {
+					position += -(position - attractTo) * 0.1;
+				} else {
+					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
+					if (element) element.style.transform = `translateY(${-position * 100}px)`;
+				}
+
 				requestAnimationFrame(raf);
-				return;
-			}
+			};
 
-			objs.forEach((obj, i) => {
-				obj.dist = Math.min(Math.abs(position - i), 1);
-				obj.dist = 1 - obj.dist ** 2;
+			raf();
 
-				const mesh = scene.meshes[i];
+			window.addEventListener('keydown', (e) => {
+				if (attractMode || initAnimation) return;
 
-				if (mesh) {
-					(mesh.material as THREE.ShaderMaterial).uniforms.distanceFromCenter.value = obj.dist;
-					const delta =
-						(mesh.geometry as unknown as { parameters: { height: number } }).parameters.height *
-						1.15;
+				attractMode = true;
 
-					if (scene.isMobile) {
-						mesh.position.x = i * 3.1 + -(position * 3.1);
-					} else {
-						const scale = 1 + 0.2 * obj.dist;
-						mesh.scale.set(scale, scale, scale);
-						mesh.position.y = i * delta + -(position * delta);
-					}
+				setTimeout(() => {
+					attractMode = false;
+				}, 700);
+
+				if (e.key === 'ArrowUp' && attractTo <= blogPost.length - 1) {
+					attractTo = attractTo + 1 > blogPost.length - 1 ? blogPost.length - 1 : attractTo + 1;
+				} else if (e.key === 'ArrowDown' && attractTo >= 0) {
+					attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0;
 				}
 			});
-
-			if (attractMode) {
-				position += -(position - attractTo) * 0.1;
-			} else {
-				position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
-				if (element) element.style.transform = `translateY(${-position * 100}px)`;
-			}
-
-			requestAnimationFrame(raf);
 		};
 
-		raf();
+		init();
 
-		window.addEventListener('keydown', (e) => {
-			if (attractMode || initAnimation) return;
-
-			attractMode = true;
-
-			setTimeout(() => {
-				attractMode = false;
-			}, 700);
-
-			if (e.key === 'ArrowUp' && attractTo <= blogPost.length - 1) {
-				attractTo = attractTo + 1 > blogPost.length - 1 ? blogPost.length - 1 : attractTo + 1;
-			} else if (e.key === 'ArrowDown' && attractTo >= 0) {
-				attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0;
-			}
-		});
+		return () => {
+			scene.destroy();
+		};
 	});
 </script>
 
@@ -235,12 +249,31 @@
 					content.classList.add('hidden');
 				});
 
-				gsap.to(scales, {
-					duration: 0.3,
-					ease: 'power0.inOut',
+				let scale = {
 					x: 2.5,
 					y: 2,
 					z: 2
+				};
+
+				if (scene.screens.isMd) {
+					scale = {
+						x: 2.2,
+						y: 1.7,
+						z: 1.7
+					};
+				}
+				if (scene.screens.isXl) {
+					scale = {
+						x: 1.5,
+						y: 1,
+						z: 1
+					};
+				}
+
+				gsap.to(scales, {
+					duration: 0.3,
+					ease: 'power0.inOut',
+					...scale
 				});
 
 				// const geometry = new THREE.PlaneGeometry(
@@ -419,6 +452,7 @@
 		min-height: 100vh;
 		width: 100%;
 		height: 100%;
+		overflow: hidden;
 	}
 	canvas {
 		width: 100%;

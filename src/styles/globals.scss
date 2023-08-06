@@ -1,8 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap');
 
 :root {
-	--mainColor: #e6e6e6;
-	--secondaryColor: #000333;
+	--primary: rebeccapurple;
+	--secondary: cornflowerblue;
+}
+
+/* Firefox */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--secondary) var(--primary);
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+	width: 15px;
+}
+
+*::-webkit-scrollbar-track {
+	background: var(--primary);
+	border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+	background-color: var(--secondary);
+	border-radius: 14px;
+	border: 3px solid var(--primary);
+}
+/* color for the text selection */
+::selection {
+	background: var(--secondary);
+	color: var(--primary);
 }
 
 body,
@@ -11,8 +38,8 @@ html {
 	padding: 0;
 	font-size: 16px;
 	line-height: 22px;
-	color: var(--mainColor);
-	background-color: var(--secondaryColor);
+	color: #fff;
+	background-color: #000;
 	overflow: hidden;
 }
 body {
