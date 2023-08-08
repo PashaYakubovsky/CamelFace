@@ -13,9 +13,12 @@
 
 	let previousPage: string | null = null;
 	let animationStarted = false;
+	// get current page in svelte
+	let currentPage = window.location.pathname;
 
 	afterNavigate(({ from }) => {
 		previousPage = from?.url?.pathname || previousPage;
+		currentPage = window.location.pathname;
 	});
 
 	pageTransition.subscribe((value) => {

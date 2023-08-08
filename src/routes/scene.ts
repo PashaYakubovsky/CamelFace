@@ -95,68 +95,21 @@ class ParticlesScene {
 		        }
 		    `,
 			fragmentShader: `
-				// Author @patriciogv - 2015
-				// http://patriciogonzalezvivo.com
-				
-				// My own port of this processing code by @beesandbombs
-				// https://dribbble.com/shots/1696376-Circle-wave
-				
-				#ifdef GL_ES
-				precision mediump float;
-				#endif
-				
+				uniform vec3 uColor1;
+				uniform vec3 uColor2;
+				uniform vec3 uColor3;
+				uniform sampler2D uTexture;
 				uniform vec2 uResolution;
-				uniform vec2 uMouse;
 				uniform float uTime;
-				
-				vec2 random2(vec2 st){
-					st = vec2( dot(st,vec2(127.1,311.7)),
-							dot(st,vec2(269.5,183.3)) );
-					return -1.0 + 2.0*fract(sin(st)*43758.5453123);
-				}
-				
-				// Gradient Noise by Inigo Quilez - iq/2013
-				// https://www.shadertoy.com/view/XdXGW8
-				float noise(vec2 st) {
-					vec2 i = floor(st);
-					vec2 f = fract(st);
-				
-					vec2 u = f*f*(3.0-2.0*f);
-				
-					return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
-									dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-								mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
-									dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
-				}
-				
-				mat2 rotate2d(float _angle){
-					return mat2(cos(_angle),-sin(_angle),
-								sin(_angle),cos(_angle));
-				}
-				
-				float shape(vec2 st, float radius) {
-					st = vec2(0.5)-st;
-					float r = length(st)*2.0;
-					float a = atan(st.y,st.x);
-					float m = abs(mod(a+uTime*2.,3.14*2.)-3.14)/3.6;
-					float f = radius;
-					m += noise(st+uTime*0.1)*.5;
-					a *= 1.+abs(atan(uTime*0.2))*.1;
-					a *= 1.+noise(st+uTime*0.1)*0.1;
-					f += sin(a*50.)*noise(st+uTime*.2)*.1;
-					f += (sin(a*20.)*.1*pow(m,2.));
-					return 1.-smoothstep(f,f+0.007,r);
-				}
-				
-				float shapeBorder(vec2 st, float radius, float width) {
-					return shape(st,radius)-shape(st,radius-width);
-				}
-				
+				uniform float uSize;
+
 				void main() {
-					vec2 st = gl_FragCoord.xy/uResolution.xy;
-					vec3 color = vec3(.5) * shapeBorder(st,0.1,0.02);
-				
-					gl_FragColor = vec4( 1.-color, 1.0 );
+					vec2 uv = gl_PointCoord.xy;
+					vec2 center = vec2(0.5, 0.5);
+					float d = distance(uv, center);
+					vec3 color1 = mix(uColor1, uColor2, uColor3);
+					vec3 color = mix(color1, color1, d);
+					gl_FragColor = vec4(color, 1.0);
 				}
 		    `,
 			uniforms: {
@@ -165,8 +118,8 @@ class ParticlesScene {
 				uMouse: { value: new THREE.Vector2() },
 				aSize: { value: 0 },
 				uColor1: { value: new THREE.Color('pink') },
-				uColor2: { value: new THREE.Color('red') },
-				uColor3: { value: new THREE.Color('white') },
+				uColor2: { value: new THREE.Color('white') },
+				uColor3: { value: new THREE.Color('blue') },
 				uTexture: { value: new THREE.TextureLoader().load('/particle.png') },
 				uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
 			},
@@ -311,7 +264,9 @@ class ParticlesScene {
 	public fadeOut(instance: ParticlesScene): void {
 		const tl = gsap.timeline();
 
-		this.audio?.play();
+		if (window.location.hostname !== 'localhost') {
+			this.audio?.play();
+		}
 
 		tl.to(
 			this.camera.position,
@@ -341,6 +296,43 @@ class ParticlesScene {
 					x: 5,
 					y: 10,
 					z: 0,
+					ease: 'power0'
+				},
+				'start'
+			);
+		}
+
+		if (instance.material) {
+			// animate color
+			tl.to(
+				instance.material.uniforms.uColor1.value,
+				{
+					duration: 6,
+					r: 0,
+					g: 0,
+					b: 0.1,
+					ease: 'power0'
+				},
+				'start'
+			);
+			tl.to(
+				instance.material.uniforms.uColor1.value,
+				{
+					duration: 6,
+					r: 0.2,
+					g: 0.2,
+					b: 0.4,
+					ease: 'power0'
+				},
+				'start'
+			);
+			tl.to(
+				instance.material.uniforms.uColor1.value,
+				{
+					duration: 6,
+					r: 0.2,
+					g: 0,
+					b: 1,
 					ease: 'power0'
 				},
 				'start'

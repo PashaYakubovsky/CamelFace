@@ -168,11 +168,23 @@ class TravelGalleryScene {
 		const textures = [];
 
 		for (let i = 0; i < posts.length; i++) {
-			const texture = this.textureLoader.load(
-				(posts[i].backgroundImage as Media).url ?? '',
-				(texture) => {
-					this.setBackground(texture);
-				}
+			const img = new Image();
+
+			const url = (posts[i].backgroundImage as Media).url;
+
+			const response = typeof url === 'string' && (await fetch(url));
+
+			const src =
+				response && response.ok ? URL.createObjectURL(await response.blob()) : '/placeholder.png';
+
+			img.src = src;
+			img.crossOrigin = 'anonymous';
+
+			const texture = new THREE.Texture(
+				img,
+				THREE.UVMapping,
+				THREE.ClampToEdgeWrapping,
+				THREE.ClampToEdgeWrapping
 			);
 
 			textures.push(texture);
