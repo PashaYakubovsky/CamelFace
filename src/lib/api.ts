@@ -177,7 +177,8 @@ export const getPosts = async () => {
 			}
 		);
 		if (response.status === 200) {
-			posts.set(response.data.docs);
+			posts.set(mock.docs as Post[]);
+			// posts.set(response.data.docs);
 		}
 	} catch (error) {
 		posts.set(mock.docs as Post[]);

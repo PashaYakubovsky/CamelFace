@@ -165,29 +165,19 @@ class TravelGalleryScene {
 	}
 
 	public async addGallery({ posts }: { posts: Post[] }) {
-		const textures = [];
+		const textures: THREE.Texture[] = [];
 
 		for (let i = 0; i < posts.length; i++) {
-			const img = new Image();
+			const media = posts[i].backgroundImage as Media;
 
-			const url = (posts[i].backgroundImage as Media).url;
+			const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
 
-			const response = typeof url === 'string' && (await fetch(url));
-
-			const src =
-				response && response.ok ? URL.createObjectURL(await response.blob()) : '/placeholder.png';
-
-			img.src = src;
-			img.crossOrigin = 'anonymous';
-
-			const texture = new THREE.Texture(
-				img,
-				THREE.UVMapping,
-				THREE.ClampToEdgeWrapping,
-				THREE.ClampToEdgeWrapping
-			);
-
-			textures.push(texture);
+			this.textureLoader.load(src, (texture) => {
+				texture.minFilter = THREE.LinearFilter;
+				texture.magFilter = THREE.LinearFilter;
+				texture.colorSpace = THREE.SRGBColorSpace;
+				textures.push(texture);
+			});
 		}
 
 		textures.forEach((t) => {
