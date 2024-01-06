@@ -114,7 +114,7 @@ class ParticlesScene {
 		    `,
 			uniforms: {
 				uTime: { value: 0 },
-				uSize: { value: 0 },
+				uSize: { value: 0.5 },
 				uMouse: { value: new THREE.Vector2() },
 				aSize: { value: 0 },
 				uColor1: { value: new THREE.Color('pink') },
