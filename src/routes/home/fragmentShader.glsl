@@ -17,6 +17,11 @@ float random (vec2 st) {
                          vec2(12.9898,78.233)))*
         43758.5453123);
 }
+
+float sdfCircle(vec2 st, vec2 center, float radius) {
+    return length(st - center) - radius;
+}
+
 void main() {
     vec2 uv = vUv;
 
@@ -30,6 +35,12 @@ void main() {
 
     float bw = (t.r + t.g + t.b) / 3.0;
 
+    float d = sdfCircle(mouse, vec2(uv.x, uv.y - 0.5), .001);
+    
+    // apply the distance field to the color
+    vec4 circle = vec4(vec3(1.0 - d), 1.0);
+    t = mix(t, circle, 0.2);
+    
     // Assign a random value based on the integer coord
     vec3 color = vec3(random( ipos ));
     vec4 another = mix(vec4(bw, bw, bw, 1.0), vec4(color / 2., 1.0), 0.1);

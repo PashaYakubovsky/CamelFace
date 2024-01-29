@@ -79,7 +79,7 @@
 			};
 
 			scene.handleHoverOut = () => {
-				handleHoverOut({ start: $pageTransition.start });
+				const ctx = handleHoverOut({ start: $pageTransition.start });
 			};
 
 			scene.onClickEvent = (meshIndex: number) => {
@@ -99,7 +99,7 @@
 			scene = new Scene(canvasElement);
 
 			scene.textColors = blogPost.map((post) => post.textColor);
-			scene.backgroundColors = blogPost.map((post) => post.backgroundColor);
+			// scene.backgroundColors = blogPost.map((post) => post.backgroundColor);
 
 			goBackButtonElement = document.querySelector('#goBackButton') as HTMLButtonElement;
 

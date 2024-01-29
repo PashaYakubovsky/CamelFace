@@ -75,19 +75,23 @@ export const handleHoverOut = ({ start }: { start: boolean }) => {
 	const transitionElement = document.querySelector('#transition') as HTMLDivElement;
 	const postTitleElem = document.querySelectorAll('#postTitle') as unknown as HTMLTitleElement[];
 
-	if (transitionElement && !start) {
-		gsap.to(transitionElement, {
-			xPercent: -99.5,
-			borderRadius: '0rem',
-			duration: 0.3,
-			ease: 'power0'
-		});
-	}
-	// trigger hover effect on post title
-	if (postTitleElem) {
-		postTitleElem.forEach((title) => {
-			title.classList.remove('hover');
-			title.classList.add('hover-out');
-		});
-	}
+	const ctx = gsap.context(() => {
+		if (transitionElement && !start) {
+			gsap.to(transitionElement, {
+				xPercent: -100,
+				borderRadius: '0rem',
+				duration: 0.3,
+				ease: 'power0'
+			});
+		}
+		// trigger hover effect on post title
+		if (postTitleElem) {
+			postTitleElem.forEach((title) => {
+				title.classList.remove('hover');
+				title.classList.add('hover-out');
+			});
+		}
+	});
+
+	return ctx;
 };

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import Scene from './scene';
 	import { goto } from '$app/navigation';
 
@@ -9,6 +9,10 @@
 
 	onMount(() => {
 		scene = new Scene(canvasElem);
+	});
+
+	onDestroy(() => {
+		if (scene) scene.destroy();
 	});
 </script>
 

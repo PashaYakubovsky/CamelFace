@@ -171,45 +171,63 @@ class TravelGalleryScene {
 			const media = posts[i].backgroundImage as Media;
 
 			const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
+			const file = await fetch(src);
+			const blob = await file.blob();
+			const url = URL.createObjectURL(blob);
+			console.log(url);
 
-			this.textureLoader.load(src, (texture) => {
+			const applyTextures = () => {
+				textures.forEach((t) => {
+					if (!this.material || !this.geometry) return;
+
+					const texture = t;
+					const material = this.material.clone();
+
+					const group = new THREE.Group();
+
+					material.uniforms.texture1.value = texture;
+					material.uniforms.texture1.value.needsUpdate = true;
+
+					material.uniforms.u_resolution.value = new THREE.Vector3(
+						window.innerWidth,
+						window.innerHeight,
+						1
+					);
+
+					const mesh = new THREE.Mesh(this.geometry, material);
+
+					group.add(mesh);
+
+					group.rotation.set(this.eulerValues.x, this.eulerValues.y, this.eulerValues.z);
+					mesh.position.set(this.positionValues.x, this.positionValues.y, this.positionValues.z);
+
+					this.scene.add(group);
+
+					this.meshes.push(mesh);
+					this.materials.push(material);
+					this.groups.push(group);
+				});
+			};
+
+			this.textureLoader.load(url, (texture) => {
 				texture.minFilter = THREE.LinearFilter;
 				texture.magFilter = THREE.LinearFilter;
 				texture.colorSpace = THREE.SRGBColorSpace;
+
+				// take the average color of the image
+				const canvas = document.createElement('canvas');
+				const context = canvas.getContext('2d');
+				if (!context) return;
+				context.drawImage(texture.image, 0, 0);
+				const data = context.getImageData(0, 0, 1, 1).data;
+				const color = new THREE.Color(`rgb(${data[0]}, ${data[1]}, ${data[2]})`);
+				this.backgroundColors.push(color.getStyle());
+				canvas.remove();
+
 				textures.push(texture);
+				if (textures.length === posts.length) applyTextures();
 			});
 		}
-
-		textures.forEach((t) => {
-			if (!this.material || !this.geometry) return;
-
-			const texture = t;
-			const material = this.material.clone();
-
-			const group = new THREE.Group();
-
-			material.uniforms.texture1.value = texture;
-			material.uniforms.texture1.value.needsUpdate = true;
-
-			material.uniforms.u_resolution.value = new THREE.Vector3(
-				window.innerWidth,
-				window.innerHeight,
-				1
-			);
-
-			const mesh = new THREE.Mesh(this.geometry, material);
-
-			group.add(mesh);
-
-			group.rotation.set(this.eulerValues.x, this.eulerValues.y, this.eulerValues.z);
-			mesh.position.set(this.positionValues.x, this.positionValues.y, this.positionValues.z);
-
-			this.scene.add(group);
-
-			this.meshes.push(mesh);
-			this.materials.push(material);
-			this.groups.push(group);
-		});
 	}
 
 	public setBackground(texture: THREE.Texture) {

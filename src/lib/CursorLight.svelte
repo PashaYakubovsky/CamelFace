@@ -5,6 +5,7 @@
 	onMount(() => {
 		const element = document.getElementById('cursorP') as HTMLElement;
 
+		if (!element) return;
 		window.addEventListener('mousemove', (e) => {
 			if (document.body.style.cursor === 'pointer') {
 				gsap.to(element, {
@@ -21,9 +22,9 @@
 	});
 </script>
 
-<div id="cursorP" class="max-md:hidden">
+<!-- <div id="cursorP" class="max-md:hidden">
 	<div id="cursor" />
-</div>
+</div> -->
 
 <style>
 	#cursorP {

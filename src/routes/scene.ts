@@ -141,7 +141,7 @@ class ParticlesScene {
 		window.addEventListener('resize', this.onWindowResize.bind(this), false);
 		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 
-		// this.addDebug();
+		this.addDebug();
 		this.animate();
 
 		this.audio = new Audio();
@@ -361,6 +361,12 @@ class ParticlesScene {
 		}
 
 		requestAnimationFrame(() => this.animate());
+	}
+
+	public destroy(): void {
+		this.renderer.dispose();
+		this.scene.clear();
+		this.gui?.destroy();
 	}
 }
 
