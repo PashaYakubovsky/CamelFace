@@ -19,8 +19,8 @@ float PI = 3.141592653589793238;
 void main() {
       // Normalized pixel coordinates (from 0 to 1)
     vec2 uv = vUv - vec2(0.5);
-    uv.x *= u_resolution.x/u_resolution.y;
-    uv *= 4.;
+    // uv.x *= u_resolution.x/u_resolution.y;
+    uv *= 6.;
     vec3 col;
     float count = u_count;
     float Factor = mod(u_time,u_octaves);

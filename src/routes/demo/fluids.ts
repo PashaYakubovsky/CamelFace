@@ -65,10 +65,8 @@ class FluidsScene {
 	}
 
 	public init() {
-		// // width and height 100% of the screen
-		this.geometry = new THREE.PlaneGeometry(1, 0.9, 32, 32);
-		// make geometry responsive
-		this.geometry.scale(1.5, 1.5, 1.5);
+		// create responsive geometry plane
+		this.geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 
 		this.material = new THREE.ShaderMaterial({
 			side: THREE.DoubleSide,
@@ -78,7 +76,7 @@ class FluidsScene {
 				u_mouse: { value: new THREE.Vector4() },
 				u_octaves: { value: 4 },
 				u_color: { value: new THREE.Color('#ffffff') },
-				u_count: { value: 300 }
+				u_count: { value: 100 }
 			},
 			vertexShader,
 			fragmentShader

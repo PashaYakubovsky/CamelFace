@@ -11,7 +11,7 @@
 	});
 </script>
 
-<title>Contact us</title>
+<title>Cardioid</title>
 
 <canvas bind:this={canvasElement} />
 
