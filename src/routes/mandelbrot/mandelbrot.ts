@@ -4,8 +4,7 @@ import fragmentShader from './fragmentShader.glsl';
 import { GUI } from 'lil-gui';
 
 const options = {
-	Color: '#ffffff',
-	Zoom: 1
+	Color: '#ffffff'
 };
 
 class MandelbrotScene {
@@ -47,12 +46,6 @@ class MandelbrotScene {
 		this.gui.addColor(options, 'Color').onChange(() => {
 			if (!this.material) return;
 			this.material.uniforms.u_color.value = new THREE.Color(options.Color);
-			this.material.needsUpdate = true;
-		});
-
-		this.gui.add(options, 'Zoom', 0, 1000000000).onChange(() => {
-			if (!this.material) return;
-			this.material.uniforms.u_zoom.value = options.Zoom;
 			this.material.needsUpdate = true;
 		});
 	}
