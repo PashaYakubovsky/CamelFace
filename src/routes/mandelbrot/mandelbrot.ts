@@ -4,7 +4,10 @@ import fragmentShader from './fragmentShader.glsl';
 import { GUI } from 'lil-gui';
 
 const options = {
-	Color: '#ffffff'
+	Color: '#ffffff',
+	['Scroll mode']: false,
+	['Recursive step']: 100,
+	['Mouse mode']: false
 };
 
 class MandelbrotScene {
@@ -37,6 +40,7 @@ class MandelbrotScene {
 		window.addEventListener('mousemove', this.onMouseMove.bind(this));
 		window.addEventListener('resize', this.onResize.bind(this));
 		window.addEventListener('wheel', this.onMouseWheel.bind(this));
+		window.addEventListener('keypress', this.mousePressed.bind(this));
 	}
 
 	public addControls() {
@@ -48,6 +52,34 @@ class MandelbrotScene {
 			this.material.uniforms.u_color.value = new THREE.Color(options.Color);
 			this.material.needsUpdate = true;
 		});
+
+		this.gui.add(options, 'Scroll mode').onChange(() => {
+			if (!this.material) return;
+			this.material.uniforms.u_scroll_mode.value = options['Scroll mode'];
+			this.material.needsUpdate = true;
+		});
+
+		this.gui.add(options, 'Recursive step', 1, 1000).onChange(() => {
+			if (!this.material) return;
+			this.material.uniforms.u_m_count.value = options['Recursive step'];
+			this.material.needsUpdate = true;
+		});
+
+		this.gui.add(options, 'Mouse mode').onChange(() => {
+			if (!this.material) return;
+			this.material.uniforms.u_mouse_mode.value = options['Mouse mode'];
+			this.material.needsUpdate = true;
+		});
+	}
+
+	public mousePressed(e: KeyboardEvent) {
+		// if press M then change the mouse mode
+		if (e.key === 'm') {
+			options['Mouse mode'] = !options['Mouse mode'];
+			if (!this.material) return;
+			this.material.uniforms.u_mouse_mode.value = options['Mouse mode'];
+			this.material.needsUpdate = true;
+		}
 	}
 
 	public init() {
@@ -61,9 +93,12 @@ class MandelbrotScene {
 			uniforms: {
 				u_time: { value: 0 },
 				u_resolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
-				u_mouse: { value: new THREE.Vector4() },
+				u_mouse: { value: new THREE.Vector2() },
 				u_color: { value: new THREE.Color('#ffffff') },
-				u_zoom: { value: 1 }
+				u_zoom: { value: 1 },
+				u_scroll_mode: { value: options['Scroll mode'] },
+				u_m_count: { value: options['Recursive step'] },
+				u_mouse_mode: { value: options['Mouse mode'] }
 			},
 			vertexShader,
 			fragmentShader
@@ -77,13 +112,17 @@ class MandelbrotScene {
 	}
 
 	onMouseMove(event: MouseEvent) {
+		if (!options['Mouse mode']) return;
 		if (this.material) {
-			this.material.uniforms.u_mouse.value.x = event.clientX;
-			this.material.uniforms.u_mouse.value.y = event.clientY;
+			const x = event.clientX;
+			const y = event.clientY;
+			this.material.uniforms.u_mouse.value.x = x;
+			this.material.uniforms.u_mouse.value.y = y;
 		}
 	}
 
 	onMouseWheel(event: WheelEvent) {
+		if (!options['Scroll mode']) return;
 		if (this.material && this.material.uniforms.u_zoom.value + event.deltaY * 0.1 > 1) {
 			this.material.uniforms.u_zoom.value += event.deltaY * 0.1;
 		}
