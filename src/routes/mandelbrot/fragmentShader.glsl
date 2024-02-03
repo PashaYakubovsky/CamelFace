@@ -17,7 +17,7 @@ float PI = 3.141592653589793238;
 vec3 mandelbrotForN(vec2 c, float n) {
   vec2 z = vec2(0.0, 0.0);
   float m = 0.0;
-  for (float i = 0.0; i < n; i++) {
+  for (float i = 0.0; i < n + u_zoom * 0.1; i++) {
     if (z.x * z.x + z.y * z.y > 4.0) {
       m = i;
       break;
