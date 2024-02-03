@@ -4,10 +4,10 @@ import fragmentShader from './fragmentShader.glsl';
 import { GUI } from 'lil-gui';
 
 const options = {
-	Color: '#ffffff',
-	['Scroll mode']: false,
+	Color: '#004433',
+	['Scroll mode']: true,
 	['Recursive step']: 100,
-	['Mouse mode']: false
+	['Mouse mode']: true
 };
 
 class MandelbrotScene {
@@ -65,11 +65,15 @@ class MandelbrotScene {
 			this.material.needsUpdate = true;
 		});
 
-		this.gui.add(options, 'Mouse mode').onChange(() => {
-			if (!this.material) return;
-			this.material.uniforms.u_mouse_mode.value = options['Mouse mode'];
-			this.material.needsUpdate = true;
-		});
+		// add tooltip for mouse mode
+		this.gui
+			.addFolder('Mouse mode (press M to change)')
+			.add(options, 'Mouse mode')
+			.onChange(() => {
+				if (!this.material) return;
+				this.material.uniforms.u_mouse_mode.value = options['Mouse mode'];
+				this.material.needsUpdate = true;
+			});
 	}
 
 	public mousePressed(e: KeyboardEvent) {
