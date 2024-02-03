@@ -53,30 +53,29 @@ float mandelbrot( in vec2 c )
 }
 
 
+float lerp(float a, float b, float t) {
+  return a + t * (b - a);
+}
 
 void main() {
   vec3 col = vec3(0.0);
 
   vec2 fragCoord = vUv * u_resolution.xy;
-
-  #define AA 1
     
-    for( int m=0; m<AA; m++ )
-    for( int n=0; n<AA; n++ )
-  {
-      // vec2 p = (-u_resolution.xy + 2.0*(fragCoord.xy+vec2(float(m),float(n))/float(AA)))/u_resolution.y;
-      float w = float(AA*m+n);
-      // float time = u_time;
-      vec2 p = (-u_resolution.xy + 2.0*fragCoord.xy)/u_resolution.y;
-      
-      float zoo = 0.62 + 0.38/(.07*sin(u_time) * 22.0);
-      zoo = pow( zoo,70.0);
-      vec2 xy = vec2( p.x-p.y, p.x+p.y);
-      vec2 c = vec2(-.745,.186) + xy*zoo;
+  vec2 p = (-u_resolution.xy + 2.0*fragCoord.xy)/u_resolution.y;
+  float zoom = u_zoom;
+  zoom = lerp(zoom, 1.0, distanceFromCenter);
+  float zoo = 0.62 + 0.38/(.07*zoom);
+  zoo = pow( zoo,25.0);
+  zoo += zoo * 0.2;
+  float coa = cos( 0.15*(1.0-zoo)*zoom );
+  float sia = sin( 0.15*(1.0-zoo)*zoom );
+  
+  vec2 xy = vec2( p.x-p.y, p.x+p.y);
+  vec2 c = vec2(-.745,.186) + xy*zoo;
 
-      float l = mandelbrot(c);
+  float l = mandelbrot(c);
 
-      col += 0.5 + 0.5 * cos( 3.0 + l*0.15 + u_color );
-      }
-    gl_FragColor = vec4( col, 1.0 );
+  col += cos( 10.0 + l*0.1 + u_color);
+  gl_FragColor = vec4( col, 1.0 );
 }
