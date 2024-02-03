@@ -30,9 +30,10 @@ vec3 mandelbrotForN(vec2 c, float n) {
 void main() {
   vec2 c = vUv * 4.0 - 2.0;
   c.y *= u_resolution.y / u_resolution.x;
-  c /= pow(u_zoom, 2.0);
-  c.x += u_mouse.x / u_resolution.x - 0.5;
-  c.y -= u_mouse.y / u_resolution.y - 0.5;
+
+  c /= u_zoom;
+  c.x += u_mouse.x / u_resolution.x;
+  c.y -= u_mouse.y / u_resolution.y;
 
   vec3 color = mandelbrotForN(c, u_m_count);
   gl_FragColor = vec4(color, 1.0);
