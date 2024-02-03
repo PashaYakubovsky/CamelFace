@@ -4,7 +4,7 @@ import fragmentShader from './fragmentShader.glsl';
 import { GUI } from 'lil-gui';
 
 const options = {
-	Color: '#004433',
+	Color: '#8fe9ff',
 	['Scroll mode']: true,
 	['Recursive step']: 100,
 	['Mouse mode']: true
@@ -98,7 +98,7 @@ class MandelbrotScene {
 				u_time: { value: 0 },
 				u_resolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
 				u_mouse: { value: new THREE.Vector2() },
-				u_color: { value: new THREE.Color('#ffffff') },
+				u_color: { value: new THREE.Color(options.Color) },
 				u_zoom: { value: 1 },
 				u_scroll_mode: { value: options['Scroll mode'] },
 				u_m_count: { value: options['Recursive step'] },
