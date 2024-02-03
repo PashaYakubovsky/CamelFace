@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import FluidScene from './fluids';
+	import MandelbrotScene from './mandelbrot';
 	import { loading } from '$lib/loading';
 
 	let canvasElement: HTMLCanvasElement;
 
 	onMount(async () => {
 		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new FluidScene(canvasElement);
+		const scene = new MandelbrotScene(canvasElement);
 	});
 </script>
 
-<title>Cardioid</title>
+<title>Mandelbrot</title>
 
 <canvas bind:this={canvasElement} />
 
