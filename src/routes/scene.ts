@@ -1,10 +1,8 @@
 import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
-// import GUI from 'lil-gui';
 import type { Media, Post } from '../types';
 import { defineScreen, type Screens } from '$lib/mediaQuery';
-// import { gsap } from 'gsap/all';
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 };
@@ -84,7 +82,7 @@ class TravelGalleryScene {
 	public mouse = new THREE.Vector2();
 	private width = window.innerWidth;
 	private height = window.innerHeight;
-	public intersected: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = [];
+	public intersected: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
 	private hovered: Record<string, THREE.Intersection> = {};
 	public screens: Screens = defineScreen();
 
@@ -146,17 +144,17 @@ class TravelGalleryScene {
 		this.material = new THREE.ShaderMaterial({
 			side: THREE.DoubleSide,
 			uniforms: {
-				time: { value: 0 } as THREE.IUniform,
-				texture1: { value: null, type: 't' } as THREE.IUniform,
-				resolutions: { value: new THREE.Vector4(), type: 'v4' } as THREE.IUniform,
-				distanceFromCenter: { value: 0, type: 'f' } as THREE.IUniform,
-				pixels: { value: new THREE.Vector2(1, 1), type: 'v2' } as THREE.IUniform,
-				mouse: { value: new THREE.Vector2(0, 0), type: 'v2' } as THREE.IUniform,
-				iResolution: { value: new THREE.Vector3(1, 1, 1), type: 'v3' } as THREE.IUniform,
-				u_resolution: { value: new THREE.Vector2(1, 1), type: 'v2' } as THREE.IUniform,
-				u_mouse: { value: new THREE.Vector2(0, 0), type: 'v2' } as THREE.IUniform,
-				u_time: { value: 0, type: 'f' } as THREE.IUniform,
-				isMobile: { value: this.isMobile, type: 'b' } as THREE.IUniform
+				time: { value: 0 },
+				texture1: { value: null, type: 't' },
+				resolutions: { value: new THREE.Vector4(), type: 'v4' },
+				distanceFromCenter: { value: 0, type: 'f' },
+				pixels: { value: new THREE.Vector2(1, 1), type: 'v2' },
+				mouse: { value: new THREE.Vector2(0, 0), type: 'v2' },
+				iResolution: { value: new THREE.Vector3(1, 1, 1), type: 'v3' },
+				u_resolution: { value: new THREE.Vector2(1, 1), type: 'v2' },
+				u_mouse: { value: new THREE.Vector2(0, 0), type: 'v2' },
+				u_time: { value: 0, type: 'f' },
+				isMobile: { value: this.isMobile, type: 'b' }
 			},
 			vertexShader,
 			fragmentShader,
@@ -287,7 +285,6 @@ class TravelGalleryScene {
 					}
 					this.handleHoverOut();
 				}
-				// const hoveredItem = this.hovered[key];
 				delete this.hovered[key];
 			}
 		});

@@ -1,6 +1,8 @@
 import { gsap } from 'gsap/all';
 import GUI from 'lil-gui';
 import * as THREE from 'three';
+import vertexShader from './vertexShader.glsl';
+import fragmentShader from './fragmentShader.glsl';
 
 class ParticlesScene {
 	private renderer: THREE.WebGLRenderer;
@@ -77,41 +79,11 @@ class ParticlesScene {
 		this.colors = new Float32Array(this.count * 3);
 		this.sizes = new Float32Array(this.count);
 
-		this.calclulateGeometry();
+		this.calculateGeometry();
 
 		this.material = new THREE.ShaderMaterial({
-			vertexShader: `
-		        uniform vec2 uMouse;
-		        uniform float uTime;
-		        uniform float uSize;
-				attribute float aRandom;
-
-		        void main() {
-		            vec4 modelPosition = modelMatrix * vec4(position, 0.8);
-
-		            gl_Position = projectionMatrix * viewMatrix * modelPosition;
-
-		            gl_PointSize = uSize * 10.0 / length(gl_Position.xyz);
-		        }
-		    `,
-			fragmentShader: `
-				uniform vec3 uColor1;
-				uniform vec3 uColor2;
-				uniform vec3 uColor3;
-				uniform sampler2D uTexture;
-				uniform vec2 uResolution;
-				uniform float uTime;
-				uniform float uSize;
-
-				void main() {
-					vec2 uv = gl_PointCoord.xy;
-					vec2 center = vec2(0.5, 0.5);
-					float d = distance(uv, center);
-					vec3 color1 = mix(uColor1, uColor2, uColor3);
-					vec3 color = mix(color1, color1, d);
-					gl_FragColor = vec4(color, 1.0);
-				}
-		    `,
+			vertexShader,
+			fragmentShader,
 			uniforms: {
 				uTime: { value: 0 },
 				uSize: { value: 0.5 },
@@ -155,40 +127,40 @@ class ParticlesScene {
 			.min(100)
 			.max(1000000)
 			.step(100)
-			.onFinishChange(this.calclulateGeometry.bind(this));
+			.onFinishChange(this.calculateGeometry.bind(this));
 		this.gui
 			.add(this.params, 'size')
 			.min(0.001)
 			.max(0.1)
 			.step(0.001)
-			.onFinishChange(this.calclulateGeometry.bind(this));
+			.onFinishChange(this.calculateGeometry.bind(this));
 		this.gui
 			.add(this.params, 'radius')
 			.min(1)
 			.max(20)
 			.step(0.1)
-			.onFinishChange(this.calclulateGeometry.bind(this));
+			.onFinishChange(this.calculateGeometry.bind(this));
 		this.gui
 			.add(this.params, 'branches')
 			.min(2)
 			.max(20)
 			.step(1)
-			.onFinishChange(this.calclulateGeometry.bind(this));
+			.onFinishChange(this.calculateGeometry.bind(this));
 		this.gui
 			.add(this.params, 'spin')
 			.min(-5)
 			.max(5)
 			.step(0.001)
-			.onFinishChange(this.calclulateGeometry.bind(this));
+			.onFinishChange(this.calculateGeometry.bind(this));
 		this.gui
 			.add(this.params, 'randomness')
 			.min(0)
 			.max(2)
 			.step(0.001)
-			.onFinishChange(this.calclulateGeometry.bind(this));
+			.onFinishChange(this.calculateGeometry.bind(this));
 	}
 
-	public calclulateGeometry(): void {
+	public calculateGeometry(): void {
 		const insideColor = new THREE.Color(this.params.insideColor);
 		const outsideColor = new THREE.Color(this.params.outsideColor);
 
