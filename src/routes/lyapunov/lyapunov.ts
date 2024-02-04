@@ -44,6 +44,7 @@ class LyapunovScene {
 		window.addEventListener('resize', this.onResize.bind(this));
 		window.addEventListener('wheel', this.onMouseWheel.bind(this));
 		window.addEventListener('keypress', this.mousePressed.bind(this));
+		window.addEventListener('click', this.onClick.bind(this));
 	}
 
 	public setInitialValues() {
@@ -64,6 +65,13 @@ class LyapunovScene {
 
 	public addControls() {
 		this.gui = new GUI();
+
+		this.gui.domElement.style.position = 'absolute';
+		this.gui.domElement.style.top = '0';
+		this.gui.domElement.style.right = '0';
+		this.gui.domElement.addEventListener('click', (e) => {
+			e.stopPropagation();
+		});
 		if (!this.material) return;
 
 		this.gui.addColor(options, 'Color').onChange(() => {
@@ -145,6 +153,10 @@ class LyapunovScene {
 		}
 	}
 
+	onClick() {
+		this.dir *= -1;
+	}
+
 	onResize() {
 		if (this.material) {
 			this.material.uniforms.u_resolution.value.x = window.innerWidth;
@@ -157,10 +169,12 @@ class LyapunovScene {
 		this.renderer?.setSize(window.innerWidth, window.innerHeight);
 	}
 
+	public dir = 1;
+
 	public animate() {
 		requestAnimationFrame(this.animate.bind(this));
 		if (this.material) {
-			this.material.uniforms.u_time.value += 0.001;
+			this.material.uniforms.u_time.value += 0.002 * this.dir;
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 	}
