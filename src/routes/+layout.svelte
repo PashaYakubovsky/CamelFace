@@ -8,6 +8,8 @@
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap/all';
 	import CursorLight from '$lib/CursorLight.svelte';
+	import Copyright from '$lib/Copyright.svelte';
+	import Nav from '$lib/Nav.svelte';
 
 	let transition: HTMLDivElement;
 
@@ -42,10 +44,6 @@
 		gsap.set(transition, { xPercent: -99.5, filter: 'blur(3px)' });
 	});
 </script>
-
-<meta
-	name="alonatunina@gmail.com. Instagram. @jetsettogether. About Me! Hello and welcome to my page! I am Alona Tiunina and I absolutely love traveling the world."
-/>
 
 <Loading />
 
@@ -84,6 +82,10 @@
 <CursorLight />
 
 <slot />
+
+<Copyright />
+
+<Nav />
 
 <style>
 	svg {

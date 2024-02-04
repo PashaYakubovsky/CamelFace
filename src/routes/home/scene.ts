@@ -167,7 +167,7 @@ class TravelGalleryScene {
 	public async addGallery({ posts }: { posts: Post[] }) {
 		const textures: THREE.Texture[] = [];
 
-		for (let i = 0; i < posts.length; i++) {
+		for (let i = posts.length - 1; i >= 0; i--) {
 			const media = posts[i].backgroundImage as Media;
 
 			const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;

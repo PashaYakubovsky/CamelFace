@@ -175,6 +175,12 @@ class LyapunovScene {
 		requestAnimationFrame(this.animate.bind(this));
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.002 * this.dir;
+			if (this.material.uniforms.u_time.value > 5) {
+				this.dir *= -1;
+			}
+			if (this.material.uniforms.u_time.value < -10) {
+				this.dir *= -1;
+			}
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 	}

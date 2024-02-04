@@ -387,7 +387,8 @@
 					style={`color:${scene?.textColors?.[index]}`}
 					class="text-[1rem] leading-7 max-md:h-[30vh] overflow-ellipsis overflow-hidden break-words"
 				>
-					{post.content}
+					<!-- pas raw html -->
+					{@html post.content}
 				</p>
 				<button
 					on:mouseenter={() => {

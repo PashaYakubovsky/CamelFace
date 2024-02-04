@@ -16,7 +16,7 @@
 	});
 </script>
 
-<title>Jet set together</title>
+<title>Hello</title>
 
 <canvas bind:this={canvasElem} />
 
