@@ -22,7 +22,7 @@ vec3 calc( in vec2 p )
   for( float i=0.0; i<100.0; i++ )
 	{
 		x = p.x*x*(1.0-x); 
-    h += log2(abs(p.x*(1.0-2.0*x))) + u_time;
+    h += log2(abs(p.x*(1.0-2.0*x)));
 		x = p.x*x*(1.0-x) + u_time * 0.1; 
     h += log2(abs(p.x*(1.0-2.0*x)));
 		x = p.x*x*(1.0-x) + u_time * 0.1;
@@ -39,7 +39,7 @@ vec3 calc( in vec2 p )
 		x = p.y*x*(1.0-x) - u_time * 0.1; 
     h += log2(abs(p.y*(1.0-2.0*x)));
 	}
-  h /= u_zoom*12.0;
+  h /= u_zoom*5.0;
 	
 	
 	vec3 col = vec3(0.0);

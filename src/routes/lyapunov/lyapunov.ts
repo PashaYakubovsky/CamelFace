@@ -9,8 +9,7 @@ const options = {
 	['Scroll mode']: true,
 	['Recursive step']: 100,
 	['Mouse mode']: true,
-	['Zoom to number']: 1,
-	['Zoom duration']: 10
+	['Intensity']: 90
 };
 
 class LyapunovScene {
@@ -49,15 +48,10 @@ class LyapunovScene {
 
 	public setInitialValues() {
 		const mouseMode = localStorage.getItem('mouseMode');
-		const zoomValue = localStorage.getItem('zoomValue');
 		const mousePosition = localStorage.getItem('mousePosition');
 
 		if (mouseMode) {
 			options['Mouse mode'] = mouseMode === 'true';
-		}
-		if (zoomValue) {
-			options['Zoom to number'] = parseFloat(zoomValue);
-			if (this.material) this.material.uniforms.u_zoom.value = parseFloat(zoomValue);
 		}
 		if (mousePosition) {
 			const [x, y] = mousePosition.split(' ');
@@ -78,94 +72,12 @@ class LyapunovScene {
 			this.material.needsUpdate = true;
 		});
 
-		this.gui.add(options, 'Scroll mode').onChange(() => {
-			if (!this.material) return;
-			this.material.uniforms.u_scroll_mode.value = options['Scroll mode'];
-			this.material.needsUpdate = true;
-		});
-
-		this.gui.add(options, 'Recursive step', 1, 1000).onChange(() => {
-			if (!this.material) return;
-			this.material.uniforms.u_m_count.value = options['Recursive step'];
-			this.material.needsUpdate = true;
-		});
-
-		// add tooltip for mouse mode
-		this.gui
-			.addFolder('Mouse mode (press M to change)')
-			.add(options, 'Mouse mode')
-			.onChange(() => {
-				if (!this.material) return;
-				this.material.uniforms.u_mouse_mode.value = options['Mouse mode'];
-				this.material.needsUpdate = true;
-			});
-
-		let isGoing = false;
-		const indicator = document.createElement('div');
-		indicator.style.position = 'absolute';
-		indicator.style.top = '0';
-		indicator.style.left = '0';
-		indicator.style.zIndex = '100';
-		indicator.style.backgroundColor = 'white';
-		indicator.style.color = 'black';
-		indicator.style.padding = '5px';
-		indicator.style.borderRadius = '5px';
-		document.body.appendChild(indicator);
-
-		let tl = gsap.timeline();
-
-		this.gui.add(options, 'Zoom to number', 1, 100000).onChange(() => {
-			if (isGoing) {
-				// remove all tween
-				tl.kill();
-				isGoing = false;
-				tl = gsap.timeline();
-			}
-			if (this.material?.uniforms.u_zoom) {
-				isGoing = true;
-				indicator.innerHTML = '';
-				indicator.innerText = 'Zooming...';
-
-				tl.to(this.material.uniforms.u_zoom, {
-					value: options['Zoom to number'],
-					duration: options['Zoom duration'],
-					ease: 'power4.inOut',
-					onComplete: () => {
-						isGoing = false;
-						indicator.innerHTML = '';
-						indicator.innerText = 'Free to zoom again!';
-					}
-				});
-			}
-		});
-
-		this.gui.add(options, 'Zoom duration', 1, 100).onChange(() => {
-			if (isGoing) return;
-			if (this.material?.uniforms.u_zoom) {
-				options['Zoom duration'] = Math.round(options['Zoom duration']);
-			}
+		this.gui.add(options, 'Intensity', 1, 100000).onChange(() => {
+			if (this.material) this.material.uniforms.u_zoom.value = options['Intensity'];
 		});
 	}
 
 	public mousePressed(e: KeyboardEvent) {
-		// if press M then change the mouse mode
-		if (e.key === 'm') {
-			options['Mouse mode'] = !options['Mouse mode'];
-			if (!this.material) return;
-			console.log(this.gui?.controllers[1]);
-			if (this.gui && this.gui.folders) this.gui.folders[0]?.controllers[0]?.updateDisplay();
-
-			// save position to local storage and zoom value to local storage
-			localStorage.setItem('mouseMode', options['Mouse mode'].toString());
-			localStorage.setItem('zoomValue', this.material.uniforms.u_zoom.value.toString());
-			localStorage.setItem(
-				'mousePosition',
-				this.material.uniforms.u_mouse.value.x + ' ' + this.material.uniforms.u_mouse.value.y
-			);
-
-			this.material.uniforms.u_mouse_mode.value = options['Mouse mode'];
-			this.material.needsUpdate = true;
-		}
 		if (e.key === '=' || e.key === '+' || e.key === '-') {
 			if (this.material?.uniforms.u_zoom) {
 				if (e.key === '-') {
@@ -190,7 +102,7 @@ class LyapunovScene {
 				u_resolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
 				u_mouse: { value: new THREE.Vector2() },
 				u_color: { value: new THREE.Color(options.Color) },
-				u_zoom: { value: 1 },
+				u_zoom: { value: options['Intensity'] },
 				u_scroll_mode: { value: options['Scroll mode'] },
 				u_m_count: { value: options['Recursive step'] },
 				u_mouse_mode: { value: options['Mouse mode'] }
@@ -225,8 +137,8 @@ class LyapunovScene {
 			const speed = this.material.uniforms.u_zoom.value * 0.2 * event.deltaY * 0.01;
 
 			this.material.uniforms.u_zoom.value += speed;
-			options['Zoom to number'] = this.material.uniforms.u_zoom.value;
-			this.gui?.controllers[3].updateDisplay();
+			options['Intensity'] = this.material.uniforms.u_zoom.value;
+			this.gui?.controllers[1].updateDisplay();
 
 			// save zoom value to local storage
 			localStorage.setItem('zoomValue', this.material.uniforms.u_zoom.value.toString());
