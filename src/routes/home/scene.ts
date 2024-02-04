@@ -107,8 +107,8 @@ class TravelGalleryScene {
 			precision: 'highp'
 		});
 
-		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+		// this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		// this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 		this.camera.position.set(0, 0, this.isMobile ? 0 : 4);
 		this.renderer.setSize(

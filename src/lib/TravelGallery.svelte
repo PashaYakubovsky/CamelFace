@@ -163,7 +163,7 @@
 						if (i === currentIndex) {
 							navElement.style.backgroundColor = scene.backgroundColors[i];
 						} else {
-							navElement.style.backgroundColor = scene.textColors[currentIndex];
+							navElement.style.backgroundColor = '#fff';
 						}
 					});
 				}
