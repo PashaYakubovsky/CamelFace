@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import bgVertexShader from '../contact/vertexShader.glsl';
-import bgFragmentShader from '../contact/fragmentShader.glsl';
+import bgVertexShader from '../fbm/vertexShader.glsl';
+import bgFragmentShader from '../fbm/fragmentShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 import vertexShader from './vertexShader.glsl';
 
