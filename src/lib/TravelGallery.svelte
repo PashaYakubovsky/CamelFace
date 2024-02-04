@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Post } from '../types';
 	import { onMount } from 'svelte';
-	import Scene from '../routes/home/scene';
+	import Scene from '../routes/scene';
 	import { gsap } from 'gsap';
 	import type * as THREE from 'three';
 	import { handleHoverIn, handleHoverOut, pageTransition } from '$lib/pageTransition';

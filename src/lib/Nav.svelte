@@ -54,7 +54,7 @@
 	}}
 	class="menu"
 >
-	<a on:click={(e) => handleLinkClick(e, '/')} href="#" class="nav-link">Galaxy</a>
+	<a on:click={(e) => handleLinkClick(e, '/galaxy')} href="#" class="nav-link">Galaxy</a>
 	<a on:click={(e) => handleLinkClick(e, '/mandelbrot')} href="#" class="nav-link">Mandelbrot set</a
 	>
 	<a on:click={(e) => handleLinkClick(e, '/fbm')} href="#" class="nav-link"
