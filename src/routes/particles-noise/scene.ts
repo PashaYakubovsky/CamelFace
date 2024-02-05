@@ -4,13 +4,15 @@ import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { createNoise3D, createNoise2D } from 'simplex-noise';
+import { createNoise3D } from 'simplex-noise';
+import alea from 'alea';
 
 function lerp(start: number, end: number, t: number) {
 	return start * (1 - t) + end;
 }
 
 class ParticlesScene {
+	public particlesGeo: THREE.BufferGeometry | undefined;
 	private renderer: THREE.WebGLRenderer;
 	private textureLoader: THREE.TextureLoader;
 	private scene: THREE.Scene;
@@ -24,14 +26,20 @@ class ParticlesScene {
 	public group: THREE.Group | undefined;
 	public audio: HTMLAudioElement | undefined;
 	public params = {
-		count: 1000,
-		threshold: 0.5,
+		count: 100000,
+		threshold: 0.1,
 		size: 0.04,
-		discard: true,
-		numVisible: 0
+		noiseRoughness: 0.0,
+		noiseScale: 0.0,
+		hoverRadius: 2.0,
+		hoverScale: 1.0,
+		hoverStrength: 0.1,
+		noise: true,
+		hoverNoise: true,
+		particlesWidth: 7,
+		particlesHeight: 7
 	};
-	public width = 500;
-	public height = 500;
+
 	public time = 0;
 	public texture!: THREE.Texture;
 	public controls: OrbitControls | undefined;
@@ -56,7 +64,7 @@ class ParticlesScene {
 		this.addObjects();
 
 		this.textureLoader = new THREE.TextureLoader();
-		this.textureLoader.load('/particle3.png', (texture) => {
+		this.textureLoader.load('/ambient2.jpg', (texture) => {
 			if (this.material) {
 				this.texture = texture;
 				this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
@@ -71,9 +79,25 @@ class ParticlesScene {
 			0.1,
 			1000
 		);
-		this.camera.position.set(0, -4, 10);
+		this.camera.position.set(25, -25, 15);
+
+		// set max visible distance
+		this.camera.far = 1000;
+
+		// if (this.particles) this.camera.lookAt(this.particles.position);
 
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		this.controls.enableDamping = true;
+		this.controls.dampingFactor = 0.25;
+		this.controls.maxPolarAngle = Math.PI / 2;
+		this.controls.minPolarAngle = Math.PI / 3;
+
+		this.controls.maxAzimuthAngle = Math.PI / 2;
+		this.controls.minAzimuthAngle = -Math.PI / 2;
+
+		this.controls.target = new THREE.Vector3(40, -30, 0);
+
+		this.controls.zoomToCursor = true;
 
 		this.raycaster = new THREE.Raycaster();
 		this.mouse = new THREE.Vector2();
@@ -85,40 +109,38 @@ class ParticlesScene {
 		this.animate();
 	}
 
-	simpleNoiseVertices(vertices: Float32Array) {
-		const getNoise = createNoise3D();
-		const _vertices = vertices.slice();
+	uploadNewFile(file: File) {
+		// take texture from file
+		const url = URL.createObjectURL(file);
+		const texture = this.textureLoader.load(url);
+		this.texture = texture;
 
-		for (let i = 0; i < _vertices.length; i += 3) {
-			const x = (Math.random() - 0.5) * 100;
-			const y = (Math.random() - 0.5) * 100;
-			const z = (Math.random() - 0.5) * 100;
-
-			const noise = getNoise(x, y, z);
-			_vertices[i] = x + noise;
-			_vertices[i + 1] = noise;
-			_vertices[i + 2] = z + noise;
-		}
-
-		return _vertices;
+		// update texture in material
+		if (this.material) this.material.uniforms.uTexture.value = this.texture;
 	}
 
 	positionAndUVForVertices(ver: Float32Array): Float32Array {
 		const _ver = ver.slice();
-		const minRadius = 1;
-		const maxRadius = 1;
 
-		const uvs = new Float32Array(this.params.count * 2);
+		const noiseRoughness = this.params.noiseRoughness;
+		const noiseScale = this.params.noiseScale;
+		const width = this.params.particlesWidth;
+		const height = this.params.particlesHeight;
 
-		// generate torus vertices
+		// create a new random function based on the seed
+		const prng = alea('seed');
+
+		const getNoise = createNoise3D(prng);
+		// generate terrain vertices
 		const count = this.params.count;
-		for (let i = 0; i < count; i++) {
-			const theta = Math.random() * Math.PI * 2;
-			const radius = lerp(minRadius, maxRadius, Math.random() * 1.5);
 
-			const x = radius * Math.sin(theta) * 2;
-			const y = 0;
-			const z = radius * Math.cos(theta) * 2;
+		for (let i = 0; i < count; i++) {
+			const u = Math.random();
+			const v = Math.random();
+
+			const x = lerp(-width, width, u);
+			const z = lerp(-height, height, v);
+			const y = getNoise(x * noiseScale, z * noiseScale, this.time) * noiseRoughness;
 
 			_ver[i * 3] = x;
 			_ver[i * 3 + 1] = y;
@@ -138,42 +160,45 @@ class ParticlesScene {
 		let indices = new Float32Array(count);
 		indices = indices.map((_, i) => i);
 		positions = this.positionAndUVForVertices(positions);
+		this.particlesGeo = particlesGeo;
 
 		particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 		particlesGeo.setAttribute('color', new THREE.BufferAttribute(color, 3));
 		particlesGeo.setAttribute('index', new THREE.Float32BufferAttribute(indices, 1));
-		// particlesGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-		// const material = new THREE.PointsMaterial({
-		// 	size: this.params.size * 20,
-		// 	depthTest: false,
-		// 	transparent: true,
-		// 	blending: THREE.AdditiveBlending,
-		// 	map: new THREE.TextureLoader().load('/particle3.png')
-		// });
 
 		const material = new THREE.ShaderMaterial({
 			vertexShader,
 			fragmentShader,
 			uniforms: {
 				uTime: { value: 0 },
-				uTexture: { value: new THREE.TextureLoader().load('/particle3.png') },
+				uTexture: { value: this.texture },
 				uThreshold: { value: this.params.threshold },
 				uSize: { value: this.params.size },
-				uMouse: { value: new THREE.Vector2() }
+				uMouse: { value: new THREE.Vector2() },
+				screenWidth: { value: window.innerWidth },
+				mouseUVCoords: { value: new THREE.Vector2() },
+				uRadius: { value: this.params.hoverRadius },
+				uScale: { value: this.params.hoverScale },
+				uStrength: { value: this.params.hoverStrength },
+				uActiveNoise: { value: this.params.hoverNoise }
 			},
 			transparent: true,
-			side: THREE.DoubleSide,
-			blending: THREE.AdditiveBlending
+			depthTest: false,
+			side: THREE.DoubleSide
+			// blending: THREE.AdditiveBlending
 		});
-
-		// vUv = ( uvTransform * vec3( uv, 1 ) ).xy;
+		this.material = material;
 
 		if (this.particles) {
 			this.scene.remove(this.particles);
 		}
 
 		this.particles = new THREE.Points(particlesGeo, material);
+		this.particles.scale.set(10, 10, 10);
 		this.scene.add(this.particles);
+
+		this.particles.position.set(0, 0, -10);
+		this.particles.rotateX(Math.PI / 2);
 	}
 
 	addDebug() {
@@ -181,16 +206,67 @@ class ParticlesScene {
 		this.gui
 			.add(this.params, 'count')
 			.min(100)
-			.max(2000)
+			.max(2000000)
 			.step(100)
 			.onFinishChange(this.addObjects.bind(this));
 
-		this.gui
+		const folderNoise = this.gui.addFolder('Noise');
+
+		folderNoise
 			.add(this.params, 'size')
 			.min(0.01)
 			.max(10)
 			.step(0.01)
 			.onFinishChange(this.addObjects.bind(this));
+
+		folderNoise.add(this.params, 'noise');
+
+		folderNoise
+			.add(this.params, 'noiseRoughness')
+			.min(0.1)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(this.addObjects.bind(this));
+
+		folderNoise
+			.add(this.params, 'noiseScale')
+			.min(0.1)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(this.addObjects.bind(this));
+
+		const folderHoverNoise = this.gui.addFolder('Hover Noise');
+
+		folderHoverNoise.add(this.params, 'hoverNoise').onFinishChange(() => {
+			if (this.material) this.material.uniforms.uActiveNoise.value = this.params.hoverNoise;
+		});
+
+		folderHoverNoise
+			.add(this.params, 'hoverRadius')
+			.min(0.01)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(() => {
+				if (this.material) this.material.uniforms.uRadius.value = this.params.hoverRadius;
+			});
+
+		folderHoverNoise
+			.add(this.params, 'hoverScale')
+			.min(0.01)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(() => {
+				if (this.material) this.material.uniforms.uScale.value = this.params.hoverScale;
+			});
+
+		folderHoverNoise
+			.add(this.params, 'hoverStrength')
+			.min(0.01)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(() => {
+				if (this.material) this.material.uniforms.uStrength.value = this.params.hoverStrength;
+			});
 	}
 
 	onWindowResize(): void {
@@ -200,12 +276,17 @@ class ParticlesScene {
 	}
 
 	onMouseMove(event: MouseEvent): void {
-		this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-		this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+		// this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		// this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-		if (this.material) this.material.uniforms.uMouse.value = this.mouse;
+		// if (this.material) this.material.uniforms.uMouse.value = this.mouse;
 
-		this.raycaster.setFromCamera(this.mouse, this.camera);
+		const rect = this.renderer.domElement.getBoundingClientRect();
+		const x = event.clientX - rect.left;
+		const y = event.clientY - rect.top;
+
+		const mouseUVCoords = new THREE.Vector2(x / rect.width, y / rect.height);
+		if (this.material) this.material.uniforms.mouseUVCoords.value = mouseUVCoords;
 	}
 
 	animate(): void {
@@ -215,6 +296,15 @@ class ParticlesScene {
 		if (this.material) {
 			this.material.uniforms.uTime.value += this.time;
 			this.material.uniforms.uMouse.value = this.mouse;
+		}
+
+		if (this.particlesGeo && this.params.noise) {
+			const vert = this.particlesGeo.getAttribute('position');
+			const _ver = this.positionAndUVForVertices(vert.array as Float32Array);
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			//@ts-ignore
+			vert.array = _ver;
+			vert.needsUpdate = true;
 		}
 
 		requestAnimationFrame(() => this.animate());

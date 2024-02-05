@@ -37,6 +37,7 @@
 	"type": "module",
 	"dependencies": {
 		"@rive-app/canvas": "^2.1.1",
+		"alea": "^1.0.1",
 		"animejs": "^3.2.2",
 		"axios": "^1.4.0",
 		"glsl-noise": "^0.0.0",

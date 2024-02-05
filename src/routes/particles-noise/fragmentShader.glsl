@@ -4,12 +4,19 @@ varying vec2 vUv;
 varying vec2 vPosition;
 varying vec3 worldPosition;
 varying vec3 vColor;
-
+uniform vec2 uMouse;
+uniform float uTime;
+uniform vec2 uResolution;
 
 uniform sampler2D uTexture;
 
 
+
+
 void main() {
-	vec4 texColor = texture2D(uTexture, vUv);
-    gl_FragColor = vec4(vec3(vUv, 1.0), 1.0);
+    // vec4 tex = texture2D(uTexture, gl_PointCoord);
+    vec4 tex = texture2D(uTexture, vUv);
+
+    gl_FragColor = vec4(tex.rgb, 1.0);
+
 }

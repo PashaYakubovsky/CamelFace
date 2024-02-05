@@ -6,6 +6,7 @@
 	let canvasElem: HTMLCanvasElement;
 	let scene: Scene;
 	let loadingAnimation = false;
+	let fileElem: HTMLInputElement;
 
 	onMount(() => {
 		scene = new Scene(canvasElem);
@@ -20,6 +21,20 @@
 
 <canvas bind:this={canvasElem} />
 
+<input
+	accept="image/*"
+	bind:this={fileElem}
+	on:change={(e) => {
+		const file = fileElem.files[0];
+		if (file) {
+			scene.uploadNewFile(file);
+		}
+	}}
+	type="file"
+	name="texture"
+	id="texture"
+/>
+
 <style>
 	canvas {
 		width: 100vw;
@@ -31,5 +46,12 @@
 	}
 	:global(#cursorP) {
 		display: none;
+	}
+
+	input {
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: 20;
 	}
 </style>
