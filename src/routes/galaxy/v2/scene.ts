@@ -4,6 +4,11 @@ import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { createNoise3D, createNoise2D } from 'simplex-noise';
+
+function lerp(start: number, end: number, t: number) {
+	return start * (1 - t) + end;
+}
 
 class ParticlesScene {
 	private renderer: THREE.WebGLRenderer;
@@ -12,14 +17,14 @@ class ParticlesScene {
 	private camera: THREE.PerspectiveCamera;
 	private raycaster: THREE.Raycaster;
 	private mouse: THREE.Vector2;
-	public particles: THREE.InstancedMesh | undefined;
+	public particles: THREE.Points | undefined;
 	private geometry!: THREE.BufferGeometry;
 	private material: THREE.ShaderMaterial | undefined;
 	public gui: GUI | undefined;
 	public group: THREE.Group | undefined;
 	public audio: HTMLAudioElement | undefined;
 	public params = {
-		count: 100,
+		count: 1000,
 		threshold: 0.5,
 		size: 0.04,
 		discard: true,
@@ -48,27 +53,17 @@ class ParticlesScene {
 
 		this.scene = new THREE.Scene();
 
+		this.addObjects();
+
 		this.textureLoader = new THREE.TextureLoader();
-		this.textureLoader.load('/ambient.jpg', (texture) => {
+		this.textureLoader.load('/particle3.png', (texture) => {
 			if (this.material) {
 				this.texture = texture;
+				this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
 
-				if (this.material.uniforms.uTexture) {
-					this.material.uniforms.uTexture.value = this.texture;
-				}
+				this.material.uniforms.uTexture.value = this.texture;
 			}
 		});
-
-		this.addParticles();
-
-		const box = new THREE.BoxGeometry(1, 1, 1);
-		const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-		const cube = new THREE.Mesh(box, material);
-
-		this.group = new THREE.Group();
-		this.group.add(cube);
-
-		this.scene.add(this.group);
 
 		this.camera = new THREE.PerspectiveCamera(
 			75,
@@ -90,89 +85,95 @@ class ParticlesScene {
 		this.animate();
 	}
 
-	addParticles(): void {
-		const geometry = new THREE.BufferGeometry();
-		const count = this.params.count;
+	simpleNoiseVertices(vertices: Float32Array) {
+		const getNoise = createNoise3D();
+		const _vertices = vertices.slice();
 
-		const positions = new Float32Array(count * 3);
-		const colors = new Float32Array(count * 3);
-		const sizes = new Float32Array(count);
-		const materials = [];
+		for (let i = 0; i < _vertices.length; i += 3) {
+			const x = (Math.random() - 0.5) * 100;
+			const y = (Math.random() - 0.5) * 100;
+			const z = (Math.random() - 0.5) * 100;
 
-		const getColorPerlinNoise = (x: number, y: number, z: number) => {
-			const c = Math.abs(Math.sin(x * 0.01) + Math.sin(y * 0.01) + Math.sin(z * 0.01));
-			return c;
-		};
-
-		for (let i = 0; i < count; i++) {
-			const i3 = i * 3;
-
-			const x = (Math.random() - 0.5) * 10;
-			const y = (Math.random() - 0.5) * 10;
-			const z = (Math.random() - 0.5) * 10;
-
-			positions[i3 + 0] = x;
-			positions[i3 + 1] = y;
-			positions[i3 + 2] = z;
-
-			const color = new THREE.Color();
-			color.setHSL(getColorPerlinNoise(x, y, z), 0.5, 0.5);
-			colors[i3 + 0] = color.r;
-			colors[i3 + 1] = color.g;
-			colors[i3 + 2] = color.b;
-
-			sizes[i] = Math.random() * 0.1;
-
-			// const material = new THREE.PointsMaterial({
-			// 	size: sizes[i],
-			// 	blending: THREE.AdditiveBlending,
-			// 	depthTest: false,
-			// 	transparent: true
-			// });
+			const noise = getNoise(x, y, z);
+			_vertices[i] = x + noise;
+			_vertices[i + 1] = noise;
+			_vertices[i + 2] = z + noise;
 		}
 
-		geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-		geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-		geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-		geometry.computeVertexNormals();
+		return _vertices;
+	}
+
+	positionAndUVForVertices(ver: Float32Array): Float32Array {
+		const _ver = ver.slice();
+		const minRadius = 1;
+		const maxRadius = 1;
+
+		const uvs = new Float32Array(this.params.count * 2);
+
+		// generate torus vertices
+		const count = this.params.count;
+		for (let i = 0; i < count; i++) {
+			const theta = Math.random() * Math.PI * 2;
+			const radius = lerp(minRadius, maxRadius, Math.random() * 1.5);
+
+			const x = radius * Math.sin(theta) * 2;
+			const y = 0;
+			const z = radius * Math.cos(theta) * 2;
+
+			_ver[i * 3] = x;
+			_ver[i * 3 + 1] = y;
+			_ver[i * 3 + 2] = z;
+		}
+
+		return _ver;
+	}
+
+	addObjects(): void {
+		this.scene.clear();
+		const particlesGeo = new THREE.BufferGeometry();
+		const count = this.params.count;
+		let positions = new Float32Array(count * 3);
+		let color = new Float32Array(count * 3);
+		color = color.map(() => Math.random());
+		let indices = new Float32Array(count);
+		indices = indices.map((_, i) => i);
+		positions = this.positionAndUVForVertices(positions);
+
+		particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+		particlesGeo.setAttribute('color', new THREE.BufferAttribute(color, 3));
+		particlesGeo.setAttribute('index', new THREE.Float32BufferAttribute(indices, 1));
+		// particlesGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+		// const material = new THREE.PointsMaterial({
+		// 	size: this.params.size * 20,
+		// 	depthTest: false,
+		// 	transparent: true,
+		// 	blending: THREE.AdditiveBlending,
+		// 	map: new THREE.TextureLoader().load('/particle3.png')
+		// });
 
 		const material = new THREE.ShaderMaterial({
-			uniforms: {
-				uTime: { value: 0 },
-				uTexture: { value: this.texture },
-				uMouse: { value: new THREE.Vector2() }
-			},
 			vertexShader,
 			fragmentShader,
-			side: THREE.DoubleSide,
+			uniforms: {
+				uTime: { value: 0 },
+				uTexture: { value: new THREE.TextureLoader().load('/particle3.png') },
+				uThreshold: { value: this.params.threshold },
+				uSize: { value: this.params.size },
+				uMouse: { value: new THREE.Vector2() }
+			},
 			transparent: true,
-			depthTest: false,
-			depthWrite: false,
+			side: THREE.DoubleSide,
 			blending: THREE.AdditiveBlending
 		});
 
-		for (let i = 0; i < this.params.count; i++) {
-			const mat = material.clone();
-			materials.push(mat);
+		// vUv = ( uvTransform * vec3( uv, 1 ) ).xy;
 
-			const particles = new THREE.Points(geometry, mat);
-
-			this.scene.add(particles);
+		if (this.particles) {
+			this.scene.remove(this.particles);
 		}
 
-		// const material = new THREE.ShaderMaterial({
-		// 	uniforms: {
-		// 		uTime: { value: 0 },
-		// 		uTexture: { value: this.texture },
-		// 		uMouse: { value: new THREE.Vector2() }
-		// 	},
-		// 	vertexShader,
-		// 	fragmentShader,
-		// 	transparent: true,
-		// 	depthTest: false,
-		// 	depthWrite: false,
-		// 	blending: THREE.AdditiveBlending
-		// });
+		this.particles = new THREE.Points(particlesGeo, material);
+		this.scene.add(this.particles);
 	}
 
 	addDebug() {
@@ -182,7 +183,14 @@ class ParticlesScene {
 			.min(100)
 			.max(2000)
 			.step(100)
-			.onFinishChange(this.addParticles.bind(this));
+			.onFinishChange(this.addObjects.bind(this));
+
+		this.gui
+			.add(this.params, 'size')
+			.min(0.01)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(this.addObjects.bind(this));
 	}
 
 	onWindowResize(): void {
@@ -207,10 +215,6 @@ class ParticlesScene {
 		if (this.material) {
 			this.material.uniforms.uTime.value += this.time;
 			this.material.uniforms.uMouse.value = this.mouse;
-		}
-
-		if (this.particles) {
-			this.particles.rotation.y += 0.001;
 		}
 
 		requestAnimationFrame(() => this.animate());

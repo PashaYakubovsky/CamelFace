@@ -1,17 +1,23 @@
 uniform float uTime;
 uniform float uSize;
-uniform float uDepth;
-varying vec2 vUv;
 attribute vec3 color;
+varying vec2 vUv;
+varying vec2 vPosition;
 varying vec3 vColor;
+varying vec3 worldPosition;
+attribute float index;
+uniform float uCount;
+float PI = 3.141592653589793;
 
-void main() {
-    vUv = uv;
-    // vertex shader
-    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-    vec4 viewPosition = viewMatrix * modelPosition;
+ void main() {
+    vUv = position.xy + vec2(0.5);
+    worldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+    vPosition = worldPosition.xz;
 
     vColor = color;
 
-    gl_Position = projectionMatrix * viewPosition;
+    vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = uSize * (1000.0 / length(gl_Position.xyz));
 }

@@ -42,6 +42,7 @@
 		"glsl-noise": "^0.0.0",
 		"gsap": "^3.12.2",
 		"lil-gui": "^0.18.2",
+		"simplex-noise": "^4.0.1",
 		"svelte-loading-spinners": "^0.3.4",
 		"three": "^0.154.0"
 	}
