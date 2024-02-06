@@ -6,6 +6,7 @@ import fragmentShader from './fragmentShader.glsl';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createNoise3D } from 'simplex-noise';
 import alea from 'alea';
+import Stats from 'three/examples/jsm/libs/stats.module';
 
 function lerp(start: number, end: number, t: number) {
 	return start * (1 - t) + end;
@@ -24,22 +25,27 @@ class ParticlesScene {
 	private material: THREE.ShaderMaterial | undefined;
 	public gui: GUI | undefined;
 	public group: THREE.Group | undefined;
+	public videoElement: HTMLVideoElement | undefined;
 	public audio: HTMLAudioElement | undefined;
 	public params = {
 		count: 100000,
 		threshold: 0.1,
 		size: 10,
-		noiseRoughness: 0.0,
-		noiseScale: 0.0,
+		noiseRoughness: 0.2,
+		noiseScale: 0.5,
 		hoverRadius: 2.0,
-		hoverScale: 1.0,
-		hoverStrength: 0.1,
-		noise: true,
-		hoverNoise: true,
+		hoverScale: 7.0,
+		hoverStrength: 0.5,
+		noise: false,
+		hoverNoise: false,
+		shaderNoise: true,
 		particlesWidth: 10,
 		particlesHeight: 7,
-		orbitControls: false
+		orbitControls: false,
+		shaderNoiseRoughness: 0.5,
+		shaderNoiseScale: 0.5
 	};
+	public stats?: Stats;
 
 	public time = 0;
 	public texture!: THREE.Texture;
@@ -50,7 +56,8 @@ class ParticlesScene {
 		this.renderer = new THREE.WebGLRenderer({
 			antialias: true,
 			alpha: true,
-			canvas: canvasElement
+			canvas: canvasElement,
+			powerPreference: 'high-performance'
 		});
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -62,6 +69,16 @@ class ParticlesScene {
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 		this.scene = new THREE.Scene();
+
+		this.stats = new Stats();
+		this.stats.dom.style.position = 'absolute';
+		this.stats.dom.style.top = 'auto';
+		this.stats.dom.style.bottom = '0';
+		this.stats.dom.style.right = '1rem';
+		this.stats.dom.style.left = 'auto';
+		this.stats.dom.style.zIndex = '1000';
+
+		document.body.appendChild(this.stats.dom);
 
 		this.addObjects();
 
@@ -217,13 +234,16 @@ class ParticlesScene {
 				uRadius: { value: this.params.hoverRadius },
 				uScale: { value: this.params.hoverScale },
 				uStrength: { value: this.params.hoverStrength },
-				uActiveNoise: { value: this.params.hoverNoise },
+				uHoverNoiseEnabled: { value: this.params.hoverNoise },
 				uSize: {
 					value: {
 						x: this.params.particlesWidth,
 						y: this.params.particlesHeight
 					}
-				}
+				},
+				uEnabledNoise: { value: this.params.shaderNoise },
+				uNoiseRoughness: { value: this.params.shaderNoiseRoughness },
+				uNoiseScale: { value: this.params.shaderNoiseScale }
 			},
 			transparent: true,
 			depthTest: false,
@@ -255,7 +275,17 @@ class ParticlesScene {
 			.min(100)
 			.max(2000000)
 			.step(100)
-			.onFinishChange(this.addObjects.bind(this));
+			.onFinishChange(() => {
+				this.addObjects();
+
+				if (this.particles) {
+					this.particles.position.set(
+						-this.params.particlesWidth * 5,
+						this.params.particlesHeight * 5,
+						-50
+					);
+				}
+			});
 
 		this.gui
 			.add(this.params, 'size')
@@ -292,19 +322,37 @@ class ParticlesScene {
 			.min(0.1)
 			.max(10)
 			.step(0.01)
-			.onFinishChange(this.addObjects.bind(this));
+			.onFinishChange(() => {
+				this.addObjects();
+				if (this.particles) {
+					this.particles.position.set(
+						-this.params.particlesWidth * 5,
+						this.params.particlesHeight * 5,
+						-50
+					);
+				}
+			});
 
 		folderNoise
 			.add(this.params, 'noiseScale')
 			.min(0.1)
 			.max(10)
 			.step(0.01)
-			.onFinishChange(this.addObjects.bind(this));
+			.onFinishChange(() => {
+				this.addObjects();
+				if (this.particles) {
+					this.particles.position.set(
+						-this.params.particlesWidth * 5,
+						this.params.particlesHeight * 5,
+						-50
+					);
+				}
+			});
 
 		const folderHoverNoise = this.gui.addFolder('Hover Noise');
 
 		folderHoverNoise.add(this.params, 'hoverNoise').onFinishChange(() => {
-			if (this.material) this.material.uniforms.uActiveNoise.value = this.params.hoverNoise;
+			if (this.material) this.material.uniforms.uHoverNoiseEnabled.value = this.params.hoverNoise;
 		});
 
 		folderHoverNoise
@@ -333,6 +381,28 @@ class ParticlesScene {
 			.onFinishChange(() => {
 				if (this.material) this.material.uniforms.uStrength.value = this.params.hoverStrength;
 			});
+
+		const folderShaderNoise = this.gui.addFolder('Shader Noise');
+		folderShaderNoise.add(this.params, 'shaderNoise').onFinishChange(() => {
+			if (this.material) this.material.uniforms.uEnabledNoise.value = this.params.shaderNoise;
+		});
+		folderShaderNoise
+			.add(this.params, 'shaderNoiseRoughness')
+			.min(0.1)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(() => {
+				if (this.material)
+					this.material.uniforms.uNoiseRoughness.value = this.params.shaderNoiseRoughness;
+			});
+		folderShaderNoise
+			.add(this.params, 'shaderNoiseScale')
+			.min(0.1)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(() => {
+				if (this.material) this.material.uniforms.uNoiseScale.value = this.params.shaderNoiseScale;
+			});
 	}
 
 	onWindowResize(): void {
@@ -347,12 +417,14 @@ class ParticlesScene {
 		const y = event.clientY - rect.top;
 
 		const mouseUVCoords = new THREE.Vector2(x / rect.width, y / rect.height);
-		console.log(mouseUVCoords);
+
 		if (this.material) this.material.uniforms.mouseUVCoords.value = mouseUVCoords;
 	}
 
 	animate(): void {
 		this.renderer.render(this.scene, this.camera);
+
+		if (this.stats) this.stats.update();
 
 		this.time += 0.01;
 		if (this.material) {
@@ -376,6 +448,7 @@ class ParticlesScene {
 		this.renderer.dispose();
 		this.scene.clear();
 		this.gui?.destroy();
+		this.videoElement?.remove();
 	}
 
 	getUserMedia(): void {
@@ -396,6 +469,8 @@ class ParticlesScene {
 				this.videoTexture = new THREE.VideoTexture(video);
 				this.videoTexture.minFilter = THREE.LinearFilter;
 				this.videoTexture.magFilter = THREE.LinearFilter;
+
+				this.videoElement = video;
 
 				if (this.material) this.material.uniforms.uTexture.value = this.videoTexture;
 			})

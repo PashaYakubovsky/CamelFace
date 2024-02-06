@@ -13,7 +13,10 @@ uniform vec2 mouseUVCoords;
 uniform float uRadius;
 uniform float uScale;
 uniform float uStrength;
-uniform bool uActiveNoise;
+uniform bool uHoverNoiseEnabled;
+uniform bool uEnabledNoise;
+uniform float uNoiseRoughness;
+uniform float uNoiseScale;
 
 uniform vec2 uMouse;
 
@@ -92,11 +95,32 @@ float snoise(vec3 v){
                                 dot(p2,x2), dot(p3,x3) ) );
 }
 
-// distance function for fluid brush effect
-float brush(vec2 p, vec2 center, float radius, float hardness){
-    float d = distance(p, center);
-    return smoothstep(radius, radius - hardness, d);
+float random (in vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
 }
+
+float sdStar( in vec2 p, in float r, in int n, in float m)
+{
+    // next 4 lines can be precomputed for a given shape
+    float an = 3.141593/float(n);
+    float en = 3.141593/m;  // m is between 2 and n
+    vec2  acs = vec2(cos(an),sin(an));
+    vec2  ecs = vec2(cos(en),sin(en)); // ecs=vec2(0,1) for regular polygon
+
+    float bn = mod(atan(p.x,p.y),2.0*an) - an;
+    p = length(p)*vec2(cos(bn),abs(sin(bn)));
+    p -= r*acs;
+    p += ecs*clamp( -dot(p,ecs), 0.0, r*acs.y/ecs.y);
+    return random(
+        vec2(
+            p.x * 0.1,
+            p.y * 0.1
+        )
+    ) - length(p)*sign(p.x);
+}
+
 
 
  void main() {
@@ -105,9 +129,8 @@ float brush(vec2 p, vec2 center, float radius, float hardness){
     // take uSize into account
     vUv = position.xz / uSize;
 
-
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = 20.0 * (10.0 / -mvPosition.z);
+    gl_PointSize = 200.0 * (1.0 / -mvPosition.z);
 
     worldPosition = position;
     vPosition = position.xz;
@@ -117,20 +140,39 @@ float brush(vec2 p, vec2 center, float radius, float hardness){
 
     float dim = 10.0;
     vec2 mouse = (mouseUVCoords) * dim;
-    float b = brush(p, mouse, uRadius, 0.1);
-    if(b > 0.0 && uActiveNoise){
+    float b = sdStar(
+        p - mouse,
+        uRadius,
+        5,
+        2.0
+    );
+    if(b > 0.0 && uHoverNoiseEnabled){
         float time = uTime * 0.001;
 
         p = p + (p - uMouse) * 5.1;
         float d = 0.0;
-        for(float i = 0.0; i < 10.0; i++){
+        for(float i = 0.0; i < uScale; i++){
             d += snoise(vec3(p * 0.1, time)) * uStrength;
             p = p + (p - uMouse) * 0.1;
         }
 
         // gl_PointSize = n * 2.0 * (10.0 / -mvPosition.z);
-        gl_Position =  projectionMatrix * modelViewMatrix * vec4(position + vec3(0.0, d * 0.5, 0.0), 1.0);
+        // mix the vertex position with the noise 
+        mvPosition.y += d;
+        gl_Position = projectionMatrix * mvPosition;
+
     } else {
+
+        if(uEnabledNoise) {
+            float time = uTime * 0.001;
+            float d = 0.0;
+            for(float i = 0.0; i < uNoiseScale; i++){
+                d += snoise(vec3(p * uNoiseRoughness, time)) * uNoiseRoughness;
+            }
+
+            mvPosition.xyz += d;
+        }
+
         gl_Position = projectionMatrix * mvPosition;
     }
 }
