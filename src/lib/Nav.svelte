@@ -54,15 +54,13 @@
 	}}
 	class="menu"
 >
+	<a on:click={(e) => handleLinkClick(e, '/')} href="#" class="nav-link">Home</a>
 	<a on:click={(e) => handleLinkClick(e, '/galaxy')} href="#" class="nav-link">Galaxy</a>
-	<a on:click={(e) => handleLinkClick(e, '/mandelbrot')} href="#" class="nav-link">Mandelbrot set</a
-	>
-	<a on:click={(e) => handleLinkClick(e, '/fbm')} href="#" class="nav-link"
-		>Fractal browning motion</a
-	>
+	<a on:click={(e) => handleLinkClick(e, '/mandelbrot')} href="#" class="nav-link">Mandelbrot set</a>
+	<a on:click={(e) => handleLinkClick(e, '/fbm')} href="#" class="nav-link">Fractal browning motion</a>
 	<a on:click={(e) => handleLinkClick(e, '/cardioid')} href="#" class="nav-link">Cardioid</a>
-	<a on:click={(e) => handleLinkClick(e, '/lyapunov')} href="#" class="nav-link">Lyapunov fractal</a
-	>
+	<a on:click={(e) => handleLinkClick(e, '/lyapunov')} href="#" class="nav-link">Lyapunov fractal</a>
+	<a on:click={(e) => handleLinkClick(e, '/particles-noise')} href="#" class="nav-link">Particles & Simplex noise</a>
 </button>
 
 <style>

@@ -37,6 +37,7 @@ export interface Post {
 	createdAt: string;
 	textColor: string;
 	backgroundColor: string;
+	slug: string;
 }
 export interface Media {
 	id: string;

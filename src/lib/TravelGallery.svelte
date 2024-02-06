@@ -83,11 +83,15 @@
 			};
 
 			scene.onClickEvent = (meshIndex: number) => {
+				// reverse the index
+				const rI = blogPost.length - 1 - meshIndex;
+				debugger;
 				if (meshIndex === currentIndex) {
 					pageTransition.update((state) => ({
 						...state,
 						start: true,
-						toPage: '/posts/' + blogPost[currentIndex].id || '/'
+						toPage: blogPost[rI].slug
+						// toPage: '/posts/' + blogPost[currentIndex].id || '/'
 					}));
 				}
 			};
@@ -157,6 +161,8 @@
 						if (goBackButtonElement)
 							goBackButtonElement.style.color = scene.textColors[currentIndex];
 						loading.update((state) => ({ ...state, color: scene.textColors[currentIndex] }));
+
+						scene.addColorToBGShader(scene.backgroundColors[currentIndex]);
 					}
 
 					navElements.forEach((navElement, i) => {
@@ -385,7 +391,7 @@
 
 				<p
 					style={`color:${scene?.textColors?.[index]}`}
-					class="text-[1rem] leading-7 max-md:h-[30vh] overflow-ellipsis overflow-hidden break-words"
+					class={`text-[1rem] leading-7 max-md:h-[30vh] overflow-ellipsis overflow-hidden break-words`}
 				>
 					<!-- pas raw html -->
 					{@html post.content}

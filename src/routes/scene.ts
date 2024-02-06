@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import vertexShader from './vertexShader.glsl';
-import fragmentShader from './fragmentShader.glsl';
+import vertexShader from './shaders/vertexShader.glsl';
+import fragmentShader from './shaders/fragmentShader.glsl';
+import bgVertexShader from './shaders/bgVertexShader.glsl';
+import bgFragmentShader from './shaders/bgFragmentShader.glsl';
 import type { Media, Post } from '../types';
 import { defineScreen, type Screens } from '$lib/mediaQuery';
 
@@ -85,7 +87,9 @@ class TravelGalleryScene {
 	public intersected: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
 	private hovered: Record<string, THREE.Intersection> = {};
 	public screens: Screens = defineScreen();
-
+	public bgGeometry: THREE.PlaneGeometry | null = null;
+	public bgMaterial: THREE.ShaderMaterial | null = null;
+	public bgPlane: THREE.Mesh | null = null;
 	public geometry: THREE.PlaneGeometry = createGeometry(this.isMobile, this.screens);
 	public eulerValues = calculateEuler(this.isMobile, this.screens);
 	public positionValues = calculatePosition(this.isMobile, this.screens);
@@ -129,6 +133,7 @@ class TravelGalleryScene {
 	public onClick(e: MouseEvent) {
 		this.intersected.forEach((hit) => {
 			const obj = hit.object as THREE.Mesh;
+
 			const meshIndex = this.meshes.findIndex((mesh) => mesh.uuid === obj.uuid);
 			if (obj.material instanceof THREE.ShaderMaterial) {
 				if (e.target instanceof HTMLElement && e.target.closest('nav')) {
@@ -145,21 +150,46 @@ class TravelGalleryScene {
 			side: THREE.DoubleSide,
 			uniforms: {
 				time: { value: 0 },
-				texture1: { value: null, type: 't' },
-				resolutions: { value: new THREE.Vector4(), type: 'v4' },
-				distanceFromCenter: { value: 0, type: 'f' },
-				pixels: { value: new THREE.Vector2(1, 1), type: 'v2' },
-				mouse: { value: new THREE.Vector2(0, 0), type: 'v2' },
-				iResolution: { value: new THREE.Vector3(1, 1, 1), type: 'v3' },
-				u_resolution: { value: new THREE.Vector2(1, 1), type: 'v2' },
-				u_mouse: { value: new THREE.Vector2(0, 0), type: 'v2' },
-				u_time: { value: 0, type: 'f' },
-				isMobile: { value: this.isMobile, type: 'b' }
+				texture1: { value: null },
+				resolutions: { value: new THREE.Vector4() },
+				distanceFromCenter: { value: 0 },
+				pixels: { value: new THREE.Vector2(1, 1) },
+				mouse: { value: new THREE.Vector2(0, 0) },
+				iResolution: { value: new THREE.Vector3(1, 1, 1) },
+				u_resolution: { value: new THREE.Vector2(1, 1) },
+				u_mouse: { value: new THREE.Vector2(0, 0) },
+				u_time: { value: 0 },
+				isMobile: { value: this.isMobile }
 			},
 			vertexShader,
 			fragmentShader,
 			transparent: true
 		});
+
+		this.bgMaterial = new THREE.ShaderMaterial({
+			uniforms: {
+				uTime: { value: 0 },
+				uColor: { value: new THREE.Color('rgb(5, 118, 240)') },
+				uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+				uMouse: { value: new THREE.Vector2(0, 0) }
+			},
+			vertexShader: bgVertexShader,
+			fragmentShader: bgFragmentShader,
+			transparent: true
+		});
+
+		const aspectRatio = window.innerWidth / window.innerHeight;
+		this.bgGeometry = new THREE.PlaneGeometry(aspectRatio * 2, 2, 64, 64);
+
+		const mesh = new THREE.Mesh(this.bgGeometry, this.bgMaterial);
+		mesh.scale.set(5, 5, 5);
+		mesh.position.set(0, 0, -2);
+		this.bgPlane = mesh;
+		if (!this.isMobile) this.scene.add(this.bgPlane);
+	}
+
+	public addColorToBGShader(color: string) {
+		if (this.bgMaterial) this.bgMaterial.uniforms.uColor.value = new THREE.Color(color);
 	}
 
 	public async addGallery({ posts }: { posts: Post[] }) {
@@ -266,6 +296,13 @@ class TravelGalleryScene {
 		});
 
 		if (this.renderer) this.renderer.setSize(this.width, this.height);
+
+		if (this.isMobile && this.bgPlane) {
+			// if bgPlane in scene, remove it
+			if (this.scene.children.includes(this.bgPlane)) {
+				this.scene.remove(this.bgPlane);
+			}
+		}
 	}
 
 	public onMouseMove(e: MouseEvent) {
@@ -302,8 +339,9 @@ class TravelGalleryScene {
 			}
 			const obj = hit.object as THREE.Mesh;
 			if (obj.material instanceof THREE.ShaderMaterial) {
-				obj.material.uniforms.mouse.value = this.mouse;
-				obj.material.uniforms.u_mouse.value = this.mouse;
+				if (obj.material.uniforms.mouse) obj.material.uniforms.mouse.value = this.mouse;
+				if (obj.material.uniforms.uMouse) obj.material.uniforms.uMouse.value = this.mouse;
+				if (obj.material.uniforms.u_mouse) obj.material.uniforms.u_mouse.value = this.mouse;
 			}
 		});
 	}
@@ -334,6 +372,8 @@ class TravelGalleryScene {
 			material.uniforms.time.value = this.time;
 			material.uniforms.u_time.value = this.time;
 		});
+
+		if (this.bgMaterial) this.bgMaterial.uniforms.uTime.value = this.time;
 	}
 }
 

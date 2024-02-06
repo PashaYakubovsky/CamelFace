@@ -121,31 +121,36 @@ float sdStar( in vec2 p, in float r, in int n, in float m)
     ) - length(p)*sign(p.x);
 }
 
+float rotateSdfStar( in vec2 p, in float r, in int n, in float m, in float a )
+{
+    p = mat2(cos(a),-sin(a),sin(a),cos(a))*p;
+    return sdStar(p,r,n,m);
+}
 
 
  void main() {
     vColor = color;
-    // vUv = fract(position.xz * 0.1);
-    // take uSize into account
     vUv = position.xz / uSize;
 
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = 200.0 * (1.0 / -mvPosition.z);
+    gl_PointSize = 2.0 * (1.0 / -mvPosition.z);
 
     worldPosition = position;
     vPosition = position.xz;
 
     vec2 p = position.xz;
-    // p.normalize();
 
     float dim = 10.0;
     vec2 mouse = (mouseUVCoords) * dim;
+    vec2 starPos = p - mouse;
+    // starPos.x -= 3.5;
     float b = sdStar(
-        p - mouse,
+        starPos,
         uRadius,
-        5,
-        2.0
+        6,
+        1.5
     );
+   
     if(b > 0.0 && uHoverNoiseEnabled){
         float time = uTime * 0.001;
 
@@ -156,8 +161,6 @@ float sdStar( in vec2 p, in float r, in int n, in float m)
             p = p + (p - uMouse) * 0.1;
         }
 
-        // gl_PointSize = n * 2.0 * (10.0 / -mvPosition.z);
-        // mix the vertex position with the noise 
         mvPosition.y += d;
         gl_Position = projectionMatrix * mvPosition;
 

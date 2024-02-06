@@ -28,24 +28,25 @@ class ParticlesScene {
 	public videoElement: HTMLVideoElement | undefined;
 	public audio: HTMLAudioElement | undefined;
 	public params = {
-		count: 100000,
+		count: 500000,
 		threshold: 0.1,
 		size: 10,
-		noiseRoughness: 0.2,
-		noiseScale: 0.5,
-		hoverRadius: 2.0,
-		hoverScale: 7.0,
-		hoverStrength: 0.5,
+		noiseRoughness: 0,
+		noiseScale: 0,
+		hoverRadius: 5.0,
+		hoverScale: 0.1,
+		hoverStrength: 0.1,
 		noise: false,
-		hoverNoise: false,
+		hoverNoise: true,
 		shaderNoise: true,
 		particlesWidth: 10,
 		particlesHeight: 7,
 		orbitControls: false,
-		shaderNoiseRoughness: 0.5,
-		shaderNoiseScale: 0.5
+		shaderNoiseRoughness: 0.65,
+		shaderNoiseScale: 3.5
 	};
 	public stats?: Stats;
+	public stream: MediaStream | undefined;
 
 	public time = 0;
 	public texture!: THREE.Texture;
@@ -117,7 +118,6 @@ class ParticlesScene {
 		this.controls.minPolarAngle = Math.PI / 3;
 		this.controls.maxAzimuthAngle = Math.PI / 2;
 		this.controls.minAzimuthAngle = -Math.PI / 2;
-		this.controls.target = new THREE.Vector3(40, -30, 0);
 		this.controls.zoomToCursor = true;
 
 		this.controls.enabled = this.params.orbitControls;
@@ -150,7 +150,9 @@ class ParticlesScene {
 	}
 
 	applySizeFromImage(img: HTMLImageElement) {
+		const isMobile = window.innerWidth < 768;
 		const aspectRatio = img.width / img.height;
+		// if (isMobile) aspectRatio = 1 / aspectRatio;
 		const d = this.params.size;
 
 		this.params.particlesWidth = d * aspectRatio;
@@ -167,9 +169,9 @@ class ParticlesScene {
 
 		if (this.particles) {
 			this.particles.position.set(
-				-this.params.particlesWidth * 5,
+				-this.params.particlesWidth * 5.5,
 				this.params.particlesHeight * 5,
-				-50
+				isMobile ? -150 : -50
 			);
 		}
 	}
@@ -449,12 +451,15 @@ class ParticlesScene {
 		this.scene.clear();
 		this.gui?.destroy();
 		this.videoElement?.remove();
+		this.stats?.dom.remove();
+		if (this.stream) this.stream.getTracks().forEach((track) => track.stop());
 	}
 
 	getUserMedia(): void {
 		navigator.mediaDevices
 			.getUserMedia({ video: true })
 			.then((stream) => {
+				this.stream = stream;
 				const video = document.createElement('video');
 				video.srcObject = stream;
 				video.play();
