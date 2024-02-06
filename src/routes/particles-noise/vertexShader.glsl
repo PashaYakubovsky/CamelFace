@@ -1,5 +1,5 @@
 uniform float uTime;
-uniform float uSize;
+uniform vec2 uSize;
 attribute vec3 color;
 varying vec2 vUv;
 varying vec2 vPosition;
@@ -101,7 +101,9 @@ float brush(vec2 p, vec2 center, float radius, float hardness){
 
  void main() {
     vColor = color;
-    vUv = fract(position.xz * 0.1);
+    // vUv = fract(position.xz * 0.1);
+    // take uSize into account
+    vUv = position.xz / uSize;
 
 
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
@@ -114,7 +116,7 @@ float brush(vec2 p, vec2 center, float radius, float hardness){
     // p.normalize();
 
     float dim = 10.0;
-    vec2 mouse = (mouseUVCoords - 0.2) * dim;
+    vec2 mouse = (mouseUVCoords) * dim;
     float b = brush(p, mouse, uRadius, 0.1);
     if(b > 0.0 && uActiveNoise){
         float time = uTime * 0.001;

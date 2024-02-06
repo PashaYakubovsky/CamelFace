@@ -28,7 +28,7 @@ class ParticlesScene {
 	public params = {
 		count: 100000,
 		threshold: 0.1,
-		size: 0.04,
+		size: 10,
 		noiseRoughness: 0.0,
 		noiseScale: 0.0,
 		hoverRadius: 2.0,
@@ -36,13 +36,15 @@ class ParticlesScene {
 		hoverStrength: 0.1,
 		noise: true,
 		hoverNoise: true,
-		particlesWidth: 7,
-		particlesHeight: 7
+		particlesWidth: 10,
+		particlesHeight: 7,
+		orbitControls: false
 	};
 
 	public time = 0;
 	public texture!: THREE.Texture;
 	public controls: OrbitControls | undefined;
+	public videoTexture: THREE.VideoTexture | undefined;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -63,41 +65,45 @@ class ParticlesScene {
 
 		this.addObjects();
 
-		this.textureLoader = new THREE.TextureLoader();
-		this.textureLoader.load('/ambient2.jpg', (texture) => {
-			if (this.material) {
-				this.texture = texture;
-				this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
-
-				this.material.uniforms.uTexture.value = this.texture;
-			}
-		});
-
 		this.camera = new THREE.PerspectiveCamera(
 			75,
 			window.innerWidth / window.innerHeight,
 			0.1,
 			1000
 		);
-		this.camera.position.set(25, -25, 15);
+		this.camera.position.set(0, 0, 15);
+
+		this.textureLoader = new THREE.TextureLoader();
+		this.textureLoader.load('/ambient2.jpg', (texture) => {
+			if (this.material) {
+				this.texture = texture;
+				this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
+
+				// get width and height of texture and set particlesWidth and particlesHeight
+				const img = new Image();
+				img.src = '/ambient2.jpg';
+				img.onload = () => {
+					this.applySizeFromImage(img);
+				};
+
+				this.material.uniforms.uTexture.value = this.texture;
+			}
+		});
 
 		// set max visible distance
 		this.camera.far = 1000;
-
-		// if (this.particles) this.camera.lookAt(this.particles.position);
 
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 		this.controls.enableDamping = true;
 		this.controls.dampingFactor = 0.25;
 		this.controls.maxPolarAngle = Math.PI / 2;
 		this.controls.minPolarAngle = Math.PI / 3;
-
 		this.controls.maxAzimuthAngle = Math.PI / 2;
 		this.controls.minAzimuthAngle = -Math.PI / 2;
-
 		this.controls.target = new THREE.Vector3(40, -30, 0);
-
 		this.controls.zoomToCursor = true;
+
+		this.controls.enabled = this.params.orbitControls;
 
 		this.raycaster = new THREE.Raycaster();
 		this.mouse = new THREE.Vector2();
@@ -115,11 +121,43 @@ class ParticlesScene {
 		const texture = this.textureLoader.load(url);
 		this.texture = texture;
 
+		// get width and height of texture and set particlesWidth and particlesHeight
+		const img = new Image();
+		img.src = url;
+		img.onload = () => {
+			this.applySizeFromImage(img);
+		};
+
 		// update texture in material
 		if (this.material) this.material.uniforms.uTexture.value = this.texture;
 	}
 
-	positionAndUVForVertices(ver: Float32Array): Float32Array {
+	applySizeFromImage(img: HTMLImageElement) {
+		const aspectRatio = img.width / img.height;
+		const d = this.params.size;
+
+		this.params.particlesWidth = d * aspectRatio;
+		this.params.particlesHeight = d;
+
+		if (this.material) {
+			this.material.uniforms.uSize.value = {
+				x: img.width,
+				y: img.height
+			};
+		}
+
+		this.addObjects();
+
+		if (this.particles) {
+			this.particles.position.set(
+				-this.params.particlesWidth * 5,
+				this.params.particlesHeight * 5,
+				-50
+			);
+		}
+	}
+
+	simplexNoiseVert(ver: Float32Array): Float32Array {
 		const _ver = ver.slice();
 
 		const noiseRoughness = this.params.noiseRoughness;
@@ -159,7 +197,7 @@ class ParticlesScene {
 		color = color.map(() => Math.random());
 		let indices = new Float32Array(count);
 		indices = indices.map((_, i) => i);
-		positions = this.positionAndUVForVertices(positions);
+		positions = this.simplexNoiseVert(positions);
 		this.particlesGeo = particlesGeo;
 
 		particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -171,21 +209,26 @@ class ParticlesScene {
 			fragmentShader,
 			uniforms: {
 				uTime: { value: 0 },
-				uTexture: { value: this.texture },
+				uTexture: { value: this.videoTexture || this.texture },
 				uThreshold: { value: this.params.threshold },
-				uSize: { value: this.params.size },
 				uMouse: { value: new THREE.Vector2() },
 				screenWidth: { value: window.innerWidth },
 				mouseUVCoords: { value: new THREE.Vector2() },
 				uRadius: { value: this.params.hoverRadius },
 				uScale: { value: this.params.hoverScale },
 				uStrength: { value: this.params.hoverStrength },
-				uActiveNoise: { value: this.params.hoverNoise }
+				uActiveNoise: { value: this.params.hoverNoise },
+				uSize: {
+					value: {
+						x: this.params.particlesWidth,
+						y: this.params.particlesHeight
+					}
+				}
 			},
 			transparent: true,
 			depthTest: false,
-			side: THREE.DoubleSide
-			// blending: THREE.AdditiveBlending
+			side: THREE.DoubleSide,
+			blending: THREE.AdditiveBlending
 		});
 		this.material = material;
 
@@ -197,12 +240,16 @@ class ParticlesScene {
 		this.particles.scale.set(10, 10, 10);
 		this.scene.add(this.particles);
 
-		this.particles.position.set(0, 0, -10);
+		// this.particles.position.set(0, 0, -10);
 		this.particles.rotateX(Math.PI / 2);
 	}
 
 	addDebug() {
 		this.gui = new GUI();
+
+		this.gui.add(this.params, 'orbitControls').onFinishChange(() => {
+			if (this.controls) this.controls.enabled = this.params.orbitControls;
+		});
 		this.gui
 			.add(this.params, 'count')
 			.min(100)
@@ -210,15 +257,34 @@ class ParticlesScene {
 			.step(100)
 			.onFinishChange(this.addObjects.bind(this));
 
-		const folderNoise = this.gui.addFolder('Noise');
-
-		folderNoise
+		this.gui
 			.add(this.params, 'size')
 			.min(0.01)
 			.max(10)
 			.step(0.01)
-			.onFinishChange(this.addObjects.bind(this));
+			.onFinishChange(() => {
+				const aspectRatio = this.params.particlesWidth / this.params.particlesHeight;
 
+				this.params.particlesWidth = this.params.size * aspectRatio;
+				this.params.particlesHeight = this.params.size;
+
+				if (this.material)
+					this.material.uniforms.uSize.value = {
+						x: this.params.particlesWidth,
+						y: this.params.particlesHeight
+					};
+
+				if (this.particles)
+					this.particles.position.set(
+						-this.params.particlesWidth * 5,
+						this.params.particlesHeight * 5,
+						-50
+					);
+
+				// this.addObjects();
+			});
+
+		const folderNoise = this.gui.addFolder('Noise');
 		folderNoise.add(this.params, 'noise');
 
 		folderNoise
@@ -276,16 +342,12 @@ class ParticlesScene {
 	}
 
 	onMouseMove(event: MouseEvent): void {
-		// this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-		// this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-		// if (this.material) this.material.uniforms.uMouse.value = this.mouse;
-
 		const rect = this.renderer.domElement.getBoundingClientRect();
 		const x = event.clientX - rect.left;
 		const y = event.clientY - rect.top;
 
 		const mouseUVCoords = new THREE.Vector2(x / rect.width, y / rect.height);
+		console.log(mouseUVCoords);
 		if (this.material) this.material.uniforms.mouseUVCoords.value = mouseUVCoords;
 	}
 
@@ -300,7 +362,7 @@ class ParticlesScene {
 
 		if (this.particlesGeo && this.params.noise) {
 			const vert = this.particlesGeo.getAttribute('position');
-			const _ver = this.positionAndUVForVertices(vert.array as Float32Array);
+			const _ver = this.simplexNoiseVert(vert.array as Float32Array);
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			//@ts-ignore
 			vert.array = _ver;
@@ -314,6 +376,32 @@ class ParticlesScene {
 		this.renderer.dispose();
 		this.scene.clear();
 		this.gui?.destroy();
+	}
+
+	getUserMedia(): void {
+		navigator.mediaDevices
+			.getUserMedia({ video: true })
+			.then((stream) => {
+				const video = document.createElement('video');
+				video.srcObject = stream;
+				video.play();
+				document.body.appendChild(video);
+				video.style.position = 'absolute';
+				video.style.bottom = '0';
+				video.style.left = '0';
+				video.style.width = '250px';
+				video.style.height = '250px';
+				video.style.zIndex = '1000';
+
+				this.videoTexture = new THREE.VideoTexture(video);
+				this.videoTexture.minFilter = THREE.LinearFilter;
+				this.videoTexture.magFilter = THREE.LinearFilter;
+
+				if (this.material) this.material.uniforms.uTexture.value = this.videoTexture;
+			})
+			.catch((err) => {
+				console.error('Error getting user media', err);
+			});
 	}
 }
 

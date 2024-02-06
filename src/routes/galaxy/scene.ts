@@ -92,7 +92,7 @@ class ParticlesScene {
 				uColor1: { value: new THREE.Color('pink') },
 				uColor2: { value: new THREE.Color('white') },
 				uColor3: { value: new THREE.Color('blue') },
-				uTexture: { value: new THREE.TextureLoader().load('/particle.png') },
+				uTexture: { value: new THREE.TextureLoader().load('/particle2.jpeg') },
 				uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
 			},
 

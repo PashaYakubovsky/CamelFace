@@ -16,6 +16,8 @@ uniform sampler2D uTexture;
 void main() {
     // vec4 tex = texture2D(uTexture, gl_PointCoord);
     vec4 tex = texture2D(uTexture, vUv);
+    // flip y axis
+    tex = texture2D(uTexture, vec2(vUv.x, 1.0 - vUv.y));
 
     gl_FragColor = vec4(tex.rgb, 1.0);
 

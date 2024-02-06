@@ -35,6 +35,13 @@
 	id="texture"
 />
 
+<button
+	on:click={() => {
+		scene.getUserMedia();
+	}}
+	>Get texture from camera
+</button>
+
 <style>
 	canvas {
 		width: 100vw;
@@ -53,5 +60,16 @@
 		top: 0;
 		left: 0;
 		z-index: 20;
+	}
+	button {
+		position: absolute;
+		top: 2rem;
+		left: 0;
+		z-index: 20;
+		border-radius: 0.25rem;
+		padding: 0.5rem 1rem;
+		background-color: #fff;
+		border: 1px solid #000;
+		color: #000;
 	}
 </style>

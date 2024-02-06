@@ -1,4 +1,3 @@
-
 uniform vec3 uColor1;
 uniform vec3 uColor2;
 uniform vec3 uColor3;
@@ -13,5 +12,8 @@ void main() {
     float d = distance(uv, center);
     vec3 color1 = mix(uColor1, uColor2, uColor3);
     vec3 color = mix(color1, color1, d);
-    gl_FragColor = vec4(color, 1.0);
+
+    vec4 tex = texture2D(uTexture, gl_PointCoord);
+
+    gl_FragColor = vec4(color, tex.z);
 }
