@@ -3,10 +3,5 @@ import { defineConfig } from 'vite';
 import glsl from 'vite-plugin-glsl';
 
 export default defineConfig({
-	plugins: [sveltekit(), glsl()],
-	build: {
-		rollupOptions: {
-			external: ['stats.js']
-		}
-	}
+	plugins: [sveltekit(), glsl()]
 });
