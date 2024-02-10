@@ -5,6 +5,8 @@ uniform float uTime;
 uniform vec3 uColor;
 varying vec2 vPos;
 varying vec3 worldPos;
+uniform vec2 uMouse;
+uniform vec3 uCameraPos;
 
 vec3 YELLOW = vec3(1.0, 1.0, 0.5);
 vec3 BLUE = vec3(0.25, 0.25, 1.0);
@@ -137,16 +139,31 @@ vec2 randomRange(vec2 st, float min, float max) {
 
 float Pi = 3.14159265359;
 
+#define INTENSITY 0.5
+#define GLOW 2.0
+
+vec3 glow(vec2 uv, vec3 color, float size) {
+  float dist = length(uv);
+  float brightness = 1.0 - smoothstep(0.0, size, dist);
+  return mix(color, vec3(1.0), brightness);
+}
+
 void main() {
   vec2 st = vUv;
   vec2 pos = vPos;
   vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
 
-  vec3 color = vec3(0.0);
+  vec3 color = vec3(.5);
 
-  color = worldPos;
-  float n = snoise(vec3((worldPos * 0.5).xy, uTime * 0.5));
-  color = mix(color, vec3(1.0), n * 0.5);
+  // apply glow effect
+  color += glow(worldPos.xy, uColor, 0.4);
 
+  // add fog effect
+  // if coord close to center then show them, or else hide them
+  float distanceToCamera = length(worldPos - uCameraPos);
+  float fog = smoothstep(0.0, 10.0, distanceToCamera);
+  color = mix(color, vec3(0.0), fog);
+
+  
   gl_FragColor = vec4(color, 1.0);
 }

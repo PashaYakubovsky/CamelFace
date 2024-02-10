@@ -61,6 +61,7 @@
 	<a on:click={(e) => handleLinkClick(e, '/cardioid')} href="#" class="nav-link">Cardioid</a>
 	<a on:click={(e) => handleLinkClick(e, '/lyapunov')} href="#" class="nav-link">Lyapunov fractal</a>
 	<a on:click={(e) => handleLinkClick(e, '/particles-noise')} href="#" class="nav-link">Particles & Simplex noise</a>
+	<a on:click={(e) => handleLinkClick(e, '/boids')} href="#" class="nav-link">Boids simulation</a>
 </button>
 
 <style>

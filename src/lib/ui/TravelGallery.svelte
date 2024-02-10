@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Post } from '../types';
+	import type { Post } from '../../types';
 	import { onMount } from 'svelte';
-	import Scene from '../routes/scene';
+	import Scene from '../../routes/scene';
 	import { gsap } from 'gsap';
 	import type * as THREE from 'three';
 	import { handleHoverIn, handleHoverOut, pageTransition } from '$lib/pageTransition';
-	import { loading } from './loading';
+	import { loading, threejsLoading } from '$lib/loading';
 
 	export let blogPost: Post[] = [];
 
@@ -25,6 +25,19 @@
 	let disableBackground = false;
 	let initAnimation = false;
 	let goBackButtonElement: HTMLButtonElement;
+	let initHappen = false;
+	$: allTextureLoaded = false;
+
+	$: if (allTextureLoaded && !initHappen) {
+		initHappen = true;
+		if (scene) {
+			scene.initGalleryAnimation();
+		}
+	}
+
+	threejsLoading.subscribe((value) => {
+		allTextureLoaded = value.loaded;
+	});
 
 	$: if (
 		contentElements.length > 0 &&
@@ -54,24 +67,6 @@
 		});
 	}
 
-	// // scroll over bottom handle
-	// $: if (currentIndex < 0 && direction === -1) {
-	// 	attractMode = true;
-	// 	attractTo = 0;
-	// 	disableAttractMode = true;
-	// }
-	// // scroll over top handle
-	// $: if (currentIndex > blogPost.length - 1 && direction === 1) {
-	// 	attractMode = true;
-	// 	attractTo = blogPost.length - 1;
-	// 	disableAttractMode = true;
-	// }
-	// // disable attract mode when we scrolled to the right section
-	// $: if (currentIndex === attractTo && disableAttractMode) {
-	// 	setTimeout(() => (attractMode = false), 700);
-	// 	disableAttractMode = false;
-	// }
-
 	$: {
 		if (scene && !scene.isMobile) {
 			scene.handleHoverIn = () => {
@@ -85,13 +80,11 @@
 			scene.onClickEvent = (meshIndex: number) => {
 				// reverse the index
 				const rI = blogPost.length - 1 - meshIndex;
-				debugger;
 				if (meshIndex === currentIndex) {
 					pageTransition.update((state) => ({
 						...state,
 						start: true,
 						toPage: blogPost[rI].slug
-						// toPage: '/posts/' + blogPost[currentIndex].id || '/'
 					}));
 				}
 			};
@@ -242,7 +235,9 @@
 	<canvas bind:this={canvasElement} />
 
 	<nav
-		class="max-md:flex-row max-md:w-full absolute left-2 max-md:right-0 top-2 max-md:top-[auto] max-md:bottom-2 max-md:justify-center transform flex flex-col-reverse z-[10]"
+		class={`max-md:flex-row max-md:w-full absolute left-2 max-md:right-0 top-2 max-md:top-[auto] max-md:bottom-2 max-md:justify-center transform flex flex-col-reverse z-[10] transition-allblob:http://localhost:5173/a8982e36-7f3a-4061-8775-742ebdd9f47e ${
+			allTextureLoaded ? 'opacity-100' : 'opacity-0 pointer-events-none'
+		}`}
 		on:mouseenter={(e) => {
 			e.stopPropagation();
 			if (initAnimation) return;
@@ -281,18 +276,6 @@
 					ease: 'power0.inOut',
 					...scale
 				});
-
-				// const geometry = new THREE.PlaneGeometry(
-				// 	window.innerWidth * 0.004,
-				// 	window.innerWidth * 0.0025,
-				// 	10,
-				// 	10
-				// );
-
-				// scene.meshes.forEach((mesh) => {
-				// 	// change with and height of mesh
-				// 	mesh.geometry = geometry;
-				// });
 
 				gsap.to(rots, {
 					duration: 0.3,
@@ -371,11 +354,10 @@
 			</button>
 		{/each}
 	</nav>
-
 	<!-- loop over posts -->
 	{#each blogPost as post, index (post.id)}
 		<section
-			class="post-info absolute left-0 h-screen w-1/2 max-md:w-full text-inherit transition duration-300 ease-in-out hidden mt-[5rem] pl-5 max-md:pl-0 flex-col justify-center max-md:bottom-0 max-md:h-[60%]"
+			class={`post-info absolute left-0 h-screen w-1/2 max-md:w-full text-inherit transition duration-300 ease-in-out hidden mt-[5rem] pl-5 max-md:pl-0 flex-col justify-center max-md:bottom-0 max-md:h-[60%]`}
 		>
 			<div
 				class="post-info__content h-[fit-content] flex flex-col gap-[1rem] py-8 px-4 max-md:py-0 max-md:px-4"
@@ -393,7 +375,6 @@
 					style={`color:${scene?.textColors?.[index]}`}
 					class={`text-[1rem] leading-7 max-md:h-[30vh] overflow-ellipsis overflow-hidden break-words`}
 				>
-					<!-- pas raw html -->
 					{@html post.content}
 				</p>
 				<button

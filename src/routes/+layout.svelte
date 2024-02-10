@@ -1,15 +1,15 @@
 <script lang="ts">
 	import '../styles/globals.scss';
 	import '../styles/app.css';
-	import Loading from '$lib/Loading.svelte';
+	import Loading from '../lib/ui/Loading.svelte';
 	import { pageTransition, transitionIn, transitionOut } from '$lib/pageTransition';
 	import { afterNavigate } from '$app/navigation';
 	import { loading } from '$lib/loading';
 	import { onMount } from 'svelte';
 	import { gsap } from 'gsap/all';
-	import CursorLight from '$lib/CursorLight.svelte';
-	import Copyright from '$lib/Copyright.svelte';
-	import Nav from '$lib/Nav.svelte';
+	import CursorLight from '$lib/ui/CursorLight.svelte';
+	import Copyright from '$lib/ui/Copyright.svelte';
+	import Nav from '$lib/ui/Nav.svelte';
 
 	let transition: HTMLDivElement;
 

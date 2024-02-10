@@ -1,3 +1,4 @@
+import { createNoise2D } from 'simplex-noise';
 import * as THREE from 'three';
 
 export class Boid {
@@ -5,18 +6,14 @@ export class Boid {
 	velocity: THREE.Vector3;
 	acceleration: THREE.Vector3;
 	force: number;
-	mesh: THREE.Mesh | null;
+	mesh: THREE.Object3D | null;
 	cohesionRadius: number;
 	alignmentRadius: number;
 	fog: THREE.Fog | null = null;
 	speedFactor = 0.01;
+	instanceMesh: THREE.InstancedMesh | null = null;
+	index = 0;
 	perceptionRadius = 0.1;
-	_initialState = {
-		velocity: new THREE.Vector3(0, 0, 0),
-		acceleration: new THREE.Vector3(0, 0, 0),
-		force: 0,
-		position: new THREE.Vector3(0, 0, 0)
-	};
 	_modules = {
 		aligment: true,
 		cohesion: false,
@@ -31,55 +28,73 @@ export class Boid {
 		mesh,
 		cohesionRadius,
 		alignmentRadius,
-		perceptionRadius
+		perceptionRadius,
+		instanceMesh,
+		index,
+		__modules
 	}: {
 		pos: { x: number; y: number; z: number };
 		force: number;
 		velocity: THREE.Vector3;
 		acceleration: THREE.Vector3;
-		mesh: THREE.Mesh | null;
+		mesh: THREE.Object3D | null;
 		cohesionRadius: number;
 		alignmentRadius: number;
 		perceptionRadius: number;
+		instanceMesh: THREE.InstancedMesh | null;
+		index: number;
+		__modules?: {
+			aligment: boolean;
+			cohesion: boolean;
+			separation: boolean;
+		};
 	}) {
 		this.position = new THREE.Vector3(x, y, z);
 		this.velocity = velocity.clone();
+		// this.acceleration = acceleration.clone();
 		this.acceleration = acceleration.clone();
 		this.force = force;
 		this.mesh = mesh;
 		this.cohesionRadius = cohesionRadius;
 		this.alignmentRadius = alignmentRadius;
 		this.perceptionRadius = perceptionRadius;
-
-		this._initialState = {
-			velocity: this.velocity.clone(),
-			acceleration: this.acceleration.clone(),
-			force,
-			position: this.position.clone()
-		};
+		this.instanceMesh = instanceMesh;
+		this.index = index;
+		if (__modules) {
+			this._modules = __modules;
+		}
 	}
-
+	noise = createNoise2D();
 	update() {
+		// check if the next position be out y <= 0.5 then change the direction
+		if (this.position.y <= -0.5) {
+			this.velocity.y = Math.abs(this.velocity.y);
+		}
 		this.velocity.add(this.acceleration);
 		this.velocity.clampLength(0, this.speedFactor);
 		this.position.add(this.velocity);
-		this.acceleration.multiplyScalar(0);
+
+		// Don't forget to reset acceleration after applying all the forces!
+		this.acceleration.set(0, 0, 0);
 	}
 
 	show() {
-		if (this.mesh) {
-			this.mesh.position.copy(this.position);
+		if (this.instanceMesh) {
+			const dummy = new THREE.Object3D();
+			dummy.position.copy(this.position);
+
 			// set the rotation of the cone
 			const quaternion = new THREE.Quaternion();
-			quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this.velocity.clone().normalize());
-			this.mesh.setRotationFromQuaternion(quaternion);
+			quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this.velocity.normalize());
+			dummy.setRotationFromQuaternion(quaternion);
+			dummy.updateMatrix();
+			this.instanceMesh.setMatrixAt(this.index, dummy.matrix);
 		}
 	}
 
 	flock(boids: Boid[]) {
 		if (this._modules.aligment) {
 			const alignment = this.aligment(boids);
-			// update acceleration
 			this.acceleration.add(alignment);
 		}
 		if (this._modules.cohesion) {
@@ -97,7 +112,6 @@ export class Boid {
 		const perceptionRadius = this.alignmentRadius;
 		const steering = new THREE.Vector3();
 		let total = 0;
-
 		for (const other of boids) {
 			const d = this.position.distanceTo(other.position);
 			if (other != this && d < perceptionRadius) {
@@ -110,7 +124,6 @@ export class Boid {
 			steering.divideScalar(total);
 			steering.sub(this.velocity);
 		}
-
 		return steering;
 	}
 	cohesion(boids: Boid[]) {
@@ -153,7 +166,7 @@ export class Boid {
 
 	remove() {
 		if (this.mesh) {
-			this.mesh.geometry.dispose();
+			this.mesh.remove();
 			this.mesh = null;
 		}
 	}

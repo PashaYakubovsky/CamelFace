@@ -13,16 +13,17 @@ const options = {
 
 class BoidsScene {
 	private scene: THREE.Scene = new THREE.Scene();
-	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
+	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	public renderer: THREE.WebGLRenderer | null = null;
+	private renderer: THREE.WebGLRenderer | null = null;
 	private material: THREE.ShaderMaterial | null = null;
 	private geometry: THREE.BufferGeometry | null = null;
 	private gui: GUI | null = null;
+	rotation = new THREE.Vector3(0, 0, 0);
 	controls: OrbitControls | null = null;
 	mousePos = { x: 0, y: 0 };
 	flock: Boid[] = [];
@@ -37,7 +38,9 @@ class BoidsScene {
 		aligmnetOn: true,
 		separationOn: true,
 		cohesionOn: true,
-		speedFactor: 0.01
+		speedFactor: 0.01,
+		mouseBehavior: true,
+		mouseBehaviorForce: 0.1
 	};
 	mouse = new THREE.Vector3();
 
@@ -74,13 +77,16 @@ class BoidsScene {
 				uResolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
 				uMouse: { value: new THREE.Vector2() },
 				uColor: { value: new THREE.Color(options.Color) },
-				uZoom: { value: 1 }
+				uZoom: { value: 1 },
+				uCameraPos: { value: new THREE.Vector3(0, 0, 0) }
 			},
 			vertexShader,
 			fragmentShader
+			// transparent: true,
+			// depthTest: false
 		});
 
-		this.geometry = new THREE.ConeGeometry(0.01, 0.03, 3);
+		this.geometry = new THREE.ConeGeometry(0.01, 0.05, 3);
 
 		this.createBoids();
 	}
@@ -160,9 +166,17 @@ class BoidsScene {
 		this.renderer?.setSize(window.innerWidth, window.innerHeight);
 	}
 
-	drawflock() {
-		const maxPos = 5;
+	drawFlocks() {
+		const maxPos = 4;
 		this.flock.forEach((boid, i) => {
+			// add direction from mouse
+			if (this.config.mouseBehavior) {
+				const mouse = new THREE.Vector3(this.mouse.x, this.mouse.y, 0);
+				const dir = new THREE.Vector3().subVectors(mouse, boid.position);
+				dir.normalize();
+				boid.acceleration.add(dir.multiplyScalar(this.config.mouseBehaviorForce));
+			}
+
 			boid.flock(this.flock);
 			boid.update();
 			boid.show();
@@ -170,9 +184,9 @@ class BoidsScene {
 			const d = this.flock[i].position.distanceTo(new THREE.Vector3(0, 0, 0));
 			if (maxPos < d) {
 				boid.position = new THREE.Vector3(
-					gsap.utils.random(-5, 5),
-					gsap.utils.random(-5, 5),
-					gsap.utils.random(-5, 5)
+					gsap.utils.random(0, 0.1),
+					gsap.utils.random(0, 0.1),
+					gsap.utils.random(0, 0.1)
 				);
 			}
 		});
@@ -181,18 +195,20 @@ class BoidsScene {
 	public animate() {
 		requestAnimationFrame(this.animate.bind(this));
 
-		this.drawflock();
+		this.drawFlocks();
 
 		if (this.material) {
 			this.material.uniforms.uTime.value += 0.001;
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
+		if (this.material) this.material.uniforms.uCameraPos.value = this.camera.position;
 	}
 
 	public setInitialValues() {}
 
 	public addControls() {
 		this.gui = new GUI();
+		this.gui.close();
 		if (!this.material) return;
 
 		const recreateParticles = () => {
@@ -314,7 +330,7 @@ class BoidsScene {
 			});
 
 		this.gui
-			.add(this.config, 'particles', 1, 1000)
+			.add(this.config, 'particles', 1, 2000)
 			.step(1)
 			.name('Particles')
 			.onFinishChange(recreateParticles);
@@ -373,11 +389,32 @@ class BoidsScene {
 				});
 			});
 
+		// add mouse behavior
+		const mouse = this.gui.addFolder('Mouse Behavior');
+		mouse.add(this.config, 'mouseBehavior').name('Mouse On/Off');
+		mouse.add(this.config, 'mouseBehaviorForce', 0, 1).step(0.01).name('Mouse Force');
+		if (this.scene.fog) {
+			this.gui?.addColor(this.scene.fog, 'color').name('Fog Color');
+			this.gui?.add(this.scene.fog, 'near', 0, 100).name('Fog Near');
+			this.gui?.add(this.scene.fog, 'far', 0, 100).name('Fog Far');
+		}
+
 		// add reset button
 		this.gui.add({ reset: recreateParticles }, 'reset').name('Reset');
 	}
 
-	public mousePressed(e: KeyboardEvent) {}
+	mousePressed(e: KeyboardEvent) {}
+
+	destroy() {
+		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+		window.removeEventListener('resize', this.onResize.bind(this));
+		window.removeEventListener('wheel', this.onMouseWheel.bind(this));
+		window.removeEventListener('keypress', this.mousePressed.bind(this));
+
+		if (this.gui) this.gui.destroy();
+		if (this.controls) this.controls.dispose();
+		if (this.renderer) this.renderer.dispose();
+	}
 }
 
 export default BoidsScene;

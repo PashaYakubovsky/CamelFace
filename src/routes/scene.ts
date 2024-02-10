@@ -5,6 +5,8 @@ import bgVertexShader from './shaders/bgVertexShader.glsl';
 import bgFragmentShader from './shaders/bgFragmentShader.glsl';
 import type { Media, Post } from '../types';
 import { defineScreen, type Screens } from '$lib/mediaQuery';
+import { threejsLoading } from '$lib/loading';
+import gsap from 'gsap';
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 };
@@ -63,9 +65,9 @@ const createGeometry = (isMobile: boolean, screens: Screens) => {
 };
 
 class TravelGalleryScene {
-	public isMobile = window.innerWidth < 768;
+	isMobile = window.innerWidth < 768;
 	private scene: THREE.Scene = new THREE.Scene();
-	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
+	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		55,
 		window.innerWidth / window.innerHeight,
 		0.1,
@@ -73,32 +75,33 @@ class TravelGalleryScene {
 	);
 	// private light: THREE.Light | null = null;
 	private raycaster = new THREE.Raycaster();
-	public renderer: THREE.WebGLRenderer | null = null;
+	renderer: THREE.WebGLRenderer | null = null;
 	private materials: THREE.ShaderMaterial[] = [];
 	private material: THREE.ShaderMaterial | null = null;
 	// private gui = new GUI();
-	public loaderManager = new THREE.LoadingManager();
+	loaderManager = new THREE.LoadingManager();
 	private textureLoader = new THREE.TextureLoader(this.loaderManager);
-	public groups: THREE.Group[] = [];
-	public meshes: THREE.Mesh[] = [];
-	public mouse = new THREE.Vector2();
+	groups: THREE.Group[] = [];
+	meshes: THREE.Mesh[] = [];
+	mouse = new THREE.Vector2();
 	private width = window.innerWidth;
 	private height = window.innerHeight;
-	public intersected: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
+	intersected: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
 	private hovered: Record<string, THREE.Intersection> = {};
-	public screens: Screens = defineScreen();
-	public bgGeometry: THREE.PlaneGeometry | null = null;
-	public bgMaterial: THREE.ShaderMaterial | null = null;
-	public bgPlane: THREE.Mesh | null = null;
-	public geometry: THREE.PlaneGeometry = createGeometry(this.isMobile, this.screens);
-	public eulerValues = calculateEuler(this.isMobile, this.screens);
-	public positionValues = calculatePosition(this.isMobile, this.screens);
+	screens: Screens = defineScreen();
+	bgGeometry: THREE.PlaneGeometry | null = null;
+	bgMaterial: THREE.ShaderMaterial | null = null;
+	bgPlane: THREE.Mesh | null = null;
+	geometry: THREE.PlaneGeometry = createGeometry(this.isMobile, this.screens);
+	eulerValues = calculateEuler(this.isMobile, this.screens);
+	positionValues = calculatePosition(this.isMobile, this.screens);
 	private time = 0;
-	public backgroundColors: string[] = [];
-	public textColors: string[] = [];
-	public onClickEvent: ((meshIndex: number) => void) | null = null;
-	public handleHoverIn: (() => void) | null = null;
-	public handleHoverOut: (() => void) | null = null;
+	backgroundColors: string[] = [];
+	textColors: string[] = [];
+	onClickEvent: ((meshIndex: number) => void) | null = null;
+	handleHoverIn: (() => void) | null = null;
+	handleHoverOut: (() => void) | null = null;
+	total = -1;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -110,7 +113,7 @@ class TravelGalleryScene {
 		});
 
 		// this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		// this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 		this.camera.position.set(0, 0, this.isMobile ? 0 : 4);
 		this.renderer.setSize(
@@ -123,6 +126,43 @@ class TravelGalleryScene {
 
 		this.animate();
 
+		const manager = this.loaderManager;
+
+		manager.onStart = function (url, itemsLoaded, itemsTotal) {
+			threejsLoading.update((v) => ({ ...v, loading: true, loaded: false }));
+
+			console.log(
+				'Started loading file: ' +
+					url +
+					'.\nLoaded ' +
+					itemsLoaded +
+					' of ' +
+					itemsTotal +
+					' files.'
+			);
+		};
+		let countLoaded = 0;
+
+		manager.onLoad = () => {
+			console.log('Loading complete!');
+
+			countLoaded += 1;
+			if (countLoaded === this.total) {
+				threejsLoading.update((v) => ({ ...v, loaded: true, loading: false }));
+			}
+		};
+
+		manager.onProgress = function (url, itemsLoaded, itemsTotal) {
+			console.log(
+				'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.'
+			);
+		};
+
+		manager.onError = function (url) {
+			threejsLoading.update((v) => ({ ...v, loading: false }));
+			console.log('There was an error loading ' + url);
+		};
+
 		this.scene.add(this.camera);
 
 		window.addEventListener('mousemove', (e) => this.onMouseMove(e));
@@ -130,7 +170,7 @@ class TravelGalleryScene {
 		window.addEventListener('click', (e) => this.onClick(e));
 	}
 
-	public onClick(e: MouseEvent) {
+	onClick(e: MouseEvent) {
 		this.intersected.forEach((hit) => {
 			const obj = hit.object as THREE.Mesh;
 
@@ -165,7 +205,6 @@ class TravelGalleryScene {
 			fragmentShader,
 			transparent: true
 		});
-
 		this.bgMaterial = new THREE.ShaderMaterial({
 			uniforms: {
 				uTime: { value: 0 },
@@ -177,10 +216,8 @@ class TravelGalleryScene {
 			fragmentShader: bgFragmentShader,
 			transparent: true
 		});
-
 		const aspectRatio = window.innerWidth / window.innerHeight;
 		this.bgGeometry = new THREE.PlaneGeometry(aspectRatio * 2, 2, 64, 64);
-
 		const mesh = new THREE.Mesh(this.bgGeometry, this.bgMaterial);
 		mesh.scale.set(5, 5, 5);
 		mesh.position.set(0, 0, -2);
@@ -188,12 +225,13 @@ class TravelGalleryScene {
 		if (!this.isMobile) this.scene.add(this.bgPlane);
 	}
 
-	public addColorToBGShader(color: string) {
+	addColorToBGShader(color: string) {
 		if (this.bgMaterial) this.bgMaterial.uniforms.uColor.value = new THREE.Color(color);
 	}
 
-	public async addGallery({ posts }: { posts: Post[] }) {
+	async addGallery({ posts }: { posts: Post[] }) {
 		const textures: THREE.Texture[] = [];
+		this.total = posts.length;
 
 		for (let i = posts.length - 1; i >= 0; i--) {
 			const media = posts[i].backgroundImage as Media;
@@ -207,7 +245,6 @@ class TravelGalleryScene {
 			const applyTextures = () => {
 				textures.forEach((t) => {
 					if (!this.material || !this.geometry) return;
-
 					const texture = t;
 					const material = this.material.clone();
 
@@ -258,7 +295,7 @@ class TravelGalleryScene {
 		}
 	}
 
-	public setBackground(texture: THREE.Texture) {
+	setBackground(texture: THREE.Texture) {
 		const imgRatio = texture.image.width / texture.image.height;
 		const planeRatio = innerWidth / innerHeight;
 		const ratio = planeRatio / imgRatio;
@@ -267,7 +304,7 @@ class TravelGalleryScene {
 		texture.offset.x = 0.5 * (1 - ratio);
 	}
 
-	public resize() {
+	resize() {
 		this.isMobile = window.innerWidth < 768;
 
 		this.width = window.innerWidth;
@@ -303,9 +340,17 @@ class TravelGalleryScene {
 				this.scene.remove(this.bgPlane);
 			}
 		}
+
+		if (this.material) {
+			this.material.uniforms.isMobile.value = this.isMobile;
+		}
+
+		if (this.bgMaterial) {
+			this.bgMaterial.uniforms.uResolution.value = new THREE.Vector2(this.width, this.height);
+		}
 	}
 
-	public onMouseMove(e: MouseEvent) {
+	onMouseMove(e: MouseEvent) {
 		// events
 		this.mouse.set((e.clientX / this.width) * 2 - 1, -(e.clientY / this.height) * 2 + 1);
 		this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -346,7 +391,7 @@ class TravelGalleryScene {
 		});
 	}
 
-	public destroy() {
+	destroy() {
 		this.meshes.forEach((mesh) => {
 			this.scene.remove(mesh);
 			mesh.geometry.dispose();
@@ -374,6 +419,43 @@ class TravelGalleryScene {
 		});
 
 		if (this.bgMaterial) this.bgMaterial.uniforms.uTime.value = this.time;
+	}
+
+	initGalleryAnimation() {
+		const tl = gsap.timeline();
+
+		this.groups.forEach((group, idx) => {
+			tl.fromTo(
+				group.position,
+				{
+					x: group.position.x + 1,
+					y: group.position.y + 5
+				},
+				{
+					x: group.position.x,
+					y: this.positionValues.y,
+					duration: 0.5,
+					ease: 'power0'
+				},
+				idx * 0.2
+			);
+			tl.fromTo(
+				group.rotation,
+				{
+					x: group.rotation.x + 1,
+					y: group.rotation.y + 5
+				},
+				{
+					x: this.eulerValues.x,
+					y: this.eulerValues.y,
+					duration: 0.5,
+					ease: 'power0'
+				},
+				idx * 0.2
+			);
+		});
+
+		return tl;
 	}
 }
 

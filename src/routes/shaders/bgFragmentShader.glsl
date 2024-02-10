@@ -13,6 +13,11 @@ void main() {
     vec2 p = fragCoord/uResolution.xy;
     vec3 col;
 
+    if(uTime < 5.0) {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }
+
     for(float j = 0.0; j < 2.0; j++){
         for(float i = 1.0; i < 10.0; i++){
             p.x += 0.5 / (i + j) * cos(i * 10.0 * p.y + uTime * 0.1 + sin((uMouse.x / (1. * i + j)) * i + j));

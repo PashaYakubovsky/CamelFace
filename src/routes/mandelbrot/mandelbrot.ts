@@ -252,6 +252,15 @@ class MandelbrotScene {
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 	}
+
+	destroy() {
+		if (this.renderer) {
+			this.renderer.dispose();
+		}
+		if (this.gui) {
+			this.gui.destroy();
+		}
+	}
 }
 
 export default MandelbrotScene;

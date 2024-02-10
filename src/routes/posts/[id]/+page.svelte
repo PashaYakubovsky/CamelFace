@@ -4,7 +4,7 @@
 	import { getPost } from '$lib/api';
 	import { page } from '$app/stores';
 	import type { Post } from '../../../types';
-	import Sidebar from '$lib/Sidebar.svelte';
+	import Sidebar from '../../../ui/Sidebar.svelte';
 	import anime from 'animejs';
 
 	let post: Post | null;

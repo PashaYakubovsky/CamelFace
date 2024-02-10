@@ -1,9 +1,10 @@
 <script lang="ts">
-	import TravelGallery from '$lib/TravelGallery.svelte';
+	import TravelGallery from '$lib/ui/TravelGallery.svelte';
 	import { posts } from '$lib/posts';
 	import { onMount } from 'svelte';
 	import type { Post } from '../types';
 	import { getPosts } from '$lib/api';
+	import { threejsLoading } from '$lib/loading';
 
 	const titles = [
 		'May the force be with you',
@@ -40,7 +41,6 @@
 	];
 
 	let title = titles[0];
-
 	let intervalId: number;
 
 	const randomTitle = () => {

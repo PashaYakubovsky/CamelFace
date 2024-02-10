@@ -2,16 +2,27 @@
 	import { onMount } from 'svelte';
 	import MandelbrotScene from './mandelbrot';
 	import { loading } from '$lib/loading';
+	import { pageTransition } from '$lib/pageTransition';
 
 	let canvasElement: HTMLCanvasElement;
 
 	onMount(async () => {
 		loading.update((state) => ({ ...state, loading: false }));
 		const scene = new MandelbrotScene(canvasElement);
+
+		return () => {
+			scene.destroy();
+		};
 	});
 </script>
 
 <title>Mandelbrot</title>
+
+<button
+	on:click={() => {
+		pageTransition.update((state) => ({ ...state, toPage: '/mandelbrot/webgpu', start: true }));
+	}}>webgpu version</button
+>
 
 <canvas bind:this={canvasElement} />
 
@@ -23,5 +34,20 @@
 		left: 0;
 		top: 0;
 		z-index: 1;
+	}
+	button {
+		position: absolute;
+		z-index: 2;
+		bottom: 0.5rem;
+		right: 0.5rem;
+		border-radius: 0.5rem;
+		padding: 0.5rem 1rem;
+		background-color: #000;
+		color: #f6f6f6;
+		transition: 0.3s ease-in-out all;
+	}
+	button:hover {
+		background-color: #f6f6f6;
+		color: #000;
 	}
 </style>

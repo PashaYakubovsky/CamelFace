@@ -14,4 +14,11 @@ declare global {
 	}
 }
 
+declare module 'three/addons/objects/Sky.js' {
+	import { Object3D } from 'three';
+	export class Sky extends Object3D {
+		constructor();
+	}
+}
+
 export {};
