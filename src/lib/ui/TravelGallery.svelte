@@ -6,6 +6,7 @@
 	import type * as THREE from 'three';
 	import { handleHoverIn, handleHoverOut, pageTransition } from '$lib/pageTransition';
 	import { loading, threejsLoading } from '$lib/loading';
+	import { fade } from 'svelte/transition';
 
 	export let blogPost: Post[] = [];
 
@@ -26,12 +27,15 @@
 	let initAnimation = false;
 	let goBackButtonElement: HTMLButtonElement;
 	let initHappen = false;
+	$: showInfoBlocks = false;
 	$: allTextureLoaded = false;
 
 	$: if (allTextureLoaded && !initHappen) {
 		initHappen = true;
+
 		if (scene) {
-			scene.initGalleryAnimation();
+			const tl = scene.initGalleryAnimation();
+			showInfoBlocks = true;
 		}
 	}
 
@@ -42,7 +46,8 @@
 	$: if (
 		contentElements.length > 0 &&
 		contentElements[currentIndex] &&
-		(!attractMode || scene.isMobile)
+		(!attractMode || scene.isMobile) &&
+		showInfoBlocks
 	) {
 		contentElements.forEach((content, idx) => {
 			if (idx !== currentIndex) {
@@ -67,31 +72,41 @@
 		});
 	}
 
-	$: {
-		if (scene && !scene.isMobile) {
-			scene.handleHoverIn = () => {
-				handleHoverIn({ color: scene.textColors[currentIndex], start: $pageTransition.start });
-			};
-
-			scene.handleHoverOut = () => {
-				const ctx = handleHoverOut({ start: $pageTransition.start });
-			};
-
-			scene.onClickEvent = (meshIndex: number) => {
-				// reverse the index
-				const rI = blogPost.length - 1 - meshIndex;
-				if (meshIndex === currentIndex) {
-					pageTransition.update((state) => ({
-						...state,
-						start: true,
-						toPage: blogPost[rI].slug
-					}));
-				}
-			};
-		}
-	}
+	let speed = 0;
+	let position = 0;
+	let rounded = 0;
 
 	onMount(() => {
+		const handleKeydown = (e: KeyboardEvent) => {
+			if (attractMode || initAnimation) return;
+
+			attractMode = true;
+
+			setTimeout(() => {
+				attractMode = false;
+			}, 700);
+
+			if (e.key === 'ArrowUp' && attractTo <= blogPost.length - 1) {
+				attractTo = attractTo + 1 > blogPost.length - 1 ? blogPost.length - 1 : attractTo + 1;
+			} else if (e.key === 'ArrowDown' && attractTo >= 0) {
+				attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0;
+			}
+		};
+
+		const handleWheel = (e: WheelEvent) => {
+			if (!scene.isMobile) {
+				speed += e.deltaY * 0.0003;
+				direction = Math.sign(e.deltaY) as 1 | -1;
+
+				if (direction === -1 && Math.abs(currentIndex) === 0) {
+					speed += e.deltaY * -0.0003;
+				}
+				if (direction === 1 && currentIndex === blogPost.length - 1) {
+					speed += e.deltaY * -0.0003;
+				}
+			}
+		};
+
 		const init = async () => {
 			scene = new Scene(canvasElement);
 
@@ -111,10 +126,6 @@
 			positions = scene.meshes.map((g) => g.position);
 			scales = scene.groups.map((g) => g.scale);
 
-			let speed = 0;
-			let position = 0;
-			let rounded = 0;
-
 			const objs = Array(blogPost.length)
 				.fill(null)
 				.map(() => {
@@ -122,20 +133,6 @@
 						dist: 0
 					};
 				});
-
-			window.addEventListener('wheel', (e) => {
-				if (!scene.isMobile) {
-					speed += e.deltaY * 0.0003;
-					direction = Math.sign(e.deltaY) as 1 | -1;
-
-					if (direction === -1 && Math.abs(currentIndex) === 0) {
-						speed += e.deltaY * -0.0003;
-					}
-					if (direction === 1 && currentIndex === blogPost.length - 1) {
-						speed += e.deltaY * -0.0003;
-					}
-				}
-			});
 
 			const raf = () => {
 				position += speed;
@@ -150,7 +147,12 @@
 				if (pageWrapperElement) {
 					// set color animated for canvas
 					if (!disableBackground) {
-						pageWrapperElement.style.backgroundColor = scene.backgroundColors[currentIndex];
+						gsap.to(pageWrapperElement, {
+							backgroundColor: scene.backgroundColors[currentIndex],
+							duration: 0.6,
+							ease: 'power0.inOut'
+						});
+
 						if (goBackButtonElement)
 							goBackButtonElement.style.color = scene.textColors[currentIndex];
 						loading.update((state) => ({ ...state, color: scene.textColors[currentIndex] }));
@@ -204,34 +206,49 @@
 				requestAnimationFrame(raf);
 			};
 
+			if (scene && !scene.isMobile) {
+				scene.handleHoverIn = () => {
+					handleHoverIn({ color: scene.textColors[currentIndex], start: $pageTransition.start });
+				};
+
+				scene.handleHoverOut = () => {
+					const ctx = handleHoverOut({ start: $pageTransition.start });
+				};
+
+				scene.onClickEvent = (meshIndex: number) => {
+					// reverse the index
+					const rI = blogPost.length - 1 - meshIndex;
+					if (meshIndex === currentIndex) {
+						pageTransition.update((state) => ({
+							...state,
+							start: true,
+							toPage: blogPost[rI].slug
+						}));
+					}
+				};
+			}
+
 			raf();
 
-			window.addEventListener('keydown', (e) => {
-				if (attractMode || initAnimation) return;
-
-				attractMode = true;
-
-				setTimeout(() => {
-					attractMode = false;
-				}, 700);
-
-				if (e.key === 'ArrowUp' && attractTo <= blogPost.length - 1) {
-					attractTo = attractTo + 1 > blogPost.length - 1 ? blogPost.length - 1 : attractTo + 1;
-				} else if (e.key === 'ArrowDown' && attractTo >= 0) {
-					attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0;
-				}
-			});
+			window.addEventListener('wheel', handleWheel);
+			window.addEventListener('keydown', handleKeydown);
 		};
 
 		init();
 
 		return () => {
 			scene.destroy();
+			window.removeEventListener('wheel', handleWheel);
+			window.removeEventListener('keydown', handleKeydown);
 		};
 	});
 </script>
 
-<div class="pageWrapper" bind:this={pageWrapperElement}>
+<div
+	class="pageWrapper transition-colors;
+"
+	bind:this={pageWrapperElement}
+>
 	<canvas bind:this={canvasElement} />
 
 	<nav

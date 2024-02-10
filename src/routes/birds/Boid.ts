@@ -1,3 +1,4 @@
+import gsap from 'gsap';
 import { createNoise2D } from 'simplex-noise';
 import * as THREE from 'three';
 
@@ -67,8 +68,9 @@ export class Boid {
 	noise = createNoise2D();
 	update() {
 		// check if the next position be out y <= 0.5 then change the direction
-		if (this.position.y <= -0.5) {
+		if (this.position.y <= gsap.utils.random(-0.2, -0.6)) {
 			this.velocity.y = Math.abs(this.velocity.y);
+			this.acceleration.y = Math.abs(this.acceleration.y);
 		}
 		this.velocity.add(this.acceleration);
 		this.velocity.clampLength(0, this.speedFactor);

@@ -4,7 +4,6 @@
 	import { onMount } from 'svelte';
 	import type { Post } from '../types';
 	import { getPosts } from '$lib/api';
-	import { threejsLoading } from '$lib/loading';
 
 	const titles = [
 		'May the force be with you',

@@ -234,6 +234,16 @@ class MandelbrotScene {
 			this.xOff += offset;
 		}
 	}
+
+	destroy() {
+		document.removeEventListener('mousemove', this.onMouseMove.bind(this));
+		document.removeEventListener('wheel', this.onMouseWheel.bind(this));
+		document.removeEventListener('keypress', this.onKeyPress.bind(this));
+
+		if (this.context) {
+			this.context.unconfigure();
+		}
+	}
 }
 
 export default MandelbrotScene;

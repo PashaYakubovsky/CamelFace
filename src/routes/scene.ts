@@ -423,37 +423,24 @@ class TravelGalleryScene {
 
 	initGalleryAnimation() {
 		const tl = gsap.timeline();
-
-		this.groups.forEach((group, idx) => {
-			tl.fromTo(
-				group.position,
-				{
-					x: group.position.x + 1,
-					y: group.position.y + 5
-				},
-				{
-					x: group.position.x,
-					y: this.positionValues.y,
-					duration: 0.5,
-					ease: 'power0'
-				},
-				idx * 0.2
-			);
-			tl.fromTo(
-				group.rotation,
-				{
-					x: group.rotation.x + 1,
-					y: group.rotation.y + 5
-				},
-				{
-					x: this.eulerValues.x,
-					y: this.eulerValues.y,
-					duration: 0.5,
-					ease: 'power0'
-				},
-				idx * 0.2
-			);
-		});
+		const positions = this.groups.map((group) => group.position);
+		tl.fromTo(
+			positions,
+			{
+				z: -1,
+				y: 4,
+				x: 4,
+				duration: 0
+			},
+			{
+				z: 0,
+				y: 0,
+				x: 0,
+				duration: 0.5,
+				stagger: 0.1,
+				ease: 'power'
+			}
+		);
 
 		return tl;
 	}

@@ -13,7 +13,7 @@ void main() {
     vec2 p = fragCoord/uResolution.xy;
     vec3 col;
 
-    if(uTime < 5.0) {
+    if(uTime < 1.0) {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         return;
     }
