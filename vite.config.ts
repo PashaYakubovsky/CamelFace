@@ -3,5 +3,11 @@ import { defineConfig } from 'vite';
 import glsl from 'vite-plugin-glsl';
 
 export default defineConfig({
-	plugins: [sveltekit(), glsl()]
+	plugins: [sveltekit(), glsl()],
+
+	build: {
+		rollupOptions: {
+			external: ['$app/environment']
+		}
+	}
 });
