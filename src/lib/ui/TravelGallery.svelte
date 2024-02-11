@@ -374,7 +374,7 @@
 	<!-- loop over posts -->
 	{#each blogPost as post, index (post.id)}
 		<section
-			class={`post-info absolute left-0 h-screen w-1/2 max-md:w-full text-inherit transition duration-300 ease-in-out hidden mt-[5rem] pl-5 max-md:pl-0 flex-col justify-center max-md:bottom-0 max-md:h-[60%]`}
+			class={`post-info absolute left-5 h-screen w-1/2 max-md:w-full text-inherit transition duration-300 ease-in-out hidden mt-[5rem] pl-5 max-md:pl-0 flex-col justify-center max-md:bottom-0 max-md:h-[60%]`}
 		>
 			<div
 				class="post-info__content h-[fit-content] flex flex-col gap-[1rem] py-8 px-4 max-md:py-0 max-md:px-4"
@@ -383,7 +383,7 @@
 					id="postTitle"
 					data-content={post.title}
 					style={`color:${scene?.textColors?.[index]}`}
-					class="text-[7.2vw] leading-normal font-bold"
+					class="text-[5.2vw] leading-normal font-bold"
 				>
 					{post.title}
 				</h2>
@@ -394,7 +394,7 @@
 				>
 					{@html post.content}
 				</p>
-				<button
+				<!-- <button
 					on:mouseenter={() => {
 						handleHoverIn({ color: scene.textColors[index], start: $pageTransition.start });
 					}}
@@ -424,7 +424,7 @@
 							d="M21.883 12l-7.527 6.235.644.765 9-7.521-9-7.479-.645.764 7.529 6.236h-21.884v1h21.883z"
 						/>
 					</svg>
-				</button>
+				</button> -->
 			</div>
 		</section>
 	{/each}

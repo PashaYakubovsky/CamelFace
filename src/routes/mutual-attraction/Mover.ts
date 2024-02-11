@@ -13,6 +13,7 @@ export interface IMover {
 	position: THREE.Vector3;
 	dummy: THREE.Object3D;
 	speedFactor: number;
+	radius: number;
 }
 
 class Mover implements IMover {
@@ -24,6 +25,7 @@ class Mover implements IMover {
 	position = new THREE.Vector3();
 	dummy = new THREE.Object3D();
 	speedFactor = 0.01;
+	radius = 0.01;
 
 	constructor({
 		x,
@@ -32,7 +34,8 @@ class Mover implements IMover {
 		mesh,
 		m,
 		index,
-		speedFactor
+		speedFactor,
+		radius
 	}: {
 		x: number;
 		y: number;
@@ -41,6 +44,7 @@ class Mover implements IMover {
 		m: number;
 		index: number;
 		speedFactor: number;
+		radius: number;
 	}) {
 		this.speedFactor = speedFactor;
 		this.velocity = new THREE.Vector3(x, y, z);
@@ -50,6 +54,7 @@ class Mover implements IMover {
 		this.mass = m;
 		this.index = index;
 		this.position.set(x, y, z);
+		this.radius = radius;
 	}
 
 	applyForce(force: THREE.Vector3) {
@@ -64,19 +69,13 @@ class Mover implements IMover {
 		this.velocity.add(this.acc);
 		this.position.add(this.velocity);
 		this.acc.multiplyScalar(0);
-
-		// if (this.index === 0) {
-		// this.movers[0]
-		// change scale matrix for 1 instance in instanced mesh
-
-		// }
 	}
 
 	attract(mover: Mover) {
 		const force = this.position.clone().sub(mover.position);
 		force.normalize();
 		const distanceSq = force.lengthSq();
-		const G = 0.01;
+		const G = 0.1;
 		const strength = +((G * (this.mass * mover.mass)) / distanceSq).toFixed(6);
 		force.setLength(strength);
 		mover.applyForce(force);
@@ -84,10 +83,15 @@ class Mover implements IMover {
 
 	show() {
 		if (this.index === 0) {
+			const scaleTo = 5;
 			const scale = new THREE.Matrix4();
-			scale.makeScale(5, 5, 5);
+			scale.makeScale(scaleTo, scaleTo, scaleTo);
 			scale.setPosition(this.position);
 			this.mesh.setMatrixAt(this.index, scale);
+			// multiple all forces
+			this.velocity.multiplyScalar(0.99);
+			this.dummy.position.copy(this.position);
+			this.dummy.updateMatrix();
 		} else {
 			this.dummy.position.copy(this.position);
 			this.dummy.updateMatrix();

@@ -6,13 +6,14 @@ import gsap from 'gsap';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Mover from './Mover';
 import type { IMover } from './Mover';
+import Stats from 'stats.js';
 
 const options = {
 	count: 5000,
 	glowingIntensity: 2.5,
 	color: '#00bfff',
 	attractorMass: 1,
-	moversMass: 0.5,
+	moversMass: 0.1,
 	speedFactor: 0.1
 };
 
@@ -30,6 +31,7 @@ class LyapunovScene {
 	private gui: GUI | null = null;
 	private controls: OrbitControls | null = null;
 	private instancedMesh: THREE.InstancedMesh | null = null;
+	private stats = new Stats();
 
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
@@ -45,6 +47,10 @@ class LyapunovScene {
 		this.addDebug();
 		this.setInitialValues();
 		this.animate();
+
+		// add stats
+		this.stats.showPanel(0);
+		document.body.appendChild(this.stats.dom);
 
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 		// add controls to the scene
@@ -111,6 +117,7 @@ class LyapunovScene {
 				mesh: this.instancedMesh,
 				index: i,
 				m: i === 0 ? options.attractorMass : gsap.utils.random(0.1, options.moversMass),
+				radius: i === 0 ? 0.05 : 0.01,
 				speedFactor: options.speedFactor
 			});
 
@@ -249,6 +256,7 @@ class LyapunovScene {
 	animate() {
 		this.drawMovers();
 		requestAnimationFrame(this.animate.bind(this));
+		this.stats.update();
 		if (this.material) {
 			this.material.uniforms.uTime.value += 0.01;
 		}
@@ -264,6 +272,10 @@ class LyapunovScene {
 		window.removeEventListener('wheel', this.onMouseWheel.bind(this));
 
 		this.renderer?.dispose();
+
+		if (this.stats) {
+			this.stats.dom.remove();
+		}
 	}
 }
 

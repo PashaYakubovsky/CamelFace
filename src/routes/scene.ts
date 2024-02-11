@@ -219,6 +219,7 @@ class TravelGalleryScene {
 		const aspectRatio = window.innerWidth / window.innerHeight;
 		this.bgGeometry = new THREE.PlaneGeometry(aspectRatio * 2, 2, 64, 64);
 		const mesh = new THREE.Mesh(this.bgGeometry, this.bgMaterial);
+		mesh.name = 'bgPlane';
 		mesh.scale.set(5, 5, 5);
 		mesh.position.set(0, 0, -2);
 		this.bgPlane = mesh;
@@ -355,12 +356,13 @@ class TravelGalleryScene {
 		this.mouse.set((e.clientX / this.width) * 2 - 1, -(e.clientY / this.height) * 2 + 1);
 		this.raycaster.setFromCamera(this.mouse, this.camera);
 		this.intersected = this.raycaster.intersectObjects(this.scene.children, true);
+		document.body.style.cursor = '';
+		console.log(this.intersected);
 
 		// If a previously hovered item is not among the hits we must call onPointerOut
 		Object.keys(this.hovered).forEach((key) => {
 			const hit = this.intersected.find((hit) => hit.object.uuid === key);
 			if (hit === undefined) {
-				document.body.style.cursor = '';
 				if (this.handleHoverOut) {
 					if (e.target instanceof HTMLElement && e.target.closest('nav')) {
 						return;
@@ -372,8 +374,6 @@ class TravelGalleryScene {
 		});
 
 		this.intersected.forEach((hit) => {
-			document.body.style.cursor = 'pointer';
-
 			// If a hit has not been flagged as hovered we must call onPointerOver
 			if (!this.hovered[hit.object.uuid]) {
 				this.hovered[hit.object.uuid] = hit;
@@ -383,7 +383,10 @@ class TravelGalleryScene {
 				}
 			}
 			const obj = hit.object as THREE.Mesh;
+			// if obj is a bgPlane, dont change cursor
 			if (obj.material instanceof THREE.ShaderMaterial) {
+				if (obj.name === 'bgPlane') return;
+				document.body.style.cursor = 'pointer';
 				if (obj.material.uniforms.mouse) obj.material.uniforms.mouse.value = this.mouse;
 				if (obj.material.uniforms.uMouse) obj.material.uniforms.uMouse.value = this.mouse;
 				if (obj.material.uniforms.u_mouse) obj.material.uniforms.u_mouse.value = this.mouse;
