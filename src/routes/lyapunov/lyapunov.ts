@@ -147,9 +147,6 @@ class LyapunovScene {
 			this.material.uniforms.u_zoom.value += speed;
 			options['Intensity'] = this.material.uniforms.u_zoom.value;
 			this.gui?.controllers[1].updateDisplay();
-
-			// save zoom value to local storage
-			localStorage.setItem('zoomValue', this.material.uniforms.u_zoom.value.toString());
 		}
 	}
 
@@ -167,6 +164,17 @@ class LyapunovScene {
 		this.camera.updateProjectionMatrix();
 
 		this.renderer?.setSize(window.innerWidth, window.innerHeight);
+	}
+
+	destroy() {
+		if (this.gui) {
+			this.gui.destroy();
+		}
+		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+		window.removeEventListener('resize', this.onResize.bind(this));
+		window.removeEventListener('wheel', this.onMouseWheel.bind(this));
+
+		this.renderer?.dispose();
 	}
 
 	public dir = 1;

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import LyapunovScene from './lyapunov';
+	import MutualAttractionScene from './scene';
 	import { loading } from '$lib/loading';
 
 	let canvasElement: HTMLCanvasElement;
 
 	onMount(() => {
 		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new LyapunovScene(canvasElement);
+		const scene = new MutualAttractionScene(canvasElement);
 
 		return () => {
 			scene.destroy();
@@ -15,7 +15,7 @@
 	});
 </script>
 
-<title>Lyapunov</title>
+<title>Mutual attraction</title>
 
 <canvas bind:this={canvasElement} />
 
