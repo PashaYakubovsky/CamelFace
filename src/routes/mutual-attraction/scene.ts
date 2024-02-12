@@ -14,7 +14,9 @@ const options = {
 	color: '#00bfff',
 	attractorMass: 1,
 	moversMass: 0.1,
-	speedFactor: 0.1
+	speedFactor: 0.1,
+	nBodyMode: false,
+	nBody: 2
 };
 
 class LyapunovScene {
@@ -97,7 +99,12 @@ class LyapunovScene {
 			fragmentShader
 		});
 
-		const n = options.count;
+		const nBodyMode = options.nBodyMode;
+		const nBody = options.nBody;
+
+		let n = options.count;
+
+		if (nBodyMode) n = nBody;
 
 		const geometry = new THREE.SphereGeometry(0.05, 12, 12);
 
@@ -107,6 +114,10 @@ class LyapunovScene {
 		const dummy = new THREE.Object3D();
 
 		for (let i = 0; i < n; i++) {
+			let m = i === 0 ? options.attractorMass : gsap.utils.random(0.1, options.moversMass);
+			if (nBodyMode) {
+				m = gsap.utils.random(0.1, options.moversMass);
+			}
 			const x = i === 0 ? 0 : gsap.utils.random(0, 1);
 			const y = i === 0 ? 0 : gsap.utils.random(0, 1);
 			const z = i === 0 ? 0 : gsap.utils.random(0, 1);
@@ -116,7 +127,7 @@ class LyapunovScene {
 				z,
 				mesh: this.instancedMesh,
 				index: i,
-				m: i === 0 ? options.attractorMass : gsap.utils.random(0.1, options.moversMass),
+				m,
 				radius: i === 0 ? 0.05 : 0.01,
 				speedFactor: options.speedFactor
 			});
@@ -138,7 +149,7 @@ class LyapunovScene {
 			const y = event.clientY;
 		}
 
-		if (this.movers[0]) {
+		if (this.movers[0] && !options.nBodyMode) {
 			this.movers[0].position.x = THREE.MathUtils.lerp(
 				this.movers[0].position.x,
 				(event.clientX / window.innerWidth) * 2 - 1,
@@ -167,17 +178,37 @@ class LyapunovScene {
 	}
 
 	drawMovers() {
-		if (this.movers.length < 2) return;
+		if (!this.movers.length) return;
 
-		const main = this.movers[0];
+		const nBodyMode = options.nBodyMode;
 
-		main.update();
-		main.show();
+		if (nBodyMode) {
+			for (let i = 0; i < this.movers.length; i++) {
+				const mover = this.movers[i];
+				mover.boundaries();
+				mover.update();
+				mover.show();
+				for (let j = 0; j < this.movers.length; j++) {
+					if (i !== j) {
+						mover.attract(this.movers[j]);
+						mover.boundaries();
+						mover.update();
+						mover.show();
+					}
+				}
+			}
+		} else {
+			const main = this.movers[0];
 
-		for (let i = 1; i < this.movers.length; i++) {
-			main.attract(this.movers[i]);
-			this.movers[i].update();
-			this.movers[i].show();
+			main.update();
+			main.show();
+
+			for (let i = 1; i < this.movers.length; i++) {
+				main.attract(this.movers[i]);
+				this.movers[i].applyForce(main.acc);
+				this.movers[i].update();
+				this.movers[i].show();
+			}
 		}
 
 		if (this.instancedMesh) this.instancedMesh.instanceMatrix.needsUpdate = true;
@@ -251,6 +282,51 @@ class LyapunovScene {
 					}
 				}
 			});
+
+		// add reset button
+		this.gui
+			.add(
+				{
+					reset: () => {
+						this.cleanUp();
+						this.init();
+					}
+				},
+				'reset'
+			)
+			.name('Reset');
+
+		const nBodyFolder = this.gui.addFolder('N-Body');
+
+		nBodyFolder
+			.add(options, 'nBodyMode')
+			.name('N-Body Mode')
+			.onChange(() => {
+				this.cleanUp();
+				this.init();
+			});
+
+		nBodyFolder
+			.add(options, 'nBody', 2, 30)
+			.step(1)
+			.name('N-Body')
+			.onChange(() => {
+				this.cleanUp();
+				this.init();
+			});
+	}
+
+	cleanUp() {
+		if (this.instancedMesh) {
+			this.instancedMesh.clear();
+			this.scene.remove(this.instancedMesh);
+		}
+		if (this.material) {
+			this.material.dispose();
+		}
+		if (this.geometry) {
+			this.geometry.dispose();
+		}
 	}
 
 	animate() {
