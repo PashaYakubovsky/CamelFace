@@ -125,7 +125,7 @@
 	</div>
 {/if}
 <!-- go back button -->
-<div
+<!-- <div
 	class={`absolute top-[2rem] max-md:top-[1rem] right-[4rem] max-md:right-[1rem] z-[10] ${
 		$loading.loading ? 'cursor-progress' : ''
 	}`}
@@ -152,11 +152,11 @@
 			/>
 		</svg>
 	</button>
-</div>
+</div> -->
 
-<div bind:this={transition} id="transition" />
+<!-- <div bind:this={transition} id="transition" /> -->
 
-<CursorLight />
+<!-- <CursorLight /> -->
 
 <slot />
 
