@@ -15,7 +15,7 @@
 	import io from 'socket.io-client';
 	import { onlineUsers } from '$lib/onlineUsers';
 
-	const socket = io('http://localhost:3000');
+	const socket = io('https://travelblogcms.onrender.com');
 
 	let transition: HTMLDivElement;
 	let previousPage: string | null = null;
