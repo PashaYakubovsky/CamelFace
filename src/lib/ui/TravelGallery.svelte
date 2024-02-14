@@ -8,6 +8,7 @@
 	import { loading, threejsLoading } from '$lib/loading';
 	import { fade } from 'svelte/transition';
 	import { onlineUsers } from '$lib/onlineUsers';
+	import { goto } from '$app/navigation';
 
 	export let blogPost: Post[] = [];
 
@@ -231,11 +232,12 @@
 					// reverse the index
 					const rI = blogPost.length - 1 - meshIndex;
 					if (meshIndex === currentIndex) {
-						pageTransition.update((state) => ({
-							...state,
-							start: true,
-							toPage: blogPost[rI].slug
-						}));
+						// pageTransition.update((state) => ({
+						// 	...state,
+						// 	start: true,
+						// 	toPage: blogPost[rI].slug
+						// }));
+						goto(blogPost[rI].slug);
 					}
 				};
 			}
@@ -272,7 +274,9 @@
 {#each Object.values(users) as user}
 	<div
 		class="user-mouse"
-		style={`color:${randomColorFromString(user?.id)};left:${user?.x}%;top:${user?.y}%`}
+		style={`color:${randomColorFromString(user?.id)};transform:translate(${user.x * 100}%,${
+			user.y * 100
+		}%);transition:0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) transform`}
 	>
 		<span>{user.name}</span>
 	</div>

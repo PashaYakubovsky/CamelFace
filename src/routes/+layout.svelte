@@ -15,7 +15,8 @@
 	import io from 'socket.io-client';
 	import { onlineUsers } from '$lib/onlineUsers';
 
-	const socket = io('https://travelblogcms.onrender.com');
+	const socket = io('https://travelblogcms.onrender.com:3000');
+	// const socket = io('http://localhost:3000');
 
 	let transition: HTMLDivElement;
 	let previousPage: string | null = null;
@@ -69,7 +70,6 @@
 		}
 
 		socket.on('users', (data) => {
-			console.log(data);
 			if (socket.id && socket.id in data) delete data[socket.id];
 			onlineUsers.update((state) => ({
 				...state,

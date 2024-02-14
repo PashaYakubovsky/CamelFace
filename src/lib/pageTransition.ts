@@ -21,10 +21,9 @@ export const transitionIn = ({ toPage }: { toPage: string }): gsap.core.Tween | 
 			duration: 0.8,
 			ease: 'power0',
 			filter: 'blur(0px)',
-			onComplete: () => {
-				goto(toPage);
-			}
+			onComplete: () => {}
 		});
+		goto(toPage);
 
 		return tween;
 	} else {
