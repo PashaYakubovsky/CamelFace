@@ -7,6 +7,7 @@
 	import { handleHoverIn, handleHoverOut, pageTransition } from '$lib/pageTransition';
 	import { loading, threejsLoading } from '$lib/loading';
 	import { fade } from 'svelte/transition';
+	import { onlineUsers } from '$lib/onlineUsers';
 
 	export let blogPost: Post[] = [];
 
@@ -27,8 +28,19 @@
 	let initAnimation = false;
 	let goBackButtonElement: HTMLButtonElement;
 	let initHappen = false;
-	$: showInfoBlocks = false;
-	$: allTextureLoaded = false;
+	let showInfoBlocks = false;
+	let allTextureLoaded = false;
+
+	let users = [] as {
+		id: string;
+		name: string;
+		x: number;
+		y: number;
+	}[];
+
+	onlineUsers.subscribe((value) => {
+		users = value.users ?? [];
+	});
 
 	$: if (allTextureLoaded && !initHappen) {
 		initHappen = true;
@@ -242,13 +254,31 @@
 			window.removeEventListener('keydown', handleKeydown);
 		};
 	});
+
+	const randomColorFromString = (str: string) => {
+		let hash = 0;
+		for (let i = 0; i < str.length; i++) {
+			hash = str.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		let color = '#';
+		for (let i = 0; i < 3; i++) {
+			let value = (hash >> (i * 8)) & 0xff;
+			color += ('00' + value.toString(16)).substr(-2);
+		}
+		return color;
+	};
 </script>
 
-<div
-	class="pageWrapper transition-colors;
-"
-	bind:this={pageWrapperElement}
->
+{#each Object.values(users) as user}
+	<div
+		class="user-mouse"
+		style={`color:${randomColorFromString(user?.id)};left:${user?.x}%;top:${user?.y}%`}
+	>
+		<span>{user.name}</span>
+	</div>
+{/each}
+
+<div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
 	<canvas bind:this={canvasElement} />
 
 	<nav
@@ -374,7 +404,7 @@
 	<!-- loop over posts -->
 	{#each blogPost as post, index (post.id)}
 		<section
-			class={`post-info absolute left-5 h-screen w-1/2 max-md:w-full text-inherit transition duration-300 ease-in-out hidden mt-[5rem] pl-5 max-md:pl-0 flex-col justify-center max-md:bottom-0 max-md:h-[60%]`}
+			class={`post-info hidden flex absolute left-5 h-screen w-1/2 max-md:w-full align-center text-inherit transition duration-300 ease-in-out pl-5 max-md:pl-0 flex-col justify-center max-md:bottom-0 max-md:h-[60%]`}
 		>
 			<div
 				class="post-info__content h-[fit-content] flex flex-col gap-[1rem] py-8 px-4 max-md:py-0 max-md:px-4"
@@ -466,6 +496,30 @@
 		top: 0;
 		left: 0;
 	}
+	.user-mouse {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		position: absolute;
+		z-index: 10;
+		background-color: currentColor;
+		text-align: center;
+	}
+	.user-mouse > span {
+		position: absolute;
+		top: 0;
+		left: 100%;
+		transform: translateX(0.5rem);
+		opacity: 0;
+		transition: 0.3s ease-in opacity;
+	}
+	.user-mouse > span:hover {
+		opacity: 1;
+	}
+	.user-mouse:hover > span {
+		opacity: 1;
+	}
+
 	@media (max-width: 768px) {
 		h2 {
 			-webkit-text-fill-color: currentColor;

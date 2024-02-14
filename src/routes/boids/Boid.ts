@@ -92,6 +92,39 @@ export class Boid {
 		}
 	}
 
+	boundaries() {
+		// if flock is out of bounds, move it to the other side and change its velocity
+		const d = 1;
+		const force = 5;
+		const desired = new THREE.Vector3();
+		if (this.position.x < -d) {
+			this.velocity.x = Math.abs(this.velocity.x);
+		} else if (this.position.x > d) {
+			this.velocity.x = -Math.abs(this.velocity.x);
+		}
+
+		if (this.position.y < -d) {
+			this.velocity.y = Math.abs(this.velocity.y);
+		} else if (this.position.y > d) {
+			this.velocity.y = -Math.abs(this.velocity.y);
+		}
+
+		if (this.position.z < -d) {
+			this.velocity.z = Math.abs(this.velocity.z);
+		} else if (this.position.z > d) {
+			this.velocity.z = -Math.abs(this.velocity.z);
+		}
+
+		if (desired.length() > 0) {
+			desired.normalize();
+			desired.multiplyScalar(this.speedFactor);
+			const steer = new THREE.Vector3();
+			steer.subVectors(desired, this.velocity);
+			steer.clampLength(0, this.speedFactor);
+			this.acceleration.add(steer);
+		}
+	}
+
 	// 3 rules for boids
 	aligment(boids: Boid[]) {
 		const perceptionRadius = this.alignmentRadius;

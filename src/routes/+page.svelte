@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import type { Post } from '../types';
 	import { getPosts } from '$lib/api';
+	import { onlineUsers } from '$lib/onlineUsers';
 
 	const titles = [
 		'May the force be with you',
@@ -40,7 +41,7 @@
 	];
 
 	let title = titles[0];
-	let intervalId: number;
+	let intervalId: NodeJS.Timeout;
 
 	const randomTitle = () => {
 		const randomIndex = Math.floor(Math.random() * titles.length);

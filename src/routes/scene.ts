@@ -357,7 +357,6 @@ class TravelGalleryScene {
 		this.raycaster.setFromCamera(this.mouse, this.camera);
 		this.intersected = this.raycaster.intersectObjects(this.scene.children, true);
 		document.body.style.cursor = '';
-		console.log(this.intersected);
 
 		// If a previously hovered item is not among the hits we must call onPointerOut
 		Object.keys(this.hovered).forEach((key) => {

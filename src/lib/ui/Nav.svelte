@@ -54,15 +54,15 @@
 	}}
 	class="menu"
 >
-	<a on:click={(e) => handleLinkClick(e, '/')} href="#" class="nav-link">Home</a>
-	<a on:click={(e) => handleLinkClick(e, '/galaxy')} href="#" class="nav-link">Galaxy</a>
-	<a on:click={(e) => handleLinkClick(e, '/mandelbrot')} href="#" class="nav-link">Mandelbrot set</a>
-	<a on:click={(e) => handleLinkClick(e, '/fbm')} href="#" class="nav-link">Fractal browning motion</a>
-	<a on:click={(e) => handleLinkClick(e, '/cardioid')} href="#" class="nav-link">Cardioid</a>
-	<a on:click={(e) => handleLinkClick(e, '/lyapunov')} href="#" class="nav-link">Lyapunov fractal</a>
-	<a on:click={(e) => handleLinkClick(e, '/particles-noise')} href="#" class="nav-link">Particles & Simplex noise</a>
-	<a on:click={(e) => handleLinkClick(e, '/boids')} href="#" class="nav-link">Boids simulation</a>
-	<a on:click={(e) => handleLinkClick(e, '/mutual-attraction')} href="#" class="nav-link">Mutual attraction</a>
+	<button on:click={(e) => handleLinkClick(e, '/')} class="nav-link">Home</button>
+	<button on:click={(e) => handleLinkClick(e, '/galaxy')} class="nav-link">Galaxy</button>
+	<button on:click={(e) => handleLinkClick(e, '/mandelbrot')} class="nav-link">Mandelbrot set</button>
+	<button on:click={(e) => handleLinkClick(e, '/fbm')} class="nav-link">Fractal browning motion</button>
+	<button on:click={(e) => handleLinkClick(e, '/cardioid')} class="nav-link">Cardioid</button>
+	<button on:click={(e) => handleLinkClick(e, '/lyapunov')} class="nav-link">Lyapunov fractal</button>
+	<button on:click={(e) => handleLinkClick(e, '/particles-noise')} class="nav-link">Particles & Simplex noise</button>
+	<button on:click={(e) => handleLinkClick(e, '/boids')} class="nav-link">Boids simulation</button>
+	<button on:click={(e) => handleLinkClick(e, '/mutual-attraction')} class="nav-link">Mutual attraction</button>
 </button>
 
 <style>
