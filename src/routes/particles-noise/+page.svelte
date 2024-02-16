@@ -57,14 +57,14 @@
 
 	input {
 		position: absolute;
-		top: 0;
-		left: 0;
-		z-index: 20;
+		top: 6rem;
+		left: 1rem;
+		z-index: 1000;
 	}
 	button {
 		position: absolute;
-		top: 2rem;
-		left: 0;
+		top: 8.5rem;
+		left: 1rem;
 		z-index: 20;
 		border-radius: 0.25rem;
 		padding: 0.5rem 1rem;

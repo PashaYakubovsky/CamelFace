@@ -205,7 +205,7 @@
 		align-items: flex-start;
 		justify-content: flex-start;
 		cursor: pointer;
-		z-index: 999;
+		z-index: 1000;
 		transition: background-color 0.3s ease;
 		color: var(--primary);
 	}

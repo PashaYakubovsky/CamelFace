@@ -10,7 +10,7 @@ const options = {
 	['Recursive step']: 100,
 	['Mouse mode']: true,
 	['Zoom to number']: 1,
-	['Zoom duration']: 10
+	['Zoom duration']: 1
 };
 
 class MandelbrotScene {
@@ -101,17 +101,6 @@ class MandelbrotScene {
 			});
 
 		let isGoing = false;
-		const indicator = document.createElement('div');
-		indicator.style.position = 'absolute';
-		indicator.style.top = '0';
-		indicator.style.left = '0';
-		indicator.style.zIndex = '100';
-		indicator.style.backgroundColor = 'white';
-		indicator.style.color = 'black';
-		indicator.style.padding = '5px';
-		indicator.style.borderRadius = '5px';
-		document.body.appendChild(indicator);
-
 		let tl = gsap.timeline();
 
 		this.gui.add(options, 'Zoom to number', 1, 100000).onChange(() => {
@@ -123,8 +112,6 @@ class MandelbrotScene {
 			}
 			if (this.material?.uniforms.u_zoom) {
 				isGoing = true;
-				indicator.innerHTML = '';
-				indicator.innerText = 'Zooming...';
 
 				tl.to(this.material.uniforms.u_zoom, {
 					value: options['Zoom to number'],
@@ -132,8 +119,6 @@ class MandelbrotScene {
 					ease: 'power4.inOut',
 					onComplete: () => {
 						isGoing = false;
-						indicator.innerHTML = '';
-						indicator.innerText = 'Free to zoom again!';
 					}
 				});
 			}
