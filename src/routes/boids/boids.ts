@@ -56,7 +56,6 @@ class BoidsScene {
 
 		this.init();
 		this.addControls();
-		this.setInitialValues();
 		this.animate();
 
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -64,7 +63,6 @@ class BoidsScene {
 		window.addEventListener('mousemove', this.onMouseMove.bind(this));
 		window.addEventListener('resize', this.onResize.bind(this));
 		window.addEventListener('wheel', this.onMouseWheel.bind(this));
-		window.addEventListener('keypress', this.mousePressed.bind(this));
 	}
 
 	public init() {
@@ -203,8 +201,6 @@ class BoidsScene {
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 		if (this.material) this.material.uniforms.uCameraPos.value = this.camera.position;
 	}
-
-	public setInitialValues() {}
 
 	public addControls() {
 		this.gui = new GUI();
@@ -403,13 +399,10 @@ class BoidsScene {
 		this.gui.add({ reset: recreateParticles }, 'reset').name('Reset');
 	}
 
-	mousePressed(e: KeyboardEvent) {}
-
 	destroy() {
 		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
 		window.removeEventListener('resize', this.onResize.bind(this));
 		window.removeEventListener('wheel', this.onMouseWheel.bind(this));
-		window.removeEventListener('keypress', this.mousePressed.bind(this));
 
 		if (this.gui) this.gui.destroy();
 		if (this.controls) this.controls.dispose();

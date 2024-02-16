@@ -15,7 +15,7 @@
 	let canvasElement: HTMLCanvasElement;
 	let contentElements: HTMLElement[] = [];
 	let pageWrapperElement: HTMLDivElement | null = null;
-	let element: HTMLDivElement;
+	// let element: HTMLDivElement;
 	let attractMode = false;
 	let attractTo = 0;
 	let rots: THREE.Euler[] = [];
@@ -45,10 +45,10 @@
 
 	$: if (allTextureLoaded && !initHappen) {
 		initHappen = true;
+		showInfoBlocks = true;
 
 		if (scene) {
 			const tl = scene.initGalleryAnimation();
-			showInfoBlocks = true;
 		}
 	}
 
@@ -108,14 +108,18 @@
 
 		const handleWheel = (e: WheelEvent) => {
 			if (!scene.isMobile) {
-				speed += e.deltaY * 0.0003;
+				speed += e.deltaY * -0.0003;
 				direction = Math.sign(e.deltaY) as 1 | -1;
 
-				if (direction === -1 && Math.abs(currentIndex) === 0) {
-					speed += e.deltaY * -0.0003;
+				if (scene.bgMaterial) {
+					scene.bgMaterial.uniforms.uSpeed.value = speed * 10;
 				}
-				if (direction === 1 && currentIndex === blogPost.length - 1) {
-					speed += e.deltaY * -0.0003;
+
+				if (direction === 1 && Math.abs(currentIndex) === 0) {
+					speed += e.deltaY * 0.0003;
+				}
+				if (direction === -1 && currentIndex === blogPost.length - 1) {
+					speed += e.deltaY * 0.0003;
 				}
 			}
 		};
@@ -213,7 +217,6 @@
 					position += -(position - attractTo) * 0.1;
 				} else {
 					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
-					if (element) element.style.transform = `translateY(${-position * 100}px)`;
 				}
 
 				requestAnimationFrame(raf);
@@ -232,17 +235,19 @@
 					// reverse the index
 					const rI = blogPost.length - 1 - meshIndex;
 					if (meshIndex === currentIndex) {
-						// pageTransition.update((state) => ({
-						// 	...state,
-						// 	start: true,
-						// 	toPage: blogPost[rI].slug
-						// }));
 						goto(blogPost[rI].slug);
 					}
 				};
 			}
 
 			raf();
+
+			attractMode = true;
+			attractTo = blogPost.length - 2;
+			// wait for the scene to be ready
+			setTimeout(() => {
+				attractMode = false;
+			}, 1000);
 
 			window.addEventListener('wheel', handleWheel);
 			window.addEventListener('keydown', handleKeydown);
@@ -286,9 +291,7 @@
 	<canvas bind:this={canvasElement} />
 
 	<nav
-		class={`max-md:flex-row max-md:w-full absolute left-2 max-md:right-0 top-2 max-md:top-[auto] max-md:bottom-2 max-md:justify-center transform flex flex-col-reverse z-[10] transition-allblob:http://localhost:5173/a8982e36-7f3a-4061-8775-742ebdd9f47e ${
-			allTextureLoaded ? 'opacity-100' : 'opacity-0 pointer-events-none'
-		}`}
+		class={`gallery-nav ${allTextureLoaded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
 		on:mouseenter={(e) => {
 			e.stopPropagation();
 			if (initAnimation) return;
@@ -522,6 +525,18 @@
 	}
 	.user-mouse:hover > span {
 		opacity: 1;
+	}
+	.gallery-nav {
+		position: fixed;
+		top: 50%;
+		transform: translateY(-50%);
+		left: 0.5rem;
+		display: flex;
+		flex-direction: column-reverse;
+		align-items: center;
+		justify-content: center;
+		z-index: 10;
+		transition: 0.3s ease-in-out opacity;
 	}
 
 	@media (max-width: 768px) {

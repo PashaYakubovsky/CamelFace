@@ -16,7 +16,7 @@ function lerp(start: number, end: number, t: number) {
 class ParticlesScene {
 	public particlesGeo: THREE.BufferGeometry | undefined;
 	private renderer: THREE.WebGLRenderer;
-	private textureLoader: THREE.TextureLoader;
+	// private textureLoader: THREE.TextureLoader;
 	private scene: THREE.Scene;
 	private camera: THREE.PerspectiveCamera;
 	private raycaster: THREE.Raycaster;
@@ -104,9 +104,9 @@ class ParticlesScene {
 				const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
 				if (!obj.geometry) return;
 				const geometry = new THREE.BufferGeometry();
-				geometry.setFromPoints(obj.geometry.attributes);
-				const mesh = new THREE.Points(geometry, material);
-				this.scene.add(mesh);
+				// geometry.setFromPoints(obj.geometry.attributes);
+				// const mesh = new THREE.Points(geometry, material);
+				// this.scene.add(mesh);
 			});
 			// apply animations
 			// this.mixer = new THREE.AnimationMixer(fbx);
@@ -218,9 +218,9 @@ class ParticlesScene {
 			this.material.uniforms.uMouse.value = this.mouse;
 		}
 
-		if (this.mixer) {
-			this.mixer.update(0.01);
-		}
+		// if (this.mixer) {
+		// 	this.mixer.update(0.01);
+		// }
 
 		requestAnimationFrame(() => this.animate());
 	}

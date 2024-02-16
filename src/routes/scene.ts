@@ -20,7 +20,7 @@ const calculateEuler = (isMobile: boolean, screens: Screens) => {
 		if (screens.isXl) {
 			euler = {
 				x: -0.1,
-				y: -0.5,
+				y: -0.7,
 				z: -0.2
 			};
 		}
@@ -210,7 +210,12 @@ class TravelGalleryScene {
 				uTime: { value: 0 },
 				uColor: { value: new THREE.Color('rgb(5, 118, 240)') },
 				uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-				uMouse: { value: new THREE.Vector2(0, 0) }
+				uMouse: { value: new THREE.Vector2(0, 0) },
+				uSpeed: { value: 0.01 },
+				uSelectedItemPosition: {
+					// by default is 20% right and 50% down
+					value: new THREE.Vector2(0.2, 0.5)
+				}
 			},
 			vertexShader: bgVertexShader,
 			fragmentShader: bgFragmentShader,
@@ -233,6 +238,7 @@ class TravelGalleryScene {
 	async addGallery({ posts }: { posts: Post[] }) {
 		const textures: THREE.Texture[] = [];
 		this.total = posts.length;
+		this.posts = posts;
 
 		for (let i = posts.length - 1; i >= 0; i--) {
 			const media = posts[i].backgroundImage as Media;
@@ -268,7 +274,6 @@ class TravelGalleryScene {
 					mesh.position.set(this.positionValues.x, this.positionValues.y, this.positionValues.z);
 
 					this.scene.add(group);
-
 					this.meshes.push(mesh);
 					this.materials.push(material);
 					this.groups.push(group);
@@ -307,7 +312,6 @@ class TravelGalleryScene {
 
 	resize() {
 		this.isMobile = window.innerWidth < 768;
-
 		this.width = window.innerWidth;
 		this.height = this.isMobile ? window.innerHeight * 0.35 : window.innerHeight;
 		this.camera.aspect = this.width / this.height;
@@ -316,22 +320,22 @@ class TravelGalleryScene {
 		this.eulerValues = calculateEuler(this.isMobile, this.screens);
 		this.geometry = createGeometry(this.isMobile, this.screens);
 
-		const newPositions: [x: number, y: number, z: number] = [
-			this.positionValues.x,
-			this.positionValues.y,
-			this.positionValues.z
-		];
-		const newEuler: [x: number, y: number, z: number] = [
-			this.eulerValues.x,
-			this.eulerValues.y,
-			this.eulerValues.z
-		];
+		// const newPositions: [x: number, y: number, z: number] = [
+		// 	this.positionValues.x,
+		// 	this.positionValues.y,
+		// 	this.positionValues.z
+		// ];
+		// const newEuler: [x: number, y: number, z: number] = [
+		// 	this.eulerValues.x,
+		// 	this.eulerValues.y,
+		// 	this.eulerValues.z
+		// ];
 
-		this.groups.forEach((group, idx) => {
-			group.rotation.set(...newEuler);
-			this.meshes[idx].position.set(...newPositions);
-			this.meshes[idx].geometry = this.geometry;
-		});
+		// this.groups.forEach((group, idx) => {
+		// 	group.rotation.set(...newEuler);
+		// 	this.meshes[idx].position.set(...newPositions);
+		// 	this.meshes[idx].geometry = this.geometry;
+		// });
 
 		if (this.renderer) this.renderer.setSize(this.width, this.height);
 
@@ -344,6 +348,11 @@ class TravelGalleryScene {
 
 		if (this.material) {
 			this.material.uniforms.isMobile.value = this.isMobile;
+			this.material.uniforms.u_resolution.value = new THREE.Vector3(
+				window.innerWidth,
+				window.innerHeight,
+				1
+			);
 		}
 
 		if (this.bgMaterial) {
@@ -425,24 +434,24 @@ class TravelGalleryScene {
 
 	initGalleryAnimation() {
 		const tl = gsap.timeline();
-		const positions = this.groups.map((group) => group.position);
-		tl.fromTo(
-			positions,
-			{
-				z: -1,
-				y: 4,
-				x: 4,
-				duration: 0
-			},
-			{
-				z: 0,
-				y: 0,
-				x: 0,
-				duration: 0.5,
-				stagger: 0.1,
-				ease: 'power'
-			}
-		);
+		// const positions = this.groups.map((group) => group.position);
+		// tl.fromTo(
+		// 	positions,
+		// 	{
+		// 		z: -1,
+		// 		y: 4,
+		// 		x: 4,
+		// 		duration: 0
+		// 	},
+		// 	{
+		// 		z: 0,
+		// 		y: 0,
+		// 		x: 0,
+		// 		duration: 0.5,
+		// 		stagger: 0.1,
+		// 		ease: 'power'
+		// 	}
+		// );
 
 		return tl;
 	}

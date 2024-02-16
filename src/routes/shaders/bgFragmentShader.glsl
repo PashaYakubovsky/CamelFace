@@ -3,6 +3,7 @@ varying vec2 vUv;
 uniform vec3 uColor;
 uniform vec2 uMouse;
 uniform vec2 uResolution;
+uniform float uSpeed;
 
 float sq(float x) {
     return x * x;
