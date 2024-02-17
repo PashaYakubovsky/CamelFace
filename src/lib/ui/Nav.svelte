@@ -62,8 +62,8 @@
 		const canvas = menuPlate;
 		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-		canvas.width = innerWidth * devicePixelRatio * 0.5;
-		canvas.height = innerHeight * devicePixelRatio * 0.5;
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
 
 		navParent.addEventListener('mousemove', (e) => {
 			const xOff = e.screenX - e.clientX;

@@ -24,7 +24,8 @@
 <input
 	accept="image/*"
 	bind:this={fileElem}
-	on:change={(e) => {
+	on:change={() => {
+		if (!fileElem.files) return;
 		const file = fileElem.files[0];
 		if (file) {
 			scene.uploadNewFile(file);
