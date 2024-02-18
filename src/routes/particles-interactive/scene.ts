@@ -224,15 +224,15 @@ class ParticlesScene {
 		this.gui = new GUI();
 
 		const t = {
-			['size*3']: this.params.size
+			['size^2*4']: this.params.size
 		};
 		this.gui
-			.add(t, 'size*3')
+			.add(t, 'size^2*4')
 			.min(1)
 			.max(600)
 			.step(1)
 			.onFinishChange(() => {
-				this.params.size = t['size*3'];
+				this.params.size = t['size^2*4'];
 				// clean up
 				this.fboMaterial.dispose();
 				this.fboTexture.dispose();
