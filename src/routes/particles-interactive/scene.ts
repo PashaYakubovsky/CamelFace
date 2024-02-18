@@ -14,15 +14,15 @@ class ParticlesScene {
 	private height = window.innerHeight;
 	gui: GUI | undefined;
 	group: THREE.Group | undefined;
-	videoElement: HTMLVideoElement | undefined;
-	audio: HTMLAudioElement | undefined;
 	params = {
-		size: 256
+		size: 256,
+		noiseForce: 0.1,
+		hoverRadius: 0.1,
+		radar: true,
+		radarRadius: 0.5
 	};
 	stats?: Stats;
-	stream: MediaStream | undefined;
 	time = 0;
-	videoTexture: THREE.VideoTexture | undefined;
 	fbo!: THREE.WebGLRenderTarget;
 	fbo1!: THREE.WebGLRenderTarget;
 	fboScene!: THREE.Scene;
@@ -132,7 +132,11 @@ class ParticlesScene {
 				uPositions: { value: this.fboTexture },
 				uInfo: { value: null },
 				uTime: { value: 0 },
-				uMouse: { value: new THREE.Vector2(0, 0) }
+				uMouse: { value: new THREE.Vector2(0, 0) },
+				uForce: { value: this.params.noiseForce },
+				uHoverRadius: { value: this.params.hoverRadius },
+				uRadar: { value: this.params.radar },
+				uRadarRadius: { value: this.params.radarRadius }
 			},
 			vertexShader: simVertexShader,
 			fragmentShader: simFragmentShader,
@@ -203,7 +207,11 @@ class ParticlesScene {
 				uPositions: { value: null },
 				uTime: { value: 0 },
 				uMouse: { value: new THREE.Vector2(0, 0) },
-				uTexture: { value: new THREE.TextureLoader().load('/particle2.jpeg') }
+				uTexture: { value: new THREE.TextureLoader().load('/particle2.jpeg') },
+				uForce: { value: this.params.noiseForce },
+				uHoverRadius: { value: this.params.hoverRadius },
+				uRadar: { value: this.params.radar },
+				uRadarRadius: { value: this.params.radarRadius }
 			},
 			vertexShader,
 			fragmentShader,
@@ -229,7 +237,7 @@ class ParticlesScene {
 		this.gui
 			.add(t, 'size^2*4')
 			.min(1)
-			.max(600)
+			.max(1200)
 			.step(1)
 			.onFinishChange(() => {
 				this.params.size = t['size^2*4'];
@@ -239,6 +247,46 @@ class ParticlesScene {
 				this.fbo.dispose();
 
 				this.setupFBO();
+			});
+
+		this.gui
+			.add(this.params, 'noiseForce')
+			.min(0.1)
+			.max(10)
+			.step(0.01)
+			.onFinishChange(() => {
+				if (this.fboMaterial) this.fboMaterial.uniforms.uForce.value = this.params.noiseForce;
+				if (this.material) this.material.uniforms.uForce.value = this.params.noiseForce;
+			});
+
+		this.gui
+			.add(this.params, 'hoverRadius')
+			.min(0.01)
+			.max(5)
+			.step(0.01)
+			.onFinishChange(() => {
+				if (this.fboMaterial)
+					this.fboMaterial.uniforms.uHoverRadius.value = this.params.hoverRadius;
+				if (this.material) this.material.uniforms.uHoverRadius.value = this.params.hoverRadius;
+			});
+
+		this.gui
+			.add(this.params, 'radar')
+			.name('radar')
+			.onChange(() => {
+				if (this.fboMaterial) this.fboMaterial.uniforms.uRadar.value = this.params.radar;
+				if (this.material) this.material.uniforms.uRadar.value = this.params.radar;
+			});
+
+		this.gui
+			.add(this.params, 'radarRadius')
+			.min(0.01)
+			.max(5)
+			.step(0.01)
+			.onFinishChange(() => {
+				if (this.fboMaterial)
+					this.fboMaterial.uniforms.uRadarRadius.value = this.params.radarRadius;
+				if (this.material) this.material.uniforms.uRadarRadius.value = this.params.radarRadius;
 			});
 	}
 
@@ -294,9 +342,7 @@ class ParticlesScene {
 		this.fboMaterial.dispose();
 		this.fboTexture.dispose();
 		this.gui?.destroy();
-		this.videoElement?.remove();
 		this.stats?.dom.remove();
-		if (this.stream) this.stream.getTracks().forEach((track) => track.stop());
 	}
 }
 

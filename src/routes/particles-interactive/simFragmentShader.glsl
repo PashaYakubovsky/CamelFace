@@ -5,6 +5,8 @@ uniform float uTime;
 uniform sampler2D uPositions;
 uniform sampler2D uInfo;
 uniform vec2 uMouse;
+uniform float uForce;
+uniform float uHoverRadius;
 
 float sdUnevenCapsule( vec2 p, float r1, float r2, float h )
 {
@@ -141,26 +143,19 @@ void main() {
         0.1 + 0.1 * sin(angle * 0.1 + uTime)
     );
 
-    radius += (targetRadius - radius) * mix(0.01, 0.05, circularForce);
+    radius += (targetRadius - radius) * mix(0.01, 0.09, circularForce);
 
 
-    vec3 targetPos = vec3(cos(angle), sin(angle), 0.0) * radius * 0.99;
+    vec3 targetPos = vec3(cos(angle), sin(angle), sin(uTime)) * radius * 0.99;
 
     pos.xy += (targetPos.xy - pos.xy) * 0.09;
 
-    pos.xy += curl(pos.xyz * 2.0, uTime, .1).yx * 0.002;
+    pos.xy += curl(pos.xyz * 5.0, uTime * uForce, uForce).yx * 0.002;
 
 
-
-
-
-    // float dist = distance(pos.xy, uMouse);
-    // vec2 dir = normalize(pos.xy - uMouse);
-    // pos.xy += dir * 0.1 * smoothstep(0.2, 0.0, dist);
-
-    float dist = sdUnevenCapsule(pos.xy - uMouse, 0.001, 0.001, 0.01) * 2.0;
+    float dist = sdUnevenCapsule(pos.xy - uMouse, 0.1, 0.1, 0.01);
     vec2 dir = normalize(pos.xy - uMouse);
-    dir = vec2(-dir.y, dir.x) * 0.5;
+    dir = vec2(-dir.y, dir.x) * uHoverRadius;
 
 
     pos.xy += dir * 0.1 * smoothstep(0.4, 0.0, dist);
