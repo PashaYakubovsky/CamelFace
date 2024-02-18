@@ -337,12 +337,21 @@ class ParticlesScene {
 	}
 
 	destroy(): void {
+		if (this.gui) {
+			this.gui.destroy();
+		}
+		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+
 		this.renderer.dispose();
-		this.fboScene.remove(this.fboMesh);
-		this.fboMaterial.dispose();
-		this.fboTexture.dispose();
-		this.gui?.destroy();
-		this.stats?.dom.remove();
+		this.renderer.forceContextLoss();
+
+		if (this.material) this.material.dispose();
+		if (this.fboMaterial) this.fboMaterial.dispose();
+		if (this.fboTexture) this.fboTexture.dispose();
+		if (this.fbo) this.fbo.dispose();
+		if (this.fbo1) this.fbo1.dispose();
+
+		if (this.stats) this.stats.dom.remove();
 	}
 }
 
