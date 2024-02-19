@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 import Stats from 'three/examples/jsm/libs/stats.module';
+import { GUI } from 'lil-gui';
 
 class ParticlesScene {
 	private renderer: THREE.WebGLRenderer;
@@ -57,11 +58,7 @@ class ParticlesScene {
 		this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.01, 20);
 		this.camera.position.z = 1.4;
 
-		this.ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-		this.ambientLight.position.set(0, 0, -1);
-		this.scene.add(this.ambientLight);
-
-		this.directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+		this.directionalLight = new THREE.DirectionalLight(new THREE.Color('red'), 10);
 		this.directionalLight.position.set(0, 0, 1);
 		this.scene.add(this.directionalLight);
 
@@ -182,7 +179,13 @@ class ParticlesScene {
 	}
 
 	addDebug() {
-		// this.gui = new GUI();
+		this.gui = new GUI();
+		this.gui.close();
+		this.gui.add(this.directionalLight.position, 'x', -10, 10, 0.01);
+		this.gui.add(this.directionalLight.position, 'y', -10, 10, 0.01);
+		this.gui.add(this.directionalLight.position, 'z', -10, 10, 0.01);
+		// directional light
+		this.gui.add(this.directionalLight, 'intensity', 0, 10, 0.01);
 	}
 
 	onWindowResize(): void {
@@ -210,6 +213,13 @@ class ParticlesScene {
 			gsap.to(this.group.rotation, {
 				x: -this.mouse.y * 0.5,
 				y: this.mouse.x * 0.5,
+				duration: 1
+			});
+		}
+		if (this.directionalLight) {
+			gsap.to(this.directionalLight.position, {
+				x: this.mouse.x * 10,
+				y: this.mouse.y * 10,
 				duration: 1
 			});
 		}
