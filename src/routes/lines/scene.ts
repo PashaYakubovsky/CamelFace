@@ -37,6 +37,7 @@ class ParticlesScene {
 	text!: string;
 	textMesh!: THREE.Mesh;
 	skullMaterial!: THREE.MeshPhysicalMaterial;
+	gui!: GUI;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -58,7 +59,7 @@ class ParticlesScene {
 		this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.01, 20);
 		this.camera.position.z = 1.4;
 
-		this.directionalLight = new THREE.DirectionalLight(new THREE.Color('red'), 10);
+		this.directionalLight = new THREE.DirectionalLight(new THREE.Color('#24e06d'), 10);
 		this.directionalLight.position.set(0, 0, 1);
 		this.scene.add(this.directionalLight);
 
@@ -94,18 +95,18 @@ class ParticlesScene {
 					reflectivity: 1,
 					transparent: true
 				});
-				this.skull.position.z = -0.2;
+				this.skull.position.z = -0.7;
 				this.skull.position.y = -0.2;
 				this.scene.add(this.skull);
 
 				this.addObjects();
+
+				this.addDebug();
+				this.animate();
+				// this.loadFont();
+				this.target = this.setupRenderTarget();
 			}
 		});
-
-		this.addDebug();
-		this.animate();
-		// this.loadFont();
-		this.target = this.setupRenderTarget();
 	}
 
 	getRenderTarget() {
@@ -129,7 +130,9 @@ class ParticlesScene {
 				uDepths: { value: null },
 				uCameraNear: { value: this.depthCamera.near },
 				uCameraFar: { value: this.depthCamera.far },
-				uNoise: { value: 0.0 }
+				uNoise: { value: 0.0 },
+				uColor: { value: new THREE.Color('#69f1af') },
+				uColor2: { value: new THREE.Color('#50c8fc') }
 			},
 			vertexShader,
 			transparent: true,
@@ -159,6 +162,7 @@ class ParticlesScene {
 
 		// flip the group
 		this.group.scale.y = -1;
+		this.group.position.z = 0.6;
 		this.scene.add(this.group);
 	}
 
@@ -181,11 +185,15 @@ class ParticlesScene {
 	addDebug() {
 		this.gui = new GUI();
 		this.gui.close();
-		this.gui.add(this.directionalLight.position, 'x', -10, 10, 0.01);
-		this.gui.add(this.directionalLight.position, 'y', -10, 10, 0.01);
-		this.gui.add(this.directionalLight.position, 'z', -10, 10, 0.01);
+		const folder = this.gui.addFolder('Lights');
 		// directional light
-		this.gui.add(this.directionalLight, 'intensity', 0, 10, 0.01);
+		folder.add(this.directionalLight, 'intensity', 0, 10, 0.01).name('Directional Light Intensity');
+		folder.addColor(this.directionalLight, 'color').name('Directional Light Color');
+
+		const folder1 = this.gui.addFolder('Material');
+		folder1.add(this.material.uniforms.uNoise, 'value', 0, 1, 0.01).name('Noise');
+		folder1.addColor(this.material.uniforms.uColor, 'value').name('Color');
+		folder1.addColor(this.material.uniforms.uColor2, 'value').name('Color2');
 	}
 
 	onWindowResize(): void {

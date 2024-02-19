@@ -9,6 +9,8 @@ uniform float uCameraNear;
 uniform float uCameraFar;
 uniform sampler2D uDepths;
 varying vec3 vPos;
+uniform vec3 uColor;
+uniform vec3 uColor2;
 
 
 
@@ -23,11 +25,14 @@ void main() {
     vec2 uv = vUv;
     float depth = readDepth(uDepths, vUv1);
 
-    vec3 c1 = vec3(0.27, 0.78, 0.93);;
-    vec3 c2 = vec3(1.0, 0.12, 0.09);
+    // vec3 c1 = vec3(0.27, 0.78, 0.93);;
+    // vec3 c2 = vec3(1.0, 0.12, 0.09);
+
+    vec3 c1 = uColor;
+    vec3 c2 = uColor2;
 
     vec3 color = vec3(1.0 - depth) * mix(c1, c2, depth);
-    color += mix(color, vec3(0.1, 0.0, 0.7), 0.5);
+    color += mix(color, uColor, 0.2);
 
     gl_FragColor.rgb = color;
     gl_FragColor.a = 1.0;
