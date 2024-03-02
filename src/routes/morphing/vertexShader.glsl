@@ -41,9 +41,10 @@ void main()
     float progress = smoothstep(delay, end, uProgress);
     vec3 mixedPosition = mix(aPositionTarget, position, progress);
 
-
     // Noise with mouse
+    // convert -1 - 1 from whole screen to 0 - 1 to fit the noise function
     vec2 mouse = uMouse;
+    mouse = mouse * 12.0;
     float noiseMouse = simplexNoise3d(vec3(mouse, uTime * 0.1));
     float distanceToMouse = distance(mixedPosition.xy, mouse);
 
@@ -55,10 +56,10 @@ void main()
 
         // moving circlular
         float angle = atan(mixedPosition.y - mouse.y, mixedPosition.x - mouse.x);
+        angle += noise * (sin(uTime * 2.5) + 1.0) * 0.5;
         mixedPosition.xy += vec2(cos(angle), sin(angle)) * noise * (sin(uTime * 2.5) + 1.0) * 0.5;
-
-
     }
+    
     
 
     // Varyings

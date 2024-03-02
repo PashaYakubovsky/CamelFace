@@ -3,9 +3,9 @@ import fragmentShader from './fragmentShader.glsl';
 import Stats from 'three/examples/jsm/libs/stats.module';
 
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import GUI from 'lil-gui';
 import gsap from 'gsap';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -45,6 +45,7 @@ class MophingScene {
 		positions?: THREE.Float32BufferAttribute[];
 		index: number;
 		targetIndex: number;
+		sizes?: Float32Array;
 	} = {
 		maxCount: 0,
 		index: 1,
@@ -128,54 +129,57 @@ class MophingScene {
 			 */
 
 			// Positions
-			const positions = gltf.scene.children.map((child) => {
-				return (child as THREE.Mesh).geometry.getAttribute('position') as THREE.BufferAttribute;
-			});
-			const maxCount = positions.reduce(
-				(max: number, position: THREE.BufferAttribute) => Math.max(max, position.count),
-				0
+			const { children } = gltf.scene;
+			const maxCount = Math.max(
+				...children.map(
+					(child) => (child as THREE.Mesh).geometry.getAttribute('position')?.count || 0
+				)
 			);
 
-			this.particles.maxCount = maxCount;
-			this.particles.positions = [];
-			for (const position of positions) {
+			this.particles = {
+				...this.particles,
+				maxCount,
+				positions: []
+			};
+
+			children.forEach((child) => {
+				const position = (child as THREE.Mesh).geometry.getAttribute(
+					'position'
+				) as THREE.BufferAttribute;
 				const original = position.array;
 				const newArr = new Float32Array(maxCount * 3);
 
 				for (let i = 0; i < maxCount; i++) {
 					const i3 = i * 3;
+					const i3mod = i3 % original.length;
 
-					if (i3 < original.length) {
-						newArr[i3] = original[i3];
-						newArr[i3 + 1] = original[i3 + 1];
-						newArr[i3 + 2] = original[i3 + 2];
-					} else {
-						const i3mod = i3 % original.length;
-						newArr[i3] = original[i3mod];
-						newArr[i3 + 1] = original[i3mod + 1];
-						newArr[i3 + 2] = original[i3mod + 2];
-					}
+					newArr.set(original.subarray(i3mod, i3mod + 3), i3);
 				}
 
-				this.particles.positions.push(new THREE.Float32BufferAttribute(newArr, 3));
-			}
+				if (this.particles.positions)
+					this.particles.positions.push(new THREE.Float32BufferAttribute(newArr, 3));
+			});
 
-			const arrSizes = new Float32Array(this.particles.maxCount);
-			for (let i = 0; i < this.particles.maxCount; i++) {
-				arrSizes[i] = Math.random();
-			}
+			this.particles.sizes = Float32Array.from({ length: maxCount }, () => Math.random());
 
 			// Geometry
 			this.particles.geometry = new THREE.BufferGeometry();
+			if (this.particles.positions) {
+				this.particles.geometry.setAttribute(
+					'position',
+					this.particles.positions[this.particles.index]
+				);
+
+				this.particles.geometry.setAttribute(
+					'aPositionTarget',
+					this.particles.positions[this.particles.targetIndex]
+				);
+			}
+
 			this.particles.geometry.setAttribute(
-				'position',
-				this.particles.positions[this.particles.index]
+				'aSize',
+				new THREE.BufferAttribute(this.particles.sizes, 1)
 			);
-			this.particles.geometry.setAttribute(
-				'aPositionTarget',
-				this.particles.positions[this.particles.targetIndex]
-			);
-			this.particles.geometry.setAttribute('aSize', new THREE.BufferAttribute(arrSizes, 1));
 
 			// Material
 			this.particles.material = new THREE.ShaderMaterial({
@@ -290,18 +294,8 @@ class MophingScene {
 	}
 
 	onWindowResize(): void {
-		// Update sizes
 		this.width = window.innerWidth;
 		this.height = window.innerHeight;
-		this.pixelRatio = Math.min(window.devicePixelRatio, 2);
-
-		if (this.particles.material) {
-			// Materials
-			this.particles.material.uniforms.uResolution.value.set(
-				this.width * this.pixelRatio,
-				this.height * this.pixelRatio
-			);
-		}
 
 		// Update camera
 		this.camera.aspect = this.width / this.height;
@@ -309,7 +303,15 @@ class MophingScene {
 
 		// Update renderer
 		this.renderer.setSize(this.width, this.height);
-		this.renderer.setPixelRatio(this.pixelRatio);
+		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+		// Update resolution uniform
+		if (this.particles.material) {
+			this.particles.material.uniforms.uResolution.value = new THREE.Vector2(
+				this.width * this.pixelRatio,
+				this.height * this.pixelRatio
+			);
+		}
 	}
 
 	onMouseMove(event: MouseEvent): void {
@@ -326,12 +328,12 @@ class MophingScene {
 		this.mouse.y = -(y / rect.height) * 2 + 1;
 
 		// Rescaling from (-1, 1) to (-4.5, 4.5)
-		this.mouse.x *= 4.5;
-		this.mouse.y *= 4.5;
+		// this.mouse.x *= 4.5;
+		// this.mouse.y *= 4.5;
 
 		// Shifting the center from (0, 0) to (0.5, 0.5)
-		this.mouse.x += 0.5;
-		this.mouse.y += 0.5;
+		// this.mouse.x += 0.5;
+		// this.mouse.y += 0.5;
 
 		console.log('[morph:mouse]', this.mouse);
 
