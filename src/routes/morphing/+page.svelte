@@ -13,9 +13,11 @@
 		gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 		const smoother = new ScrollSmoother({
 			content: parentElem,
-			smooth: 0.1,
+			smooth: 1.1,
 			effects: true,
-			speed: 0.33
+			speed: 0.5,
+			smoothTouch: true,
+			normalizeScroll: true
 		});
 
 		scene = new Scene(canvasElem);
