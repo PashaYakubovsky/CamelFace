@@ -470,12 +470,12 @@
 </div>
 
 <style>
-	button:hover svg {
+	/* button:hover svg {
 		transform: translateX(0.5rem);
 	}
 	svg {
 		transition: 0.3s ease-in-out transform;
-	}
+	} */
 	h2 {
 		overflow: hidden;
 		transition: clip-path 0.3s ease-in-out;

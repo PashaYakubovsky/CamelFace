@@ -10,7 +10,7 @@
 <style>
 	footer {
 		text-align: center;
-		position: absolute;
+		position: fixed;
 		bottom: 0.5rem;
 		left: 0.5rem;
 		z-index: 1000;

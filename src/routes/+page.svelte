@@ -66,9 +66,12 @@
 
 	onMount(() => {
 		randomTitle();
+		// disable scroll
+		document.body.style.overflow = 'hidden';
 
 		return () => {
 			clearInterval(intervalId);
+			document.body.style.overflow = 'auto';
 		};
 	});
 
