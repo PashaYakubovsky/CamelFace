@@ -350,6 +350,20 @@ class MophingScene {
 		if (this.particles.points) {
 		}
 
+		// Lerp particles to mouse position
+		if (this.particles.points) {
+			this.particles.points.position.x = gsap.utils.interpolate(
+				this.particles.points.position.x,
+				this.mouse.x,
+				0.01
+			);
+			this.particles.points.position.y = gsap.utils.interpolate(
+				this.particles.points.position.y,
+				this.mouse.y,
+				0.01
+			);
+		}
+
 		// Rotate points
 		if (this.particles.points) {
 			this.particles.points.rotation.y = Math.sin(this.time * 0.1) * 0.5;
