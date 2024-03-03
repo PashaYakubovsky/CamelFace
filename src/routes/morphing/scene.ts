@@ -115,8 +115,8 @@ class MophingScene {
 		// Events
 		window.addEventListener('resize', this.onWindowResize.bind(this), false);
 		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
-		window.addEventListener('click', this.onClick.bind(this), false);
-		window.addEventListener('wheel', this.onWheel.bind(this), false);
+		// window.addEventListener('click', this.onClick.bind(this), false);
+		// window.addEventListener('wheel', this.onWheel.bind(this), false);
 	}
 
 	onReady() {}
@@ -389,8 +389,8 @@ class MophingScene {
 	}
 
 	destroy(): void {
-		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
-		window.removeEventListener('click', this.onClick.bind(this));
+		// window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+		// window.removeEventListener('click', this.onClick.bind(this));
 		window.removeEventListener('wheel', this.onWheel.bind(this));
 
 		this.renderer.dispose();
