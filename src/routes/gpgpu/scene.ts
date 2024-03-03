@@ -441,9 +441,8 @@ class GPGPUScene {
 
 			if (intersects[0].point && this.gpgpu && this.gpgpu.particlesVariable) {
 				this.gpgpu.particlesVariable.material.uniforms.uIntersect.value = intersects[0].point;
+				console.log('[gpgpu:intersects]', intersects[0].point);
 			}
-
-			console.log('[gpgpu:intersects]', intersects[0].point);
 		}
 
 		if (this.particles.material) {
