@@ -16,24 +16,10 @@ class MophingScene {
 	private width = window.innerWidth;
 	private height = window.innerHeight;
 	private pixelRatio = Math.min(window.devicePixelRatio, 2);
-	group: THREE.Group | undefined;
 	stats?: Stats;
 	time = 0;
-	material!: THREE.ShaderMaterial;
-	count!: number;
 	scene!: THREE.Scene;
 	camera!: THREE.PerspectiveCamera;
-	target!: THREE.WebGLRenderTarget;
-	geometry!: THREE.PlaneGeometry;
-	skullGeometry!: THREE.BufferGeometry;
-	depthCamera!: THREE.PerspectiveCamera;
-	skullMesh!: THREE.Mesh;
-	ambientLight!: THREE.AmbientLight;
-	directionalLight!: THREE.DirectionalLight;
-	skull!: THREE.Mesh;
-	text!: string;
-	textMesh!: THREE.Mesh;
-	skullMaterial!: THREE.MeshPhysicalMaterial;
 	gui!: GUI;
 	gltfLoader: GLTFLoader;
 	dracoLoader: DRACOLoader;
@@ -389,9 +375,9 @@ class MophingScene {
 	}
 
 	destroy(): void {
-		// window.removeEventListener('mousemove', this.onMouseMove.bind(this));
-		// window.removeEventListener('click', this.onClick.bind(this));
-		window.removeEventListener('wheel', this.onWheel.bind(this));
+		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+
+		if (this.gui) this.gui.destroy();
 
 		this.renderer.dispose();
 		this.renderer.forceContextLoss();

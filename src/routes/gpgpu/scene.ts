@@ -492,8 +492,8 @@ class GPGPUScene {
 
 	destroy(): void {
 		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
-		window.removeEventListener('click', this.onClick.bind(this));
-		window.removeEventListener('wheel', this.onWheel.bind(this));
+
+		if (this.gui) this.gui.destroy();
 
 		this.renderer.dispose();
 		this.renderer.forceContextLoss();
