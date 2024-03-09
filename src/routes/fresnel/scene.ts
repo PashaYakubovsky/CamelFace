@@ -175,8 +175,8 @@ class MophingScene {
 		const mesh = new THREE.Mesh(geometry, this.material);
 
 		const geometry1 = new THREE.SphereGeometry(4.8, 32, 32);
-		const material1 = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
-		const mesh1 = new THREE.Mesh(geometry1, material1);
+		this.material1 = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+		const mesh1 = new THREE.Mesh(geometry1, this.material1);
 
 		mesh.add(mesh1);
 
@@ -223,13 +223,24 @@ class MophingScene {
 			.step(0.1)
 			.name('Rayleigh');
 
-		// hologram
+		// fresnel
 		const fresnelFolder = this.gui.addFolder('Fresnel');
-		fresnelFolder.addColor(this.debugObject, 'color').onChange(() => {
-			if (this.material) {
-				this.material.uniforms.uColor.value = new THREE.Color(this.debugObject.color);
-			}
-		});
+		fresnelFolder
+			.addColor(this.debugObject, 'color')
+			.name('Fresnel color')
+			.onChange(() => {
+				if (this.material) {
+					this.material.uniforms.uColor.value = new THREE.Color(this.debugObject.color);
+				}
+			});
+		fresnelFolder
+			.addColor(this.material1, 'color')
+			.name('Sphere color')
+			.onChange(() => {
+				if (this.material1) {
+					this.material1.color.set(this.debugObject.floorColor);
+				}
+			});
 		fresnelFolder
 			.add(this.debugObject, 'falloff')
 			.min(0)

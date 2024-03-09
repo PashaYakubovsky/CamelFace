@@ -28,7 +28,7 @@
 	});
 </script>
 
-<title>Hologram</title>
+<title>Fresnel</title>
 
 <div bind:this={parentElem} class="parent">
 	<canvas bind:this={canvasElem} />
