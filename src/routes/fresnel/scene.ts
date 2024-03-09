@@ -27,6 +27,7 @@ class MophingScene {
 	controls: OrbitControls;
 	debugObject = {
 		clearColor: '#312f32',
+		sphereColor: '#000000',
 		color: '#50c8fc',
 		orbitControls: false,
 		falloff: 0.9,
@@ -37,6 +38,7 @@ class MophingScene {
 	};
 	floorPlane!: THREE.Mesh;
 	sky!: Sky;
+	material1!: THREE.MeshBasicMaterial;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -234,11 +236,11 @@ class MophingScene {
 				}
 			});
 		fresnelFolder
-			.addColor(this.material1, 'color')
+			.addColor(this.debugObject, 'sphereColor')
 			.name('Sphere color')
 			.onChange(() => {
 				if (this.material1) {
-					this.material1.color.set(this.debugObject.floorColor);
+					this.material1.color.set(this.debugObject.sphereColor);
 				}
 			});
 		fresnelFolder
