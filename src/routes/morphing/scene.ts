@@ -10,7 +10,7 @@ import GUI from 'lil-gui';
 import gsap from 'gsap';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
-class MophingScene {
+class MorphingScene {
 	private renderer: THREE.WebGLRenderer;
 	private mouse: THREE.Vector2;
 	private width = window.innerWidth;
@@ -101,102 +101,99 @@ class MophingScene {
 		// Events
 		window.addEventListener('resize', this.onWindowResize.bind(this), false);
 		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
-		// window.addEventListener('click', this.onClick.bind(this), false);
-		// window.addEventListener('wheel', this.onWheel.bind(this), false);
 	}
 
-	onReady() {}
+	onReady() {
+		// Ready callback
+	}
 
 	addObjects() {
 		// Load models
-		this.gltfLoader.load('/models.glb', (gltf: GLTF) => {
-			/**
-			 * Particles
-			 */
+		// this.gltfLoader.load('/models.glb', (gltf: GLTF) => {
 
-			// Positions
-			const { children } = gltf.scene;
-			const maxCount = Math.max(
-				...children.map(
-					(child) => (child as THREE.Mesh).geometry.getAttribute('position')?.count || 0
-				)
-			);
+		// Positions
+		const { children } = gltf.scene;
+		const maxCount = Math.max(
+			...children.map(
+				(child) => (child as THREE.Mesh).geometry.getAttribute('position')?.count || 0
+			)
+		);
 
-			this.particles = {
-				...this.particles,
-				maxCount,
-				positions: []
-			};
+		this.particles = {
+			...this.particles,
+			maxCount,
+			positions: []
+		};
 
-			children.forEach((child) => {
-				const position = (child as THREE.Mesh).geometry.getAttribute(
-					'position'
-				) as THREE.BufferAttribute;
-				const original = position.array;
-				const newArr = new Float32Array(maxCount * 3);
+		children.forEach((child) => {
+			const position = (child as THREE.Mesh).geometry.getAttribute(
+				'position'
+			) as THREE.BufferAttribute;
+			const original = position.array;
+			const newArr = new Float32Array(maxCount * 3);
 
-				for (let i = 0; i < maxCount; i++) {
-					const i3 = i * 3;
-					const i3mod = i3 % original.length;
+			for (let i = 0; i < maxCount; i++) {
+				const i3 = i * 3;
+				const i3mod = i3 % original.length;
 
-					newArr.set(original.subarray(i3mod, i3mod + 3), i3);
-				}
-
-				if (this.particles.positions)
-					this.particles.positions.push(new THREE.Float32BufferAttribute(newArr, 3));
-			});
-
-			this.particles.sizes = Float32Array.from({ length: maxCount }, () => Math.random());
-
-			// Geometry
-			this.particles.geometry = new THREE.BufferGeometry();
-			if (this.particles.positions) {
-				this.particles.geometry.setAttribute(
-					'position',
-					this.particles.positions[this.particles.index]
-				);
-
-				this.particles.geometry.setAttribute(
-					'aPositionTarget',
-					this.particles.positions[this.particles.targetIndex]
-				);
+				newArr.set(original.subarray(i3mod, i3mod + 3), i3);
 			}
 
+			if (this.particles.positions)
+				this.particles.positions.push(new THREE.Float32BufferAttribute(newArr, 3));
+		});
+
+		this.particles.sizes = Float32Array.from({ length: maxCount }, () => Math.random());
+
+		// Geometry
+		this.particles.geometry = new THREE.BufferGeometry();
+		if (this.particles.positions) {
 			this.particles.geometry.setAttribute(
-				'aSize',
-				new THREE.BufferAttribute(this.particles.sizes, 1)
+				'position',
+				this.particles.positions[this.particles.index]
 			);
 
-			// Material
-			this.particles.material = new THREE.ShaderMaterial({
-				vertexShader,
-				fragmentShader,
-				blending: THREE.AdditiveBlending,
-				depthTest: false,
-				uniforms: {
-					uProgress: new THREE.Uniform(0),
-					uSize: new THREE.Uniform(this.debugObject.size),
-					uResolution: new THREE.Uniform(
-						new THREE.Vector2(this.width * this.pixelRatio, this.height * this.pixelRatio)
-					),
-					uMorphMergeSize: new THREE.Uniform(this.debugObject.morphMergeSize),
-					uMorphDuration: new THREE.Uniform(this.debugObject.morphDuration),
-					uMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
-					uTime: new THREE.Uniform(0),
-					uColor1: new THREE.Uniform(new THREE.Color(this.debugObject.color1)),
-					uColor2: new THREE.Uniform(new THREE.Color(this.debugObject.color2))
-				}
-			});
+			this.particles.geometry.setAttribute(
+				'aPositionTarget',
+				this.particles.positions[this.particles.targetIndex]
+			);
+		}
 
-			// Points
-			this.particles.points = new THREE.Points(this.particles.geometry, this.particles.material);
-			// Disable frustum culling for preventing points to be culled
-			this.particles.points.frustumCulled = false;
-			this.scene.add(this.particles.points);
+		this.particles.geometry.setAttribute(
+			'aSize',
+			new THREE.BufferAttribute(this.particles.sizes, 1)
+		);
 
-			// On ready callback
-			this.onReady();
+		// Material
+		this.particles.material = new THREE.ShaderMaterial({
+			vertexShader,
+			fragmentShader,
+			blending: THREE.AdditiveBlending,
+			depthTest: false,
+			uniforms: {
+				uProgress: new THREE.Uniform(0),
+				uSize: new THREE.Uniform(this.debugObject.size),
+				uResolution: new THREE.Uniform(
+					new THREE.Vector2(this.width * this.pixelRatio, this.height * this.pixelRatio)
+				),
+				uMorphMergeSize: new THREE.Uniform(this.debugObject.morphMergeSize),
+				uMorphDuration: new THREE.Uniform(this.debugObject.morphDuration),
+				uMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
+				uTime: new THREE.Uniform(0),
+				uColor1: new THREE.Uniform(new THREE.Color(this.debugObject.color1)),
+				uColor2: new THREE.Uniform(new THREE.Color(this.debugObject.color2))
+			}
 		});
+
+		// Points
+		this.particles.points = new THREE.Points(this.particles.geometry, this.particles.material);
+		// Disable frustum culling for preventing points to be culled
+		this.particles.points.frustumCulled = false;
+		this.scene.add(this.particles.points);
+
+		// On ready callback
+		this.onReady();
+		// });
 	}
 
 	morph({ index, targetIndex }: { index?: number; targetIndex?: number }) {
@@ -334,10 +331,6 @@ class MophingScene {
 		// Update controls
 		if (this.controls) this.controls.update();
 
-		// Lerp camera to points
-		if (this.particles.points) {
-		}
-
 		// Lerp particles to mouse position
 		if (this.particles.points) {
 			this.particles.points.position.x = gsap.utils.interpolate(
@@ -391,8 +384,6 @@ class MophingScene {
 
 		if (this.stats) this.stats.dom.remove();
 	}
-
-	onWheel(event: WheelEvent) {}
 }
 
-export default MophingScene;
+export default MorphingScene;

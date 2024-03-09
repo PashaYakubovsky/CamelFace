@@ -16,16 +16,7 @@ attribute float aSize;
 
 #include ./includes/simplexNoise3d.glsl
 
-float distanceWithNoiseEdge(vec2 p, float edge, float noise)
-{   
-    float d = edge - distance(p, vec2(0.5));
-    d += noise;
-    return d;
-}
-
-
-void main()
-{
+void main() {
     // Position mixed with noise
     float noiseOrigin =  simplexNoise3d(position * uMorphMergeSize);
     float noiseTarget =  simplexNoise3d(aPositionTarget * uMorphMergeSize);
@@ -45,20 +36,11 @@ void main()
     // convert -1 - 1 from whole screen to 0 - 1 to fit the noise function
     vec2 mouse = uMouse;
     mouse = mouse * 12.0;
-    float noiseMouse = simplexNoise3d(vec3(mouse, uTime * 0.1));
     float distanceToMouse = distance(mixedPosition.xy, mouse);
 
-    if(distanceToMouse < 1.2)
-    {   
-        float noise = mix(noiseMouse, noise, 0.5);
-        noise = smoothstep(-1.0, 1.0, noise);
-        // mixedPosition.xy += normalize(mixedPosition.xy - mouse) * noise * clamp((sin(uTime * 2.5) * 2.0), 1.0, 5.0);
-
-        // moving circlular
-        float angle = atan(mixedPosition.y - mouse.y, mixedPosition.x - mouse.x);
-        angle += noise * (sin(uTime * 2.5) + 1.0) * 0.5;
-        mixedPosition.xy += vec2(cos(angle), sin(angle)) * noise * (sin(uTime * 2.5) + 1.0) * 0.5;
-    }
+    // move particle away from mouse
+    float force = (1.0 - distanceToMouse) * 2.0;
+    mixedPosition.xy += normalize(mixedPosition.xy - mouse) * force * 0.1;
     
     
 

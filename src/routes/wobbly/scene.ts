@@ -62,7 +62,7 @@ class WobblyScene {
 	};
 	floorPlane!: THREE.Mesh;
 	geometry!: THREE.BufferGeometry;
-	wobble!: THREE.Mesh;
+	wobble!: THREE.Mesh | THREE.Group;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.height = window.innerHeight;
@@ -244,7 +244,8 @@ class WobblyScene {
 			.step(0.01)
 			.onChange(() => {
 				if (this.material) {
-					this.material.metalness = this.debugObject.metalness;
+					(this.material as unknown as THREE.MeshPhysicalMaterial).metalness =
+						this.debugObject.metalness;
 				}
 			});
 		folder
@@ -254,7 +255,8 @@ class WobblyScene {
 			.step(0.01)
 			.onChange(() => {
 				if (this.material) {
-					this.material.roughness = this.debugObject.roughness;
+					(this.material as unknown as THREE.MeshPhysicalMaterial).roughness =
+						this.debugObject.roughness;
 				}
 			});
 		folder
@@ -264,7 +266,8 @@ class WobblyScene {
 			.step(0.01)
 			.onChange(() => {
 				if (this.material) {
-					this.material.transmission = this.debugObject.transmission;
+					(this.material as unknown as THREE.MeshPhysicalMaterial).transmission =
+						this.debugObject.transmission;
 				}
 			});
 		folder
@@ -274,7 +277,7 @@ class WobblyScene {
 			.step(0.01)
 			.onChange(() => {
 				if (this.material) {
-					this.material.ior = this.debugObject.ior;
+					(this.material as unknown as THREE.MeshPhysicalMaterial).ior = this.debugObject.ior;
 				}
 			});
 		folder
@@ -284,7 +287,8 @@ class WobblyScene {
 			.step(0.01)
 			.onChange(() => {
 				if (this.material) {
-					this.material.thickness = this.debugObject.thickness;
+					(this.material as unknown as THREE.MeshPhysicalMaterial).thickness =
+						this.debugObject.thickness;
 				}
 			});
 
@@ -383,7 +387,7 @@ class WobblyScene {
 				['Box']: new THREE.BoxGeometry(5, 5, 5, 50, 50, 50),
 				['Circle']: new THREE.CircleGeometry(2.5, 50)
 			};
-			this.geometry = mergeVertices(shapeCreate[value]);
+			this.geometry = mergeVertices(shapeCreate[value as keyof typeof shapeCreate]);
 			this.geometry.computeTangents();
 
 			if (this.wobble) {
