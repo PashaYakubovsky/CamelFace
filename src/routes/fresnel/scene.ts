@@ -27,7 +27,7 @@ class MophingScene {
 	controls: OrbitControls;
 	debugObject = {
 		clearColor: '#312f32',
-		sphereColor: '#000000',
+		sphereColor: new THREE.Color('#50c8fc'),
 		color: '#50c8fc',
 		orbitControls: false,
 		falloff: 0.9,
@@ -38,7 +38,7 @@ class MophingScene {
 	};
 	floorPlane!: THREE.Mesh;
 	sky!: Sky;
-	material1!: THREE.MeshBasicMaterial;
+	material1!: THREE.MeshPhysicalMaterial;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -69,8 +69,9 @@ class MophingScene {
 		// Lights
 		const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 		this.scene.add(ambientLight);
-		const directionalLight = new THREE.DirectionalLight(0xffffff, 12);
-		directionalLight.position.set(0, 0, 10);
+		const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+		directionalLight.position.set(5, 2, 10);
+		this.scene.add(directionalLight);
 
 		this.stats = new Stats();
 		this.stats.dom.style.left = 'auto';
@@ -145,11 +146,10 @@ class MophingScene {
 
 	addObjects() {
 		// Load models
-		// this.gltfLoader.load('/AnimatedHuman.glb', (gltf: GLTF) => {
+
 		/**
 		 * Setup objects
 		 */
-		// const mesh = gltf.scene.getObjectByName('Human_Mesh') as THREE.SkinnedMesh;
 
 		// Material
 		this.material = new THREE.ShaderMaterial({
@@ -177,7 +177,14 @@ class MophingScene {
 		const mesh = new THREE.Mesh(geometry, this.material);
 
 		const geometry1 = new THREE.SphereGeometry(4.8, 32, 32);
-		this.material1 = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+		this.material1 = new THREE.MeshPhysicalMaterial({
+			color: this.debugObject.sphereColor,
+			side: THREE.DoubleSide,
+			metalness: 0.2,
+			roughness: 0.8,
+			ior: 1.5,
+			thickness: 0.1
+		});
 		const mesh1 = new THREE.Mesh(geometry1, this.material1);
 
 		mesh.add(mesh1);
@@ -235,14 +242,7 @@ class MophingScene {
 					this.material.uniforms.uColor.value = new THREE.Color(this.debugObject.color);
 				}
 			});
-		fresnelFolder
-			.addColor(this.debugObject, 'sphereColor')
-			.name('Sphere color')
-			.onChange(() => {
-				if (this.material1) {
-					this.material1.color.set(this.debugObject.sphereColor);
-				}
-			});
+
 		fresnelFolder
 			.add(this.debugObject, 'falloff')
 			.min(0)
@@ -265,6 +265,38 @@ class MophingScene {
 					this.material.uniforms.uFresnelPower.value = this.debugObject.fresnelPower;
 				}
 			});
+
+		const meshPhysicalMaterialFolder = this.gui.addFolder('MeshPhysicalMaterial');
+		meshPhysicalMaterialFolder
+			.addColor(this.debugObject, 'sphereColor')
+			.name('Sphere color')
+			.onChange(() => {
+				if (this.material1) {
+					this.material1.color.set(this.debugObject.sphereColor);
+				}
+			});
+		meshPhysicalMaterialFolder
+			.add(this.material1, 'metalness')
+			.min(0)
+			.max(1)
+			.step(0.01)
+			.name('Metalness');
+
+		meshPhysicalMaterialFolder
+			.add(this.material1, 'roughness')
+			.min(0)
+			.max(1)
+			.step(0.01)
+			.name('Roughness');
+
+		meshPhysicalMaterialFolder.add(this.material1, 'ior').min(1).max(3).step(0.01).name('IOR');
+
+		meshPhysicalMaterialFolder
+			.add(this.material1, 'thickness')
+			.min(0)
+			.max(1)
+			.step(0.01)
+			.name('Thickness');
 	}
 
 	onWindowResize(): void {
