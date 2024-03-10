@@ -173,10 +173,10 @@ class MophingScene {
 			}
 		});
 
-		const geometry = new THREE.SphereGeometry(5, 32, 32);
+		const geometry = new THREE.SphereGeometry(5, 64, 64);
 		const mesh = new THREE.Mesh(geometry, this.material);
 
-		const geometry1 = new THREE.SphereGeometry(4.8, 32, 32);
+		const geometry1 = new THREE.SphereGeometry(4.8, 64, 64);
 		this.material1 = new THREE.MeshPhysicalMaterial({
 			color: this.debugObject.sphereColor,
 			side: THREE.DoubleSide,
