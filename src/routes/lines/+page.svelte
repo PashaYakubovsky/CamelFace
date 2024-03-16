@@ -7,10 +7,12 @@
 
 	onMount(() => {
 		scene = new Scene(canvasElem);
+		document.body.style.overflow = 'hidden';
 	});
 
 	onDestroy(() => {
 		if (scene) scene.destroy();
+		document.body.style.overflow = 'auto';
 	});
 </script>
 

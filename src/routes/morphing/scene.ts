@@ -107,10 +107,10 @@ class MorphingScene {
 		// Ready callback
 	}
 
-	addObjects() {
+	async addObjects() {
 		// Load models
 		// this.gltfLoader.load('/models.glb', (gltf: GLTF) => {
-
+		const gltf = await this.gltfLoader.loadAsync('/models.glb');
 		// Positions
 		const { children } = gltf.scene;
 		const maxCount = Math.max(

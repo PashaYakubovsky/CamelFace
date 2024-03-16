@@ -24,7 +24,6 @@ float sdfCircle(vec2 st, vec2 center, float radius) {
 
 void main() {
     vec2 uv = vUv;
-
     vec4 t = texture2D(uTexture, uv);
     vec4 vT = texture2D(videoTexture, uv);
 

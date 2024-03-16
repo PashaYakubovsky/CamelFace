@@ -77,7 +77,9 @@
 	let blogPost: Post[] = [];
 
 	posts.subscribe((value) => {
-		blogPost = value;
+		blogPost = value.sort((a, b) => {
+			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+		});
 	});
 
 	onMount(async () => {

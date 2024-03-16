@@ -5,7 +5,7 @@ import bgVertexShader from './shaders/bgVertexShader.glsl';
 import bgFragmentShader from './shaders/bgFragmentShader.glsl';
 import type { Media, Post } from '../types';
 import { defineScreen, type Screens } from '$lib/mediaQuery';
-import { loading, threejsLoading } from '$lib/loading';
+import { threejsLoading } from '$lib/loading';
 import gsap from 'gsap';
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
