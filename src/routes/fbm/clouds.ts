@@ -81,6 +81,19 @@ class cloudsScene {
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 	}
+
+	destroy() {
+		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+		window.removeEventListener('resize', this.onResize.bind(this));
+
+		this.scene.traverse((object) => {
+			if (object instanceof THREE.Mesh) {
+				object.geometry.dispose();
+				object.material.dispose();
+			}
+		});
+		if (this.renderer) this.renderer.dispose();
+	}
 }
 
 export default cloudsScene;

@@ -3,6 +3,7 @@
 	import MandelbrotScene from './mandelbrot';
 	import { loading } from '$lib/loading';
 	import { pageTransition } from '$lib/pageTransition';
+	import { goto } from '$app/navigation';
 
 	let canvasElement: HTMLCanvasElement;
 
@@ -20,7 +21,7 @@
 
 <button
 	on:click={() => {
-		pageTransition.update((state) => ({ ...state, toPage: '/mandelbrot/webgpu', start: true }));
+		goto('/mandelbrot/webgpu');
 	}}>webgpu version</button
 >
 

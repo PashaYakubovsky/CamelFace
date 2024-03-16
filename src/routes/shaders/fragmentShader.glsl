@@ -1,10 +1,10 @@
 precision mediump float;
 
-uniform vec2 u_resolution;
-uniform float u_time;
+uniform vec2 uResolution;
 uniform float time;
-uniform sampler2D texture1;
-uniform vec2 mouse;
+uniform sampler2D uTexture;
+uniform sampler2D videoTexture;
+uniform vec2 uMouse;
 precision highp float;
 uniform float distanceFromCenter;
 uniform vec4 resolution;
@@ -25,9 +25,15 @@ float sdfCircle(vec2 st, vec2 center, float radius) {
 void main() {
     vec2 uv = vUv;
 
-    vec4 t = texture2D(texture1, uv);
+    vec4 t = texture2D(uTexture, uv);
+    vec4 vT = texture2D(videoTexture, uv);
 
-    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+    // replace texture with video if it's available
+    if (vT.a > 0.0) {
+        t = vT;
+    }
+
+    vec2 st = gl_FragCoord.xy/uResolution.xy;
 
     st *= 100.0; // Scale the coordinate system by 10
     vec2 ipos = floor(st);  // get the integer coords
@@ -35,7 +41,7 @@ void main() {
 
     float bw = (t.r + t.g + t.b) / 3.0;
 
-    float d = sdfCircle(mouse, vec2(uv.x, uv.y - 0.5), .001);
+    float d = sdfCircle(uMouse, vec2(uv.x, uv.y - 0.5), .001);
     
     // apply the distance field to the color
     vec4 circle = vec4(vec3(1.0 - d), 1.0);

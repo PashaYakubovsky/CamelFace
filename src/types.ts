@@ -25,6 +25,7 @@ export interface TravelBlogPost {
 export interface Post {
 	id: string;
 	backgroundImage: string | Media;
+	video: string | Media;
 	title?: string;
 	author: string | User;
 	country: string | Country;

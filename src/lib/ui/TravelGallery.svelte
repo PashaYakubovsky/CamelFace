@@ -6,9 +6,9 @@
 	import type * as THREE from 'three';
 	import { handleHoverIn, handleHoverOut, pageTransition } from '$lib/pageTransition';
 	import { loading, threejsLoading } from '$lib/loading';
-	import { fade } from 'svelte/transition';
 	import { onlineUsers } from '$lib/onlineUsers';
 	import { goto } from '$app/navigation';
+	import { posts } from '$lib/posts';
 
 	export let blogPost: Post[] = [];
 
@@ -126,9 +126,11 @@
 
 		const init = async () => {
 			scene = new Scene(canvasElement);
+			blogPost = blogPost.sort(
+				(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+			);
 
 			scene.textColors = blogPost.map((post) => post.textColor);
-			// scene.backgroundColors = blogPost.map((post) => post.backgroundColor);
 
 			goBackButtonElement = document.querySelector('#goBackButton') as HTMLButtonElement;
 
@@ -136,11 +138,10 @@
 			contentElements = Array.from(
 				document.querySelectorAll('.post-info')
 			).reverse() as HTMLElement[];
-
 			await scene.addGallery({ posts: blogPost });
 
 			rots = scene.groups.map((g) => g.rotation);
-			positions = scene.meshes.map((g) => g.position);
+			positions = scene.groups.map((g) => g.position);
 			scales = scene.groups.map((g) => g.scale);
 
 			const objs = Array(blogPost.length)
@@ -156,7 +157,7 @@
 				speed *= 0.8;
 				rounded = Math.round(position);
 				let diff = rounded - position;
-				const nextIndex = +position.toFixed(0);
+				let nextIndex = +position.toFixed(0);
 
 				// get current index of anchor
 				currentIndex = nextIndex;
@@ -165,7 +166,7 @@
 					// set color animated for canvas
 					if (!disableBackground) {
 						gsap.to(pageWrapperElement, {
-							backgroundColor: scene.backgroundColors[currentIndex],
+							backgroundColor: scene.backgroundColors[+position.toFixed(0)],
 							duration: 0.6,
 							ease: 'power0.inOut'
 						});
@@ -178,8 +179,8 @@
 					}
 
 					navElements.forEach((navElement, i) => {
-						if (i === currentIndex) {
-							navElement.style.backgroundColor = scene.backgroundColors[i];
+						if (i === $posts.length - 1 - nextIndex) {
+							navElement.style.backgroundColor = '#000';
 						} else {
 							navElement.style.backgroundColor = '#fff';
 						}
@@ -233,7 +234,7 @@
 
 				scene.onClickEvent = (meshIndex: number) => {
 					// reverse the index
-					const rI = blogPost.length - 1 - meshIndex;
+					const rI = meshIndex;
 					if (meshIndex === currentIndex) {
 						goto(blogPost[rI].slug);
 					}
@@ -241,13 +242,6 @@
 			}
 
 			raf();
-
-			attractMode = true;
-			attractTo = blogPost.length - 2;
-			// wait for the scene to be ready
-			setTimeout(() => {
-				attractMode = false;
-			}, 1000);
 
 			window.addEventListener('wheel', handleWheel);
 			window.addEventListener('keydown', handleKeydown);
@@ -365,10 +359,6 @@
 					}
 				});
 
-				// scene.meshes.forEach((mesh) => {
-				// 	// change with and height of mesh
-				// 	mesh.geometry = scene.geometry;
-				// });
 				gsap.to(scales, {
 					duration: 0.3,
 					ease: 'power0.inOut',
@@ -401,6 +391,7 @@
 				}}
 				on:mouseenter={() => {
 					attractTo = index;
+					scene.changeVideo(index);
 				}}
 				class="bg-white mt-1 max-md:ml-1 min-w-[2vw] max-md:min-w-[4vw] min-h-[2vw] max-md:min-h-[4vw] h-4 rounded-full border border-gray-700 cursor-pointer"
 			>

@@ -5,7 +5,7 @@ import bgVertexShader from './shaders/bgVertexShader.glsl';
 import bgFragmentShader from './shaders/bgFragmentShader.glsl';
 import type { Media, Post } from '../types';
 import { defineScreen, type Screens } from '$lib/mediaQuery';
-import { threejsLoading } from '$lib/loading';
+import { loading, threejsLoading } from '$lib/loading';
 import gsap from 'gsap';
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
@@ -55,7 +55,7 @@ const createGeometry = (isMobile: boolean, screens: Screens) => {
 	if (!isMobile) {
 		geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0014];
 		if (screens.isXl) {
-			geometry = [window.innerWidth * 0.0013, window.innerWidth * 0.0011];
+			geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0015];
 		}
 		if (screens.is2Xl) {
 			geometry = [window.innerWidth * 0.0011, window.innerWidth * 0.001];
@@ -66,42 +66,51 @@ const createGeometry = (isMobile: boolean, screens: Screens) => {
 
 class TravelGalleryScene {
 	isMobile = window.innerWidth < 768;
-	private scene: THREE.Scene = new THREE.Scene();
+	scene: THREE.Scene = new THREE.Scene();
 	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		55,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	// private light: THREE.Light | null = null;
-	private raycaster = new THREE.Raycaster();
+	raycaster = new THREE.Raycaster();
 	renderer: THREE.WebGLRenderer | null = null;
-	private materials: THREE.ShaderMaterial[] = [];
-	private material: THREE.ShaderMaterial | null = null;
-	// private gui = new GUI();
+	materials: THREE.ShaderMaterial[] = [];
+	material: THREE.ShaderMaterial | null = null;
 	loaderManager = new THREE.LoadingManager();
-	private textureLoader = new THREE.TextureLoader(this.loaderManager);
+	textureLoader = new THREE.TextureLoader(this.loaderManager);
 	groups: THREE.Group[] = [];
 	meshes: THREE.Mesh[] = [];
 	mouse = new THREE.Vector2();
-	private width = window.innerWidth;
-	private height = window.innerHeight;
+	width = window.innerWidth;
+	height = window.innerHeight;
 	intersected: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
-	private hovered: Record<string, THREE.Intersection> = {};
-	screens: Screens = defineScreen();
+	hovered: Record<string, THREE.Intersection> = {};
+	screens: Screens = {
+		is2Xl: false,
+		isXl: false,
+		isLg: false,
+		isMd: false,
+		is3Xl: false
+	};
 	bgGeometry: THREE.PlaneGeometry | null = null;
 	bgMaterial: THREE.ShaderMaterial | null = null;
 	bgPlane: THREE.Mesh | null = null;
-	geometry: THREE.PlaneGeometry = createGeometry(this.isMobile, this.screens);
-	eulerValues = calculateEuler(this.isMobile, this.screens);
-	positionValues = calculatePosition(this.isMobile, this.screens);
-	private time = 0;
+	geometry: THREE.PlaneGeometry | null = null;
+	eulerValues = { x: 0, y: 0, z: 0 };
+	positionValues = { x: 0, y: 0, z: 0 };
+	time = 0;
 	backgroundColors: string[] = [];
 	textColors: string[] = [];
 	onClickEvent: ((meshIndex: number) => void) | null = null;
 	handleHoverIn: (() => void) | null = null;
 	handleHoverOut: (() => void) | null = null;
 	total = -1;
+	posts: Post[] = [];
+	videoNode: HTMLVideoElement | null = null;
+	videTexture: THREE.VideoTexture | null = null;
+	postsMaterials: THREE.ShaderMaterial[] = [];
+	prevMaterialIndex = -1;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -111,6 +120,11 @@ class TravelGalleryScene {
 			powerPreference: 'high-performance',
 			precision: 'highp'
 		});
+
+		this.screens = defineScreen();
+		this.geometry = createGeometry(this.isMobile, this.screens);
+		this.positionValues = calculatePosition(this.isMobile, this.screens);
+		this.eulerValues = calculateEuler(this.isMobile, this.screens);
 
 		// this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -128,7 +142,7 @@ class TravelGalleryScene {
 
 		const manager = this.loaderManager;
 
-		manager.onStart = function (url, itemsLoaded, itemsTotal) {
+		manager.onStart = (url, itemsLoaded, itemsTotal) => {
 			threejsLoading.update((v) => ({ ...v, loading: true, loaded: false }));
 
 			console.log(
@@ -141,21 +155,22 @@ class TravelGalleryScene {
 					' files.'
 			);
 		};
-		let countLoaded = 0;
 
-		manager.onLoad = () => {
-			console.log('Loading complete!');
-
-			countLoaded += 1;
-			if (countLoaded === this.total) {
-				threejsLoading.update((v) => ({ ...v, loaded: true, loading: false }));
-			}
-		};
-
-		manager.onProgress = function (url, itemsLoaded, itemsTotal) {
+		manager.onProgress = (url, itemsLoaded, itemsTotal) => {
 			console.log(
 				'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.'
 			);
+			const progressInPercent = (itemsLoaded / this.total) * 100;
+
+			threejsLoading.update((v) => ({ ...v, progress: progressInPercent }));
+
+			if (itemsLoaded === itemsTotal) {
+				threejsLoading.update((v) => ({
+					...v,
+					loaded: true,
+					loading: false
+				}));
+			}
 		};
 
 		manager.onError = function (url) {
@@ -190,16 +205,15 @@ class TravelGalleryScene {
 			side: THREE.DoubleSide,
 			uniforms: {
 				time: { value: 0 },
-				texture1: { value: null },
+				uTexture: { value: null },
 				resolutions: { value: new THREE.Vector4() },
 				distanceFromCenter: { value: 0 },
 				pixels: { value: new THREE.Vector2(1, 1) },
 				mouse: { value: new THREE.Vector2(0, 0) },
-				iResolution: { value: new THREE.Vector3(1, 1, 1) },
-				u_resolution: { value: new THREE.Vector2(1, 1) },
-				u_mouse: { value: new THREE.Vector2(0, 0) },
-				u_time: { value: 0 },
-				isMobile: { value: this.isMobile }
+				uResolution: { value: new THREE.Vector2(1, 1) },
+				uMouse: { value: new THREE.Vector2(0, 0) },
+				isMobile: { value: this.isMobile },
+				videoTexture: { value: null }
 			},
 			vertexShader,
 			fragmentShader,
@@ -237,67 +251,164 @@ class TravelGalleryScene {
 
 	async addGallery({ posts }: { posts: Post[] }) {
 		const textures: THREE.Texture[] = [];
-		this.total = posts.length;
-		this.posts = posts;
 
-		for (let i = posts.length - 1; i >= 0; i--) {
-			const media = posts[i].backgroundImage as Media;
+		// Create video node and texture
+		this.videoNode = document.createElement('video');
+		this.videoNode.loop = true;
+		this.videoNode.muted = true;
+
+		// Create video texture
+		this.videTexture = new THREE.VideoTexture(this.videoNode);
+		this.videTexture.minFilter = THREE.LinearFilter;
+		this.videTexture.magFilter = THREE.LinearFilter;
+		this.videTexture.format = THREE.RGBAFormat;
+
+		this.posts = posts.sort(
+			(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+		);
+		this.total = posts.length;
+
+		for (let i = 0; i < posts.length; i++) {
+			const post = posts[i];
+			const media = post.backgroundImage as Media;
 
 			const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
+
 			const file = await fetch(src);
 			const blob = await file.blob();
 			const url = URL.createObjectURL(blob);
 			console.log(url);
 
-			const applyTextures = () => {
-				textures.forEach((t) => {
-					if (!this.material || !this.geometry) return;
-					const texture = t;
-					const material = this.material.clone();
+			const texture = await this.textureLoader.loadAsync(url);
+			texture.minFilter = THREE.LinearFilter;
+			texture.magFilter = THREE.LinearFilter;
+			texture.colorSpace = THREE.SRGBColorSpace;
 
-					const group = new THREE.Group();
+			// take the average color of the image
+			const canvas = document.createElement('canvas');
+			const context = canvas.getContext('2d');
+			if (!context) return;
+			context.drawImage(texture.image, 0, 0);
+			const data = context.getImageData(0, 0, 1, 1).data;
+			const color = new THREE.Color(`rgb(${data[0]}, ${data[1]}, ${data[2]})`);
+			this.backgroundColors.push(color.getStyle());
+			canvas.remove();
 
-					material.uniforms.texture1.value = texture;
-					material.uniforms.texture1.value.needsUpdate = true;
+			textures.push(texture);
 
-					material.uniforms.u_resolution.value = new THREE.Vector3(
-						window.innerWidth,
-						window.innerHeight,
-						1
-					);
+			// Apply texture to the material
+			if (!this.material || !this.geometry) return;
+			const material = this.material.clone();
 
-					const mesh = new THREE.Mesh(this.geometry, material);
+			try {
+				const group = new THREE.Group();
 
-					group.add(mesh);
+				material.uniforms.uTexture.value = texture;
+				material.uniforms.uTexture.value.needsUpdate = true;
+				material.uniforms.id = { value: i };
+				material.uniforms.uResolution.value = new THREE.Vector3(
+					window.innerWidth,
+					window.innerHeight,
+					1
+				);
 
-					group.rotation.set(this.eulerValues.x, this.eulerValues.y, this.eulerValues.z);
-					mesh.position.set(this.positionValues.x, this.positionValues.y, this.positionValues.z);
+				const mesh = new THREE.Mesh(this.geometry, material);
 
-					this.scene.add(group);
-					this.meshes.push(mesh);
-					this.materials.push(material);
-					this.groups.push(group);
-				});
-			};
+				group.add(mesh);
 
-			this.textureLoader.load(url, (texture) => {
-				texture.minFilter = THREE.LinearFilter;
-				texture.magFilter = THREE.LinearFilter;
-				texture.colorSpace = THREE.SRGBColorSpace;
+				group.position.y = -5 + i;
 
-				// take the average color of the image
-				const canvas = document.createElement('canvas');
-				const context = canvas.getContext('2d');
-				if (!context) return;
-				context.drawImage(texture.image, 0, 0);
-				const data = context.getImageData(0, 0, 1, 1).data;
-				const color = new THREE.Color(`rgb(${data[0]}, ${data[1]}, ${data[2]})`);
-				this.backgroundColors.push(color.getStyle());
-				canvas.remove();
+				this.meshes[i] = mesh;
+				this.materials[i] = material;
+				this.groups[i] = group;
+			} catch (err) {
+				console.error(err);
+			}
+		}
+		this.groups.forEach((group) => {
+			gsap.fromTo(
+				group.scale,
+				{
+					x: 2,
+					y: 2,
+					z: 2
+				},
+				{
+					x: 1,
+					y: 1,
+					z: 1,
+					duration: 1,
+					ease: 'power2.inOut'
+				}
+			);
 
-				textures.push(texture);
-				if (textures.length === posts.length) applyTextures();
+			gsap.fromTo(
+				group.position,
+				{
+					x: 0,
+					y: 5,
+					z: -1
+				},
+				{
+					...this.positionValues,
+					duration: 1,
+					ease: 'power2.inOut'
+				}
+			);
+			gsap.to(group.rotation, {
+				...this.eulerValues,
+				duration: 1,
+				ease: 'power2.inOut'
 			});
+			this.scene.add(group);
+		});
+
+		this.changeVideo(0);
+	}
+
+	// Change the index of the video to be played
+	async changeVideo(index: number) {
+		try {
+			if (this.prevMaterialIndex === index) return;
+
+			if (this.materials.length === 0) return;
+			const post = this.posts[index];
+			if (!post.video) return;
+
+			this.materials.forEach((material) => {
+				// clean video texture
+				if (material.uniforms.videoTexture) material.uniforms.videoTexture.value = null;
+			});
+
+			if (post.video) {
+				const media = post.video as Media;
+				const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
+				const file = fetch(src);
+				const blob = await (await file).blob();
+				const url = URL.createObjectURL(blob);
+				console.log(url, 'GALLERY:INDEX: ', index);
+
+				if (!this.videoNode) return;
+				this.videoNode.loop = true;
+				this.videoNode.muted = true;
+				this.videoNode.src = url;
+				this.videoNode.play();
+				this.videTexture = new THREE.VideoTexture(this.videoNode);
+				this.videTexture.minFilter = THREE.LinearFilter;
+				this.videTexture.magFilter = THREE.LinearFilter;
+				this.videTexture.format = THREE.RGBAFormat;
+
+				// Update video texture
+				if (this.videTexture) this.videTexture.needsUpdate = true;
+			}
+
+			// Apply video texture to the material
+			this.materials[index].uniforms.videoTexture.value = this.videTexture;
+			this.materials[index].needsUpdate = true;
+
+			this.prevMaterialIndex = index;
+		} catch (err) {
+			console.error(err);
 		}
 	}
 
@@ -313,31 +424,16 @@ class TravelGalleryScene {
 	resize() {
 		this.isMobile = window.innerWidth < 768;
 		this.width = window.innerWidth;
-		this.height = this.isMobile ? window.innerHeight * 0.35 : window.innerHeight;
-		this.camera.aspect = this.width / this.height;
+		this.height = window.innerHeight;
 		this.screens = defineScreen();
-		this.positionValues = calculatePosition(this.isMobile, this.screens);
-		this.eulerValues = calculateEuler(this.isMobile, this.screens);
-		this.geometry = createGeometry(this.isMobile, this.screens);
 
-		// const newPositions: [x: number, y: number, z: number] = [
-		// 	this.positionValues.x,
-		// 	this.positionValues.y,
-		// 	this.positionValues.z
-		// ];
-		// const newEuler: [x: number, y: number, z: number] = [
-		// 	this.eulerValues.x,
-		// 	this.eulerValues.y,
-		// 	this.eulerValues.z
-		// ];
+		if (this.renderer)
+			this.renderer.setSize(
+				window.innerWidth,
+				this.isMobile ? window.innerHeight * 0.35 : window.innerHeight
+			);
 
-		// this.groups.forEach((group, idx) => {
-		// 	group.rotation.set(...newEuler);
-		// 	this.meshes[idx].position.set(...newPositions);
-		// 	this.meshes[idx].geometry = this.geometry;
-		// });
-
-		if (this.renderer) this.renderer.setSize(this.width, this.height);
+		this.camera.aspect = this.width / this.height;
 
 		if (this.isMobile && this.bgPlane) {
 			// if bgPlane in scene, remove it
@@ -348,7 +444,7 @@ class TravelGalleryScene {
 
 		if (this.material) {
 			this.material.uniforms.isMobile.value = this.isMobile;
-			this.material.uniforms.u_resolution.value = new THREE.Vector3(
+			this.material.uniforms.uResolution.value = new THREE.Vector3(
 				window.innerWidth,
 				window.innerHeight,
 				1
@@ -385,19 +481,21 @@ class TravelGalleryScene {
 			// If a hit has not been flagged as hovered we must call onPointerOver
 			if (!this.hovered[hit.object.uuid]) {
 				this.hovered[hit.object.uuid] = hit;
+				const index = this.meshes.findIndex((m) => m.uuid === hit.object.uuid);
 
 				if (this.handleHoverIn) {
 					this.handleHoverIn();
 				}
+
+				this.changeVideo(index);
+				console.log(this.posts[index], index);
 			}
 			const obj = hit.object as THREE.Mesh;
 			// if obj is a bgPlane, dont change cursor
 			if (obj.material instanceof THREE.ShaderMaterial) {
 				if (obj.name === 'bgPlane') return;
 				document.body.style.cursor = 'pointer';
-				if (obj.material.uniforms.mouse) obj.material.uniforms.mouse.value = this.mouse;
 				if (obj.material.uniforms.uMouse) obj.material.uniforms.uMouse.value = this.mouse;
-				if (obj.material.uniforms.u_mouse) obj.material.uniforms.u_mouse.value = this.mouse;
 			}
 		});
 	}
@@ -426,7 +524,6 @@ class TravelGalleryScene {
 
 		this.materials.forEach((material) => {
 			material.uniforms.time.value = this.time;
-			material.uniforms.u_time.value = this.time;
 		});
 
 		if (this.bgMaterial) this.bgMaterial.uniforms.uTime.value = this.time;

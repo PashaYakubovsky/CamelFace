@@ -58,13 +58,13 @@
 
 	input {
 		position: absolute;
-		top: 6rem;
+		top: 2rem;
 		left: 1rem;
 		z-index: 1000;
 	}
 	button {
 		position: absolute;
-		top: 8.5rem;
+		top: 4.5rem;
 		left: 1rem;
 		z-index: 20;
 		border-radius: 0.25rem;

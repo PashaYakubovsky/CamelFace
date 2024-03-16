@@ -46,7 +46,11 @@ export const getPosts = async () => {
 			}
 		);
 		if (response.status === 200) {
-			posts.set(response.data.docs || mock.docs);
+			const data = response.data.docs || mock.docs;
+			data.sort((a, b) => {
+				return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+			});
+			posts.set(data);
 		}
 	} catch (error) {
 		posts.set(mock.docs as unknown as Post[]);
