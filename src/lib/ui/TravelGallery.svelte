@@ -21,6 +21,7 @@
 	let rots: THREE.Euler[] = [];
 	let positions: THREE.Vector3[] = [];
 	let scales: THREE.Vector3[] = [];
+	let materials: THREE.Material[] = [];
 	let scene: Scene;
 	let navElements: HTMLButtonElement[] = [];
 	let currentIndex = 0;
@@ -54,6 +55,15 @@
 
 	threejsLoading.subscribe((value) => {
 		allTextureLoaded = value.loaded;
+		if (value.loaded) {
+			attractTo = blogPost.length - 1;
+			attractMode = true;
+			currentIndex = blogPost.length - 1;
+			setTimeout(() => {
+				attractTo = 0;
+				attractMode = false;
+			}, 1000);
+		}
 	});
 
 	$: if (
@@ -143,6 +153,7 @@
 			rots = scene.groups.map((g) => g.rotation);
 			positions = scene.groups.map((g) => g.position);
 			scales = scene.groups.map((g) => g.scale);
+			materials = scene.groups.map((g) => g.children[0].material);
 
 			const objs = Array(blogPost.length)
 				.fill(null)
@@ -177,14 +188,6 @@
 
 						scene.addColorToBGShader(scene.backgroundColors[currentIndex]);
 					}
-
-					navElements.forEach((navElement, i) => {
-						if (i === $posts.length - 1 - nextIndex) {
-							navElement.style.backgroundColor = '#000';
-						} else {
-							navElement.style.backgroundColor = '#fff';
-						}
-					});
 				}
 
 				if (initAnimation) {
@@ -313,9 +316,9 @@
 				}
 				if (scene.screens.isXl) {
 					scale = {
-						x: 1.5,
-						y: 1,
-						z: 1
+						x: 1.6,
+						y: 1.3,
+						z: 1.2
 					};
 				}
 
@@ -324,6 +327,12 @@
 					ease: 'power0.inOut',
 					...scale
 				});
+				if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled = false;
+
+				for (let i = 0; i < materials.length; i++) {
+					const mat = materials[i];
+					mat.uniforms.uMouse = { value: { x: 0.5, y: 0.5 } };
+				}
 
 				gsap.to(rots, {
 					duration: 0.3,
@@ -390,10 +399,16 @@
 					}
 				}}
 				on:mouseenter={() => {
-					attractTo = index;
+					attractTo = blogPost.findIndex((p) => p.id === post.id);
 					scene.changeVideo(index);
+					scene.addColorToBGShader(scene.backgroundColors[currentIndex]);
 				}}
-				class="bg-white mt-1 max-md:ml-1 min-w-[2vw] max-md:min-w-[4vw] min-h-[2vw] max-md:min-h-[4vw] h-4 rounded-full border border-gray-700 cursor-pointer"
+				on:mouseleave={() => {
+					if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled = true;
+				}}
+				class={`bg-white mt-1 max-md:ml-1 min-w-[2vw] max-md:min-w-[4vw] min-h-[2vw] max-md:min-h-[4vw] h-4 rounded-full border border-gray-700 cursor-pointer ${
+					scene?.isMobile ? 'opacity-0' : 'opacity-100'
+				} ${currentIndex === index ? 'bg-gray-700' : ''}`}
 			>
 				<!-- {post.title} -->
 			</button>

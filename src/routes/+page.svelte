@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import type { Post } from '../types';
 	import { getPosts } from '$lib/api';
+	import Loading from '$lib/ui/Loading.svelte';
 
 	const titles = [
 		'May the force be with you',
@@ -90,6 +91,8 @@
 <title>
 	{title}
 </title>
+
+<Loading />
 
 {#if blogPost.length > 0}
 	<TravelGallery {blogPost} />

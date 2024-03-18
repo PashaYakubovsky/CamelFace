@@ -274,8 +274,6 @@ class ParticlesScene {
 	}
 
 	onClick(e: MouseEvent): void {
-		e.preventDefault();
-
 		if (this.material) {
 			gsap.fromTo(
 				this.material.uniforms.uNoise,

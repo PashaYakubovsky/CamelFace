@@ -4,7 +4,7 @@
 	import { threejsLoading } from '$lib/loading';
 </script>
 
-{#if $loading.loading}
+{#if $loading.loading || !$threejsLoading.loaded}
 	<div class="wrapper">
 		<Clock size="50" color={$loading.color} unit="vh" duration="10s" />
 		<progress max="100" value={$threejsLoading.progress} />

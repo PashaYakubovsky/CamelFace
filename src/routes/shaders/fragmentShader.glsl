@@ -29,7 +29,7 @@ void main() {
 
     // replace texture with video if it's available
     if (vT.a > 0.0) {
-        t = vT;
+        t = mix(vT, t, 1.0 - distanceFromCenter);
     }
 
     vec2 st = gl_FragCoord.xy/uResolution.xy;

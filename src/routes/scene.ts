@@ -222,18 +222,22 @@ class TravelGalleryScene {
 		this.bgMaterial = new THREE.ShaderMaterial({
 			uniforms: {
 				uTime: { value: 0 },
-				uColor: { value: new THREE.Color('rgb(5, 118, 240)') },
+				uColor: { value: new THREE.Color('rgb(0, 0, 0)') },
+				uPrevColor: { value: new THREE.Color('rgb(0, 0, 0)') },
 				uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
 				uMouse: { value: new THREE.Vector2(0, 0) },
 				uSpeed: { value: 0.01 },
+				uFactor: { value: 1.0 },
 				uSelectedItemPosition: {
 					// by default is 20% right and 50% down
 					value: new THREE.Vector2(0.2, 0.5)
-				}
+				},
+				uEnabled: { value: true }
 			},
 			vertexShader: bgVertexShader,
 			fragmentShader: bgFragmentShader,
-			transparent: true
+			transparent: true,
+			depthTest: false
 		});
 		const aspectRatio = window.innerWidth / window.innerHeight;
 		this.bgGeometry = new THREE.PlaneGeometry(aspectRatio * 2, 2, 64, 64);
@@ -246,7 +250,22 @@ class TravelGalleryScene {
 	}
 
 	addColorToBGShader(color: string) {
-		if (this.bgMaterial) this.bgMaterial.uniforms.uColor.value = new THREE.Color(color);
+		if (this.bgMaterial) {
+			this.bgMaterial.uniforms.uPrevColor.value = this.bgMaterial.uniforms.uColor.value;
+			this.bgMaterial.uniforms.uColor.value = new THREE.Color(color);
+
+			gsap.fromTo(
+				this.bgMaterial.uniforms.uFactor,
+				{
+					value: 0
+				},
+				{
+					value: 1,
+					duration: 1,
+					ease: 'none'
+				}
+			);
+		}
 	}
 
 	async addGallery({ posts }: { posts: Post[] }) {
@@ -316,8 +335,6 @@ class TravelGalleryScene {
 
 				group.add(mesh);
 
-				group.position.y = -5 + i;
-
 				this.meshes[i] = mesh;
 				this.materials[i] = material;
 				this.groups[i] = group;
@@ -346,8 +363,8 @@ class TravelGalleryScene {
 				group.position,
 				{
 					x: 0,
-					y: 5,
-					z: -1
+					y: -10,
+					z: -3.5
 				},
 				{
 					...this.positionValues,
