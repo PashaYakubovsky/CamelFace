@@ -381,6 +381,8 @@ class TravelGalleryScene {
 		});
 
 		// this.changeVideo(0);
+
+		this.posts = posts;
 	}
 
 	// Change the index of the video to be played
@@ -498,7 +500,7 @@ class TravelGalleryScene {
 				}
 
 				// this.changeVideo(index);
-				console.log(this.posts[index], index);
+				console.log(this.posts, index);
 			}
 			const obj = hit.object as THREE.Mesh;
 			// if obj is a bgPlane, dont change cursor

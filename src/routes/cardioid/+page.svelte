@@ -5,9 +5,13 @@
 
 	let canvasElement: HTMLCanvasElement;
 
-	onMount(async () => {
+	onMount(() => {
 		loading.update((state) => ({ ...state, loading: false }));
 		const scene = new CardioidScene(canvasElement);
+
+		return () => {
+			scene.destroy();
+		};
 	});
 </script>
 

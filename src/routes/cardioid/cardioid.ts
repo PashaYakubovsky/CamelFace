@@ -122,6 +122,19 @@ class CardioidScene {
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 	}
+
+	destroy() {
+		window.removeEventListener('mousemove', this.onMouseMove);
+		window.removeEventListener('resize', this.onResize);
+		this.gui?.destroy();
+		this.scene.traverse((object) => {
+			if (object instanceof THREE.Mesh) {
+				object.geometry.dispose();
+				object.material.dispose();
+			}
+		});
+		this.renderer?.dispose();
+	}
 }
 
 export default CardioidScene;

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import Scene from './scene';
 	import gsap from 'gsap';
 	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
@@ -61,10 +61,11 @@
 				}
 			});
 		};
-	});
 
-	onDestroy(() => {
-		if (scene) scene.destroy();
+		return () => {
+			if (scene) scene.destroy();
+			smoother.kill();
+		};
 	});
 </script>
 

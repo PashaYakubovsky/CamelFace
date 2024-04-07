@@ -4,27 +4,18 @@
 	import gsap from 'gsap';
 	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 	import { ScrollSmoother } from 'gsap/dist/ScrollSmoother';
+	gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 
 	let canvasElem: HTMLCanvasElement;
 	let parentElem: HTMLElement;
 	let scene: Scene;
 
 	onMount(() => {
-		gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
-		const smoother = new ScrollSmoother({
-			content: parentElem,
-			smooth: 1.5,
-			effects: true,
-			speed: 0.5,
-			smoothTouch: true,
-			normalizeScroll: true
-		});
+		const scene = new Scene(canvasElem);
 
-		scene = new Scene(canvasElem);
-	});
-
-	onDestroy(() => {
-		if (scene) scene.destroy();
+		return () => {
+			scene.destroy();
+		};
 	});
 </script>
 
@@ -37,7 +28,7 @@
 <style>
 	.parent {
 		width: 100vw;
-		height: 100%;
+		height: 100vh;
 		overflow: hidden;
 		position: relative;
 	}

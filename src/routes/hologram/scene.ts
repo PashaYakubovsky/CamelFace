@@ -402,9 +402,7 @@ class MophingScene {
 
 	destroy(): void {
 		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
-
-		this.renderer.dispose();
-		this.renderer.forceContextLoss();
+		window.removeEventListener('resize', this.onWindowResize.bind(this));
 
 		if (this.gui) this.gui.destroy();
 
@@ -414,6 +412,8 @@ class MophingScene {
 				child.material.dispose();
 			}
 		});
+
+		this.renderer.dispose();
 
 		if (this.stats) this.stats.dom.remove();
 	}

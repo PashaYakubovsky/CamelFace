@@ -10,7 +10,7 @@
 	import { goto } from '$app/navigation';
 	import { posts } from '$lib/posts';
 
-	export let blogPost: Post[] = [];
+	// export let $posts: Post[] = [];
 
 	let canvasElement: HTMLCanvasElement;
 	let contentElements: HTMLElement[] = [];
@@ -56,9 +56,9 @@
 	threejsLoading.subscribe((value) => {
 		allTextureLoaded = value.loaded;
 		if (value.loaded) {
-			attractTo = blogPost.length - 1;
+			attractTo = $posts.length - 1;
 			attractMode = true;
-			currentIndex = blogPost.length - 1;
+			currentIndex = $posts.length - 1;
 			setTimeout(() => {
 				attractTo = 0;
 				attractMode = false;
@@ -109,8 +109,8 @@
 				attractMode = false;
 			}, 700);
 
-			if (e.key === 'ArrowUp' && attractTo <= blogPost.length - 1) {
-				attractTo = attractTo + 1 > blogPost.length - 1 ? blogPost.length - 1 : attractTo + 1;
+			if (e.key === 'ArrowUp' && attractTo <= $posts.length - 1) {
+				attractTo = attractTo + 1 > $posts.length - 1 ? $posts.length - 1 : attractTo + 1;
 			} else if (e.key === 'ArrowDown' && attractTo >= 0) {
 				attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0;
 			}
@@ -128,7 +128,7 @@
 				if (direction === 1 && Math.abs(currentIndex) === 0) {
 					speed += e.deltaY * 0.0003;
 				}
-				if (direction === -1 && currentIndex === blogPost.length - 1) {
+				if (direction === -1 && currentIndex === $posts.length - 1) {
 					speed += e.deltaY * 0.0003;
 				}
 			}
@@ -136,26 +136,17 @@
 
 		const init = async () => {
 			scene = new Scene(canvasElement);
-			blogPost = blogPost.sort(
-				(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-			);
-
-			scene.textColors = blogPost.map((post) => post.textColor);
-
+			scene.textColors = $posts.map((post) => post.textColor);
 			goBackButtonElement = document.querySelector('#goBackButton') as HTMLButtonElement;
-
 			navElements = Array.from(document.querySelectorAll('nav > button')) as HTMLButtonElement[];
-			contentElements = Array.from(
-				document.querySelectorAll('.post-info')
-			).reverse() as HTMLElement[];
-			await scene.addGallery({ posts: blogPost });
-
+			contentElements = Array.from(document.querySelectorAll('.post-info')) as HTMLElement[];
+			await scene.addGallery({ posts: $posts.slice() });
 			rots = scene.groups.map((g) => g.rotation);
 			positions = scene.groups.map((g) => g.position);
 			scales = scene.groups.map((g) => g.scale);
 			materials = scene.groups.map((g) => g.children[0].material);
 
-			const objs = Array(blogPost.length)
+			const objs = Array($posts.length)
 				.fill(null)
 				.map(() => {
 					return {
@@ -239,7 +230,7 @@
 					// reverse the index
 					const rI = meshIndex;
 					if (meshIndex === currentIndex) {
-						goto(blogPost[rI].slug);
+						goto($posts[rI].slug);
 					}
 				};
 			}
@@ -391,7 +382,7 @@
 			}
 		}}
 	>
-		{#each blogPost as post, index (post.id)}
+		{#each $posts as post, index (post.id)}
 			<button
 				on:click={() => {
 					if (scene.isMobile) {
@@ -399,8 +390,8 @@
 					}
 				}}
 				on:mouseenter={() => {
-					attractTo = blogPost.findIndex((p) => p.id === post.id);
-					scene.changeVideo(index);
+					attractTo = $posts.findIndex((p) => p.id === post.id);
+					// scene.changeVideo(index);
 					scene.addColorToBGShader(scene.backgroundColors[currentIndex]);
 				}}
 				on:mouseleave={() => {
@@ -415,7 +406,7 @@
 		{/each}
 	</nav>
 	<!-- loop over posts -->
-	{#each blogPost as post, index (post.id)}
+	{#each $posts as post, index (post.id)}
 		<section
 			class={`post-info hidden flex absolute left-5 h-screen w-1/2 max-md:w-full align-center text-inherit transition duration-300 ease-in-out pl-5 max-md:pl-0 flex-col justify-center max-md:bottom-0 max-md:h-[60%]`}
 		>

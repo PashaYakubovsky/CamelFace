@@ -2,7 +2,6 @@
 	import TravelGallery from '$lib/ui/TravelGallery.svelte';
 	import { posts } from '$lib/posts';
 	import { onMount } from 'svelte';
-	import type { Post } from '../types';
 	import { getPosts } from '$lib/api';
 	import Loading from '$lib/ui/Loading.svelte';
 
@@ -75,14 +74,6 @@
 		};
 	});
 
-	let blogPost: Post[] = [];
-
-	posts.subscribe((value) => {
-		blogPost = value.sort((a, b) => {
-			return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-		});
-	});
-
 	onMount(async () => {
 		await getPosts();
 	});
@@ -94,6 +85,6 @@
 
 <Loading />
 
-{#if blogPost.length > 0}
-	<TravelGallery {blogPost} />
+{#if $posts.length > 0}
+	<TravelGallery />
 {/if}
