@@ -271,20 +271,20 @@ class TravelGalleryScene {
 	async addGallery({ posts }: { posts: Post[] }) {
 		const textures: THREE.Texture[] = [];
 
-		// Create video node and texture
-		this.videoNode = document.createElement('video');
-		this.videoNode.loop = true;
-		this.videoNode.muted = true;
+		// // Create video node and texture
+		// this.videoNode = document.createElement('video');
+		// this.videoNode.loop = true;
+		// this.videoNode.muted = true;
 
-		// Create video texture
-		this.videTexture = new THREE.VideoTexture(this.videoNode);
-		this.videTexture.minFilter = THREE.LinearFilter;
-		this.videTexture.magFilter = THREE.LinearFilter;
-		this.videTexture.format = THREE.RGBAFormat;
+		// // Create video texture
+		// this.videTexture = new THREE.VideoTexture(this.videoNode);
+		// this.videTexture.minFilter = THREE.LinearFilter;
+		// this.videTexture.magFilter = THREE.LinearFilter;
+		// this.videTexture.format = THREE.RGBAFormat;
 
-		this.posts = posts.sort(
-			(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-		);
+		// this.posts = posts.sort(
+		// 	(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+		// );
 		this.total = posts.length;
 
 		for (let i = 0; i < posts.length; i++) {
@@ -380,53 +380,46 @@ class TravelGalleryScene {
 			this.scene.add(group);
 		});
 
-		this.changeVideo(0);
+		// this.changeVideo(0);
 	}
 
 	// Change the index of the video to be played
 	async changeVideo(index: number) {
-		try {
-			if (this.prevMaterialIndex === index) return;
-
-			if (this.materials.length === 0) return;
-			const post = this.posts[index];
-			if (!post.video) return;
-
-			this.materials.forEach((material) => {
-				// clean video texture
-				if (material.uniforms.videoTexture) material.uniforms.videoTexture.value = null;
-			});
-
-			if (post.video) {
-				const media = post.video as Media;
-				const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
-				const file = fetch(src);
-				const blob = await (await file).blob();
-				const url = URL.createObjectURL(blob);
-				console.log(url, 'GALLERY:INDEX: ', index);
-
-				if (!this.videoNode) return;
-				this.videoNode.loop = true;
-				this.videoNode.muted = true;
-				this.videoNode.src = url;
-				this.videoNode.play();
-				this.videTexture = new THREE.VideoTexture(this.videoNode);
-				this.videTexture.minFilter = THREE.LinearFilter;
-				this.videTexture.magFilter = THREE.LinearFilter;
-				this.videTexture.format = THREE.RGBAFormat;
-
-				// Update video texture
-				if (this.videTexture) this.videTexture.needsUpdate = true;
-			}
-
-			// Apply video texture to the material
-			this.materials[index].uniforms.videoTexture.value = this.videTexture;
-			this.materials[index].needsUpdate = true;
-
-			this.prevMaterialIndex = index;
-		} catch (err) {
-			console.error(err);
-		}
+		// try {
+		// 	if (this.prevMaterialIndex === index) return;
+		// 	if (this.materials.length === 0) return;
+		// 	const post = this.posts[index];
+		// 	if (!post.video) return;
+		// 	this.materials.forEach((material) => {
+		// 		// clean video texture
+		// 		if (material.uniforms.videoTexture) material.uniforms.videoTexture.value = null;
+		// 	});
+		// 	if (post.video) {
+		// 		const media = post.video as Media;
+		// 		const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
+		// 		const file = fetch(src);
+		// 		const blob = await (await file).blob();
+		// 		const url = URL.createObjectURL(blob);
+		// 		console.log(url, 'GALLERY:INDEX: ', index);
+		// 		if (!this.videoNode) return;
+		// 		this.videoNode.loop = true;
+		// 		this.videoNode.muted = true;
+		// 		this.videoNode.src = url;
+		// 		this.videoNode.play();
+		// 		this.videTexture = new THREE.VideoTexture(this.videoNode);
+		// 		this.videTexture.minFilter = THREE.LinearFilter;
+		// 		this.videTexture.magFilter = THREE.LinearFilter;
+		// 		this.videTexture.format = THREE.RGBAFormat;
+		// 		// Update video texture
+		// 		if (this.videTexture) this.videTexture.needsUpdate = true;
+		// 	}
+		// 	// Apply video texture to the material
+		// 	this.materials[index].uniforms.videoTexture.value = this.videTexture;
+		// 	this.materials[index].needsUpdate = true;
+		// 	this.prevMaterialIndex = index;
+		// } catch (err) {
+		// 	console.error(err);
+		// }
 	}
 
 	setBackground(texture: THREE.Texture) {
@@ -504,7 +497,7 @@ class TravelGalleryScene {
 					this.handleHoverIn();
 				}
 
-				this.changeVideo(index);
+				// this.changeVideo(index);
 				console.log(this.posts[index], index);
 			}
 			const obj = hit.object as THREE.Mesh;

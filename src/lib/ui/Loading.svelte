@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { loading } from '$lib/loading';
 	import { Clock } from 'svelte-loading-spinners';
-	import { threejsLoading } from '$lib/loading';
 </script>
 
-{#if $loading.loading || !$threejsLoading.loaded}
+{#if $loading.loading}
 	<div class="wrapper">
 		<Clock size="50" color={$loading.color} unit="vh" duration="10s" />
-		<progress max="100" value={$threejsLoading.progress} />
 	</div>
 {/if}
 
@@ -34,14 +32,6 @@
 		z-index: 100;
 		width: 50vw;
 		height: 1rem;
-		border-radius: 1rem;
-	}
-	progress::-webkit-progress-bar {
-		background-color: #f4f4f4;
-		border-radius: 1rem;
-	}
-	progress::-webkit-progress-value {
-		background-color: #00c8ff;
 		border-radius: 1rem;
 	}
 </style>
