@@ -397,11 +397,11 @@
 				on:mouseleave={() => {
 					if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled = true;
 				}}
-				class={`bg-white mt-1 max-md:ml-1 min-w-[2vw] max-md:min-w-[4vw] min-h-[2vw] max-md:min-h-[4vw] h-4 rounded-full border border-gray-700 cursor-pointer ${
-					scene?.isMobile ? 'opacity-0' : 'opacity-100'
-				} ${currentIndex === index ? 'bg-gray-700' : ''}`}
+				class={`nav-item ${currentIndex === index ? 'nav-item_active' : ''}`}
 			>
-				<!-- {post.title} -->
+				<span class="nav-item__text">
+					{post.title}
+				</span>
 			</button>
 		{/each}
 	</nav>
@@ -534,6 +534,39 @@
 		justify-content: center;
 		z-index: 10;
 		transition: 0.3s ease-in-out opacity;
+	}
+	.nav-item {
+		background-color: rgb(250, 248, 248);
+		color: rgb(47, 47, 47);
+		border: 1px solid currentColor;
+		min-height: 2vw;
+		min-width: 2vw;
+		align-self: flex-start;
+		margin-top: 0.5rem;
+		transition: 0.3s ease-in-out all;
+		font-size: 1rem;
+		line-height: 1rem;
+		overflow: hidden;
+		font-weight: 600;
+		border-radius: 2rem;
+	}
+	.nav-item_active {
+		background-color: rgb(47, 47, 47);
+		color: rgb(250, 248, 248);
+	}
+	.nav-item__text {
+		display: block;
+		width: 0px;
+		overflow: hidden;
+		transition: 0.3s ease-in-out all;
+		white-space: nowrap;
+	}
+	.nav-item:hover .nav-item__text {
+		width: 9rem;
+	}
+	.nav-item:hover {
+		width: 100%;
+		height: fit-content;
 	}
 
 	@media (max-width: 768px) {

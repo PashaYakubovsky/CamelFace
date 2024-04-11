@@ -240,13 +240,13 @@ class TravelGalleryScene {
 			depthTest: false
 		});
 		const aspectRatio = window.innerWidth / window.innerHeight;
-		this.bgGeometry = new THREE.PlaneGeometry(aspectRatio * 2, 2, 64, 64);
-		const mesh = new THREE.Mesh(this.bgGeometry, this.bgMaterial);
-		mesh.name = 'bgPlane';
-		mesh.scale.set(5, 5, 5);
-		mesh.position.set(0, 0, -2);
-		this.bgPlane = mesh;
-		if (!this.isMobile) this.scene.add(this.bgPlane);
+		// this.bgGeometry = new THREE.PlaneGeometry(aspectRatio * 2, 2, 64, 64);
+		// const mesh = new THREE.Mesh(this.bgGeometry, this.bgMaterial);
+		// mesh.name = 'bgPlane';
+		// mesh.scale.set(5, 5, 5);
+		// mesh.position.set(0, 0, -2);
+		// this.bgPlane = mesh;
+		// if (!this.isMobile) this.scene.add(this.bgPlane);
 	}
 
 	addColorToBGShader(color: string) {
