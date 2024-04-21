@@ -5,7 +5,6 @@ import { getAuth } from 'firebase/auth';
  * Your firebase client SDK config goes here
  */
 const FIREBASE_CONFIG_SDK = import.meta.env.VITE_FIREBASE_CONFIG_SDK;
-console.log(FIREBASE_CONFIG_SDK, '__________');
 const firebaseConfig = JSON.parse(FIREBASE_CONFIG_SDK ?? '{}');
 
 let firebaseApp: FirebaseApp | undefined;
