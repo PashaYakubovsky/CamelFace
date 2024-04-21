@@ -296,7 +296,6 @@ class TravelGalleryScene {
 			const file = await fetch(src);
 			const blob = await file.blob();
 			const url = URL.createObjectURL(blob);
-			console.log(url);
 
 			const texture = await this.textureLoader.loadAsync(url);
 			texture.minFilter = THREE.LinearFilter;
@@ -498,9 +497,6 @@ class TravelGalleryScene {
 				if (this.handleHoverIn) {
 					this.handleHoverIn();
 				}
-
-				// this.changeVideo(index);
-				console.log(this.posts, index);
 			}
 			const obj = hit.object as THREE.Mesh;
 			// if obj is a bgPlane, dont change cursor
