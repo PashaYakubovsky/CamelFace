@@ -37,8 +37,8 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@sveltejs/adapter-auto": "^2.1.0",
-		"@sveltejs/kit": "^2.5.10",
+		"@sveltejs/adapter-auto": "^3.2.2",
+		"@sveltejs/kit": "^2.5.18",
 		"@webgpu/types": "^0.1.40",
 		"alea": "^1.0.1",
 		"animejs": "^3.2.2",
