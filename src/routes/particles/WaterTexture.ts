@@ -1,14 +1,26 @@
-const easeOutSine = (t, b, c, d) => {
+const easeOutSine: (t: number, b: number, c: number, d: number) => number = (t, b, c, d) => {
 	return c * Math.sin((t / d) * (Math.PI / 2)) + b;
 };
 
-const easeOutQuad = (t, b, c, d) => {
+const easeOutQuad: (t: number, b: number, c: number, d: number) => number = (t, b, c, d) => {
 	t /= d;
 	return -c * t * (t - 2) + b;
 };
 
+type Point = { x: number; y: number; age?: number; force?: number; vx?: number; vy?: number };
+
 export class WaterTexture {
-	constructor(options) {
+	canvas!: HTMLCanvasElement;
+	ctx!: CanvasRenderingContext2D;
+	size: number;
+	points: Point[];
+	radius: number;
+	width: number;
+	height: number;
+	maxAge: number;
+	last: Point | null;
+
+	constructor(options: { size?: number; maxAge?: number; debug?: boolean }) {
 		this.size = options.size || 64;
 		this.points = [];
 		this.radius = this.size * 0.1;
@@ -36,14 +48,15 @@ export class WaterTexture {
 		this.canvas.id = 'WaterTexture';
 		this.canvas.width = this.width;
 		this.canvas.height = this.height;
-		this.ctx = this.canvas.getContext('2d');
+		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+		this.ctx = this.canvas.getContext('2d')!;
 		this.clear();
 	}
 	clear() {
 		this.ctx.fillStyle = 'black';
 		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 	}
-	addPoint(point) {
+	addPoint(point: Point) {
 		let force = 0;
 		let vx = 0;
 		let vy = 0;
@@ -69,13 +82,15 @@ export class WaterTexture {
 	}
 	update() {
 		this.clear();
-		let agePart = 1 / this.maxAge;
+		const agePart = 1 / this.maxAge;
 		this.points.forEach((point, i) => {
-			let slowAsOlder = 1 - point.age / this.maxAge;
-			let force = point.force * agePart * slowAsOlder;
-			point.x += point.vx * force;
-			point.y += point.vy * force;
-			point.age += 1;
+			const slowAsOlder = 1 - (point.age || 1) / this.maxAge;
+			const force = (point.force || 1) * agePart * slowAsOlder;
+			point.x += (point.vx || 1) * force;
+			point.y += (point.vy || 1) * force;
+			if (point.age) point.age += 1;
+			else point.age = 1;
+
 			if (point.age > this.maxAge) {
 				this.points.splice(i, 1);
 			}
@@ -84,9 +99,9 @@ export class WaterTexture {
 			this.drawPoint(point);
 		});
 	}
-	drawPoint(point) {
+	drawPoint(point: Point) {
 		// Convert normalized position into canvas coordinates
-		let pos = {
+		const pos = {
 			x: point.x * this.width,
 			y: point.y * this.height
 		};
@@ -94,22 +109,27 @@ export class WaterTexture {
 		const ctx = this.ctx;
 
 		let intensity = 1;
-		if (point.age < this.maxAge * 0.3) {
-			intensity = easeOutSine(point.age / (this.maxAge * 0.3), 0, 1, 1);
+		if ((point.age || 1) < this.maxAge * 0.3) {
+			intensity = easeOutSine((point.age || 1) / (this.maxAge * 0.3), 0, 1, 1);
 		} else {
-			intensity = easeOutQuad(1 - (point.age - this.maxAge * 0.3) / (this.maxAge * 0.7), 0, 1, 1);
+			intensity = easeOutQuad(
+				1 - ((point.age || 1) - this.maxAge * 0.3) / (this.maxAge * 0.7),
+				0,
+				1,
+				1
+			);
 		}
-		intensity *= point.force;
+		intensity *= point.force || 1;
 
 		// Insert data to color channels
 		// RG = Unit vector
-		let red = ((point.vx + 1) / 2) * 255;
-		let green = ((point.vy + 1) / 2) * 255;
+		const red = (((point.vx || 1) + 1) / 2) * 255;
+		const green = (((point.vy || 1) + 1) / 2) * 255;
 		// B = Unit vector
-		let blue = intensity * 255;
-		let color = `${red}, ${green}, ${blue}`;
+		const blue = intensity * 255;
+		const color = `${red}, ${green}, ${blue}`;
 
-		let offset = this.size * 5;
+		const offset = this.size * 5;
 		ctx.shadowOffsetX = offset;
 		ctx.shadowOffsetY = offset;
 		ctx.shadowBlur = radius * 1;

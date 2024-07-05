@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 import { GUI } from 'lil-gui';
-import gsap from 'gsap';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Stats from 'stats.js';
 import { BloomEffect, EffectComposer, EffectPass, RenderPass } from 'postprocessing';
@@ -21,8 +20,8 @@ const options = {
 
 class Particles {
 	private scene: THREE.Scene = new THREE.Scene();
-	camera: THREE.PerspectiveCamera | null = null;
-	renderer: THREE.WebGLRenderer | null = null;
+	camera: THREE.PerspectiveCamera;
+	renderer: THREE.WebGLRenderer;
 	private material: THREE.ShaderMaterial | null = null;
 	private geometry: THREE.PlaneGeometry | null = null;
 	private gui: GUI | null = null;
@@ -102,31 +101,6 @@ class Particles {
 		this.scene.add(plane);
 		this.displacement.interactivePlane = plane;
 
-		// 2D canvas
-		// this.displacement.canvas = document.createElement('canvas');
-		// this.displacement.canvas.width = 256;
-		// this.displacement.canvas.height = 256;
-		// this.displacement.canvas.style.position = 'fixed';
-		// this.displacement.canvas.style.width = '256px';
-		// this.displacement.canvas.style.height = '256px';
-		// this.displacement.canvas.style.top = '0px';
-		// this.displacement.canvas.style.left = '0px';
-		// this.displacement.canvas.style.zIndex = '10';
-		// document.body.append(this.displacement.canvas);
-
-		// Context
-		// this.displacement.context = this.displacement.canvas.getContext('2d')!;
-		// this.displacement.context.fillRect(
-		// 	0,
-		// 	0,
-		// 	this.displacement.canvas.width,
-		// 	this.displacement.canvas.height
-		// );
-
-		// Glow image
-		// this.displacement.glowImage = new Image();
-		// this.displacement.glowImage.src = './glow.png';
-
 		// Raycaster
 		this.displacement.raycaster = new THREE.Raycaster();
 
@@ -150,12 +124,7 @@ class Particles {
 			this.displacement.screenCursor.x = point.x;
 			this.displacement.screenCursor.y = point.y;
 
-			// const point2 = {
-			// 	x: event.clientX / window.innerWidth,
-			// 	y: event.clientY / window.innerHeight
-			// };
-
-			this.waterTexture.addPoint(point);
+			if (this.waterTexture) this.waterTexture.addPoint(point);
 		});
 
 		// Initial canvas
@@ -163,7 +132,7 @@ class Particles {
 			size: options.waterSize,
 			maxAge: options.waterAge
 		});
-		this.displacement.canvas = this.waterTexture.canvas;
+		this.displacement.canvas = this.waterTexture?.canvas;
 		this.displacement.texture = new THREE.CanvasTexture(this.displacement.canvas);
 
 		/**
@@ -255,6 +224,7 @@ class Particles {
 			.max(256)
 			.name('Size')
 			.onChange(() => {
+				if (!this.waterTexture) return;
 				this.waterTexture.size = options.waterSize;
 				this.waterTexture.radius = options.waterSize * 0.1;
 			});
@@ -265,42 +235,44 @@ class Particles {
 			.max(1000)
 			.name('Age')
 			.onChange(() => {
+				if (!this.waterTexture) return;
 				this.waterTexture.maxAge = options.waterAge;
 			});
 
 		const folderPostProcessing = this.gui.addFolder('Post Processing');
 		// folderPostProcessing.add(this.waterEffect.uniforms.get('uTexture'), 'value').name('Texture');
-		folderPostProcessing
-			.add(this.bloomEffect.blendMode.opacity, 'value')
-			.min(0)
-			.max(1)
-			.name('Bloom Opacity');
+		if (this.bloomEffect) {
+			folderPostProcessing
+				.add(this.bloomEffect.blendMode.opacity, 'value')
+				.min(0)
+				.max(1)
+				.name('Bloom Opacity');
 
-		folderPostProcessing
-			.add(options, 'bloomStrength')
-			.min(0)
-			.max(100)
-			.name('Bloom Strength')
-			.onChange(() => {
-				this.bloomEffect.intensity = options.bloomStrength;
-			});
+			folderPostProcessing
+				.add(options, 'bloomStrength')
+				.min(0)
+				.max(100)
+				.name('Bloom Strength')
+				.onChange(() => {
+					if (this.bloomEffect) this.bloomEffect.intensity = options.bloomStrength;
+				});
 
-		folderPostProcessing
-			.add(options, 'bloomRadius')
-			.min(0)
-			.max(10)
-			.name('Bloom Radius')
-			.onChange(() => {
-				this.bloomEffect.distinction = options.bloomRadius;
-			});
-
-		const distortionIntensity = this.waterEffect?.uniforms.get('uDistortionIntensity');
+			folderPostProcessing
+				.add(options, 'bloomRadius')
+				.min(0)
+				.max(10)
+				.name('Bloom Radius')
+				.onChange(() => {
+					if (this.bloomEffect) this.bloomEffect.distinction = options.bloomRadius;
+				});
+		}
+		const ditortionIntensity = this.waterEffect?.uniforms.get('uDistortionIntensity');
 		folderPostProcessing
 			.add(options, 'distortionIntensity')
 			.min(0)
 			.max(10)
 			.onChange(() => {
-				distortionIntensity!.value = options.distortionIntensity;
+				if (distortionIntensity) distortionIntensity.value = options.distortionIntensity;
 			})
 			.name('Distortion Intensity');
 	}
@@ -311,13 +283,15 @@ class Particles {
 			this.displacement.glowImage.remove();
 		}
 
-		this.scene.remove(this.displacement.interactivePlane!);
-		this.scene.remove(this.instancedMesh!);
+		if (this.displacement.interactivePlane) this.scene.remove(this.displacement.interactivePlane);
+		if (this.instancedMesh) this.scene.remove(this.instancedMesh);
 
-		this.displacement.texture!.dispose();
+		if (this.displacement.texture) this.displacement.texture.dispose();
 		this.renderer?.dispose();
 
 		this.displacement = {};
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
 		this.renderer = null;
 	}
 
@@ -339,55 +313,8 @@ class Particles {
 				if (!uv) return;
 				this.displacement.canvasCursor!.x = uv.x * this.displacement.canvas!.width;
 				this.displacement.canvasCursor!.y = (1 - uv.y) * this.displacement.canvas!.height;
-
-				// if (this.waterTexture) {
-				// 	this.waterTexture.addPoint(this.displacement.canvasCursor);
-				// }
 			}
 		}
-
-		/**
-		 * Displacement
-		 */
-		// // Fade out
-		// this.displacement.context!.globalCompositeOperation = 'source-over';
-		// this.displacement.context!.globalAlpha = 0.02;
-
-		// this.displacement.context!.beginPath();
-		// this.displacement.context!.arc(
-		// 	this.displacement.canvasCursor!.x,
-		// 	this.displacement.canvasCursor!.y,
-		// 	10,
-		// 	0,
-		// 	Math.PI * 2
-		// );
-		// this.displacement.context!.fill();
-
-		// this.displacement.context!.fillRect(
-		// 	0,
-		// 	0,
-		// 	this.displacement.canvas!.width,
-		// 	this.displacement.canvas!.height
-		// );
-
-		// // Speed alpha
-		// const cursorDistance = this.displacement.canvasCursorPrevious!.distanceTo(
-		// 	this.displacement.canvasCursor!
-		// );
-		// this.displacement.canvasCursorPrevious!.copy(this.displacement.canvasCursor!);
-		// const alpha = Math.min(cursorDistance * 0.05, 1);
-		// // Draw glow
-		// const glowSize = this.displacement.canvas!.width * 0.1;
-		// this.displacement.context!.globalCompositeOperation = 'lighten';
-		// this.displacement.context!.globalAlpha = alpha;
-
-		// this.displacement.context!.drawImage(
-		// 	this.displacement.glowImage!,
-		// 	this.displacement.canvasCursor!.x - glowSize * 0.5,
-		// 	this.displacement.canvasCursor!.y - glowSize * 0.5,
-		// 	glowSize,
-		// 	glowSize
-		// );
 
 		if (this.material) {
 			this.material.uniforms.uTime.value += 0.01;

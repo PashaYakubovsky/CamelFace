@@ -154,15 +154,22 @@ float rotateSdfStar( in vec2 p, in float r, in int n, in float m, in float a )
     if(b > 0.0 && uHoverNoiseEnabled){
         float time = uTime * 0.001;
 
-        p = p + (p - uMouse) * 5.1;
-        float d = 0.0;
+        float distanceToMouse = length(p - mouse);
+        float scale = 1.0 - distanceToMouse / dim;
+        float d = snoise(vec3(p * 0.1, time)) * uStrength * scale;
         for(float i = 0.0; i < uScale; i++){
             d += snoise(vec3(p * 0.1, time)) * uStrength;
             p = p + (p - uMouse) * 0.1;
         }
-
         mvPosition.y += d;
         gl_Position = projectionMatrix * mvPosition;
+
+        // p = p + (p - uMouse);
+        // float d = 0.0;
+        
+
+        // mvPosition.y += d;
+        // gl_Position = projectionMatrix * mvPosition;
 
     } else {
 

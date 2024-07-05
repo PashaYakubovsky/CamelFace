@@ -1,4 +1,3 @@
-import { gsap } from 'gsap/all';
 import GUI from 'lil-gui';
 import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
@@ -13,21 +12,21 @@ function lerp(start: number, end: number, t: number) {
 }
 
 class ParticlesScene {
-	public particlesGeo: THREE.BufferGeometry | undefined;
 	private renderer: THREE.WebGLRenderer;
 	private textureLoader: THREE.TextureLoader;
 	private scene: THREE.Scene;
 	private camera: THREE.PerspectiveCamera;
-	private raycaster: THREE.Raycaster;
+	private raycaster!: THREE.Raycaster;
 	private mouse: THREE.Vector2;
-	public particles: THREE.Points | undefined;
-	private geometry!: THREE.BufferGeometry;
 	private material: THREE.ShaderMaterial | undefined;
-	public gui: GUI | undefined;
-	public group: THREE.Group | undefined;
-	public videoElement: HTMLVideoElement | undefined;
-	public audio: HTMLAudioElement | undefined;
-	public params = {
+	particlesGeo: THREE.BufferGeometry | undefined;
+	raycasetPlane!: THREE.Mesh;
+	particles: THREE.Points | undefined;
+	gui: GUI | undefined;
+	group: THREE.Group | undefined;
+	videoElement: HTMLVideoElement | undefined;
+	audio: HTMLAudioElement | undefined;
+	params = {
 		count: 500000,
 		threshold: 0.1,
 		size: 10,
@@ -45,13 +44,13 @@ class ParticlesScene {
 		shaderNoiseRoughness: 0.65,
 		shaderNoiseScale: 3.5
 	};
-	public stats?: Stats;
-	public stream: MediaStream | undefined;
+	stats?: Stats;
+	stream: MediaStream | undefined;
 
-	public time = 0;
-	public texture!: THREE.Texture;
-	public controls: OrbitControls | undefined;
-	public videoTexture: THREE.VideoTexture | undefined;
+	time = 0;
+	texture!: THREE.Texture;
+	controls: OrbitControls | undefined;
+	videoTexture: THREE.VideoTexture | undefined;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -129,6 +128,7 @@ class ParticlesScene {
 		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 
 		this.addDebug();
+
 		this.animate();
 	}
 
@@ -264,6 +264,19 @@ class ParticlesScene {
 
 		// this.particles.position.set(0, 0, -10);
 		this.particles.rotateX(Math.PI / 2);
+
+		// get width and height of texture and set particlesWidth and particlesHeight
+		this.raycasetPlane = new THREE.Mesh(
+			new THREE.PlaneGeometry(
+				this.params.particlesWidth * 3.2,
+				this.params.particlesHeight * 3.2,
+				1,
+				1
+			),
+			new THREE.MeshBasicMaterial({ wireframe: true, depthTest: false, side: THREE.DoubleSide })
+		);
+		this.raycasetPlane.position.x = -2;
+		this.scene.add(this.raycasetPlane);
 	}
 
 	addDebug() {
@@ -414,13 +427,26 @@ class ParticlesScene {
 	}
 
 	onMouseMove(event: MouseEvent): void {
-		const rect = this.renderer.domElement.getBoundingClientRect();
-		const x = event.clientX - rect.left;
-		const y = event.clientY - rect.top;
+		// raycasting
+		this.mouse = new THREE.Vector2(
+			(event.clientX / window.innerWidth) * 2 - 1,
+			-(event.clientY / window.innerHeight) * 2 + 1
+		);
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+		const intersects = this.raycaster.intersectObject(this.raycasetPlane);
+		console.log(intersects);
+		if (intersects.length > 0) {
+			try {
+				const uv = intersects[0].uv;
+				if (!uv) return;
+				uv.y = 1 - uv.y;
+				// normalize uv
+				uv.x = uv.x + 0.3;
 
-		const mouseUVCoords = new THREE.Vector2(x / rect.width, y / rect.height);
-
-		if (this.material) this.material.uniforms.mouseUVCoords.value = mouseUVCoords;
+				console.log(this.mouse);
+				if (this.material) this.material.uniforms.mouseUVCoords.value = uv;
+			} catch {}
+		}
 	}
 
 	animate(): void {

@@ -35,12 +35,16 @@ void main() {
     // Noise with mouse
     // convert -1 - 1 from whole screen to 0 - 1 to fit the noise function
     vec2 mouse = uMouse;
-    mouse = mouse * 12.0;
     float distanceToMouse = distance(mixedPosition.xy, mouse);
 
     // move particle away from mouse
     float force = (1.0 - distanceToMouse) * 2.0;
-    mixedPosition.xy += normalize(mixedPosition.xy - mouse) * force * 0.1;
+    if(distanceToMouse < 1.) {
+        // add offset to mouse
+        mouse += vec2(-0.5, -0.5);
+        mixedPosition.xy += normalize(mixedPosition.xy - mouse) * force * 0.2;
+    }
+    // mixedPosition.xy += normalize(mixedPosition.xy - mouse) * force * 0.1;
     
     
 

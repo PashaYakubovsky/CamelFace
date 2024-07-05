@@ -8,7 +8,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import GUI from 'lil-gui';
 import gsap from 'gsap';
-import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
 class MorphingScene {
 	private renderer: THREE.WebGLRenderer;
@@ -23,6 +22,8 @@ class MorphingScene {
 	gui!: GUI;
 	gltfLoader: GLTFLoader;
 	dracoLoader: DRACOLoader;
+	raycastPlane!: THREE.Mesh;
+	raycaseter!: THREE.Raycaster;
 	particles: {
 		geometry?: THREE.BufferGeometry;
 		material?: THREE.ShaderMaterial;
@@ -91,6 +92,15 @@ class MorphingScene {
 
 		// Add objects
 		this.addObjects();
+
+		// Raycaster
+		this.raycaseter = new THREE.Raycaster();
+		const aspectRatio = this.width / this.height;
+		this.raycastPlane = new THREE.Mesh(
+			new THREE.PlaneGeometry(aspectRatio * 10, 10, 1, 1),
+			new THREE.MeshBasicMaterial({ visible: false })
+		);
+		this.scene.add(this.raycastPlane);
 
 		// Debug
 		this.addDebug();
@@ -310,18 +320,25 @@ class MorphingScene {
 		this.mouse.x = (x / rect.width) * 2 - 1;
 		this.mouse.y = -(y / rect.height) * 2 + 1;
 
-		// Rescaling from (-1, 1) to (-4.5, 4.5)
-		// this.mouse.x *= 4.5;
-		// this.mouse.y *= 4.5;
-
-		// Shifting the center from (0, 0) to (0.5, 0.5)
-		// this.mouse.x += 0.5;
-		// this.mouse.y += 0.5;
-
 		console.log('[morph:mouse]', this.mouse);
 
-		if (this.particles.material) {
-			this.particles.material.uniforms.uMouse.value = this.mouse;
+		// if (this.particles.material) {
+		// 	this.particles.material.uniforms.uMouse.value = this.mouse;
+		// }
+
+		// raycast
+		this.raycaseter.setFromCamera(this.mouse, this.camera);
+		const intersects = this.raycaseter.intersectObject(this.raycastPlane);
+
+		if (intersects.length) {
+			const point = intersects[0].point;
+			const x = point.x;
+			const y = point.y;
+
+			console.log('[morph:raycast]', x, y);
+			if (this.particles.material) {
+				this.particles.material.uniforms.uMouse.value = new THREE.Vector2(x, y);
+			}
 		}
 	}
 
@@ -340,6 +357,18 @@ class MorphingScene {
 			);
 			this.particles.points.position.y = gsap.utils.interpolate(
 				this.particles.points.position.y,
+				this.mouse.y,
+				0.01
+			);
+		}
+		if (this.raycastPlane) {
+			this.raycastPlane.position.x = gsap.utils.interpolate(
+				this.raycastPlane.position.x,
+				this.mouse.x,
+				0.01
+			);
+			this.raycastPlane.position.y = gsap.utils.interpolate(
+				this.raycastPlane.position.y,
 				this.mouse.y,
 				0.01
 			);
