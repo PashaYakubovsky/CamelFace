@@ -11,15 +11,6 @@
 			});
 		}
 	}
-	onMount(() => {
-		if (typeof gtag !== 'undefined') {
-			console.log('gtag is defined');
-			gtag('config', 'G-WNGXJE3D6K', {
-				page_title: document.title,
-				page_path: $page.url.pathname
-			});
-		}
-	});
 </script>
 
 <svelte:head>
