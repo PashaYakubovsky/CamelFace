@@ -1,14 +1,25 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 
 	$: {
 		if (typeof gtag !== 'undefined') {
+			console.log('gtag is defined');
 			gtag('config', 'G-WNGXJE3D6K', {
 				page_title: document.title,
 				page_path: $page.url.pathname
 			});
 		}
 	}
+	onMount(() => {
+		if (typeof gtag !== 'undefined') {
+			console.log('gtag is defined');
+			gtag('config', 'G-WNGXJE3D6K', {
+				page_title: document.title,
+				page_path: $page.url.pathname
+			});
+		}
+	});
 </script>
 
 <svelte:head>

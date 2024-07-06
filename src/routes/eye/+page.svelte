@@ -16,7 +16,7 @@
 	});
 </script>
 
-<title>Fractal browning</title>
+<title>Eye</title>
 
 <canvas
 	on:mousemove={(event) => {
