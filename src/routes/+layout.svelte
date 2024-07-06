@@ -2,11 +2,12 @@
 	import '../styles/globals.scss';
 	import '../styles/app.css';
 	import Copyright from '$lib/ui/Copyright.svelte';
+	import { page } from '$app/stores';
 
 	import { onMount } from 'svelte';
 	import { firebaseAuth } from '$lib/firebase/firebase.app';
 	import { v4 as uuidv4 } from 'uuid';
-	import { PUBLIC_GOOGLE_ANALYTICS_ID as GOOGLE_ANALYTICS_ID } from '$env/static/public';
+
 	let userId: string = localStorage.getItem('userId') || uuidv4();
 
 	onMount(() => {
@@ -26,19 +27,30 @@
 		firebaseAuth.onAuthStateChanged(async (user) => {});
 	});
 
-	onMount(() => {
-		//@ts-ignore
+	$: {
+		if (typeof gtag !== 'undefined') {
+			gtag('config', 'G-WNGXJE3D6K', {
+				page_title: document.title,
+				page_path: $page.url.pathname
+			});
+		}
+	}
+</script>
+
+<svelte:head>
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-WNGXJE3D6K">
+	</script>
+	<script>
 		window.dataLayer = window.dataLayer || [];
+
 		function gtag() {
-			//@ts-ignore
 			dataLayer.push(arguments);
 		}
-		//@ts-ignore
+
 		gtag('js', new Date());
-		//@ts-ignore
-		gtag('config', GOOGLE_ANALYTICS_ID);
-	});
-</script>
+		gtag('config', 'G-WNGXJE3D6K');
+	</script>
+</svelte:head>
 
 <slot />
 
