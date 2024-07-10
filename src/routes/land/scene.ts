@@ -167,7 +167,8 @@ class scene {
 		// );
 
 		this.scroller = new VirtualScroll({
-			useTouch: true
+			useTouch: true,
+			touchMultiplier: 4
 		});
 		this.progress = 0;
 		this.scroller.on((event) => {
