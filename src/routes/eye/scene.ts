@@ -44,6 +44,7 @@ class scene {
 		this.animate();
 
 		window.addEventListener('mousemove', this.onMouseMove.bind(this));
+		window.addEventListener('click', this.handleClick.bind(this));
 		window.addEventListener('resize', this.onResize.bind(this));
 	}
 
@@ -238,6 +239,13 @@ class scene {
 		}
 	}
 
+	handleClick() {
+		if (this.degree < 5) this.degree += 1;
+		else this.degree = 1;
+		if (this.order < 3) this.order += 1;
+		else this.order = 1;
+	}
+
 	onResize() {
 		if (this.material) {
 			this.material.uniforms.u_resolution.value.x = window.innerWidth;
@@ -250,6 +258,7 @@ class scene {
 		this.renderer?.setSize(window.innerWidth, window.innerHeight);
 	}
 	degree = 1;
+	order = 1;
 	dir = 1;
 	public animate() {
 		const d = this.clock.getDelta() * 100;
@@ -259,7 +268,7 @@ class scene {
 		}
 		this.degree = this.dir ? this.degree + 0.001 : this.degree - 0.001;
 		if (this.degree > 5) {
-			this.dir = 0;
+			this.dir = -1;
 			this.degree = 4;
 		}
 		if (this.degree < 1) {
@@ -270,6 +279,7 @@ class scene {
 		if (this.eyeMaterial) {
 			this.eyeMaterial.uniforms.uTime.value -= 0.01;
 			this.eyeMaterial.uniforms.uDegree.value = this.degree;
+			this.eyeMaterial.uniforms.uOrder.value = this.order;
 		}
 
 		if (this.camera) {
@@ -291,6 +301,7 @@ class scene {
 	destroy() {
 		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
 		window.removeEventListener('resize', this.onResize.bind(this));
+		window.removeEventListener('click', this.handleClick.bind(this));
 		if (this.rafId) window.cancelAnimationFrame(this.rafId);
 
 		if (this.renderer) this.renderer.dispose();
