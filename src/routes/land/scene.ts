@@ -166,7 +166,9 @@ class scene {
 		// 	this.camera.position.z
 		// );
 
-		this.scroller = new VirtualScroll();
+		this.scroller = new VirtualScroll({
+			useTouch: true
+		});
 		this.progress = 0;
 		this.scroller.on((event) => {
 			this.progress += event.deltaY * 0.0001;
