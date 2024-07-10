@@ -86,7 +86,7 @@ const CustomPostEffectShader = {
 			return coord + cc * dist * amt;
 		}
 
-		const int num_iter = 10;
+		const int num_iter = 5;
 		const float reci_num_iter_f = 1.0 / float(num_iter);
 
 		float random(vec3 scale, float seed) {
@@ -95,7 +95,7 @@ const CustomPostEffectShader = {
 
 		void main() {
 			vec4 color = texture2D( tDiffuse, vUv );
-			vec2 screenRatio = vec2(resolution.x / resolution.y, 1.0);
+			vec2 screenRatio = vec2(resolution.x * 0.5 / resolution.y * 0.5, 1.0);
 			vec3 sumcol = vec3(0.0);
 			vec3 sumw = vec3(0.0);
 			vec2 blurOrigin = resolution * 0.5;

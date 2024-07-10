@@ -87,7 +87,7 @@ void main() {
     vec3 p = position;
 
     float noise = snoise(vec3(vWorldPosition * 5.0));
-    p.y = noise * 0.07;
+    p.y = noise * 0.1 + sin(iTime * 0.5 + p.x * 0.5 + p.z * 0.5) * 0.01;
     vec4 _mvPosition = modelViewMatrix * vec4(p, 1.0);
     // vViewPosition = -_mvPosition.xyz;
     csm_Position = p;

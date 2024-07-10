@@ -14,17 +14,17 @@ import Stats from 'stats.js';
 import Delaunator from 'delaunator';
 import PoissionDiskSampling from 'poisson-disk-sampling';
 import VirtualScroll from 'virtual-scroll';
-import { CustomPostEffectShader } from './dotScreen';
+import { CustomPostEffectShader } from './CustomPostEffect';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import gsap from 'gsap';
 
-const SIZE = 15;
+const SIZE = 25;
 const p = new PoissionDiskSampling({
 	shape: [SIZE, SIZE * 2],
 	minDistance: 0.2,
 	maxDistance: 3,
-	tries: 10
+	tries: 2
 });
 const points3d = p.fill().map((p) => new THREE.Vector3(p[0], 0, p[1]));
 
@@ -34,7 +34,7 @@ class scene {
 		35,
 		window.innerWidth / window.innerHeight,
 		0.1,
-		100
+		500
 	);
 	public renderer: THREE.WebGLRenderer | null = null;
 	private material: CustomShaderMaterial | null = null;
@@ -93,7 +93,7 @@ class scene {
 		composer.addPass(outputPass);
 
 		const customPass = new ShaderPass(CustomPostEffectShader);
-		customPass.uniforms['scale'].value = 4;
+		customPass.uniforms['scale'].value = 2;
 		customPass.uniforms['angle'].value = 0;
 		customPass.uniforms['resolution'].value = new THREE.Vector2(500, 500);
 
@@ -111,8 +111,6 @@ class scene {
 
 		// create shape
 		let indexDel = Delaunator.from(points3d.map((p) => [p.x, p.z]));
-
-		console.log(indexDel);
 
 		this.geometry = new THREE.BufferGeometry().setFromPoints(points3d);
 
@@ -160,7 +158,7 @@ class scene {
 		this.scene.add(mesh2);
 
 		mesh.position.set(-(SIZE / 2), 0, -(SIZE * 0.4));
-		mesh2.position.set(-(SIZE / 2), 0, SIZE * 1.5);
+		mesh2.position.set(-(SIZE / 2), 0, SIZE * 1.6);
 
 		this.camera.position.set(0, 0.5, -9);
 		this.camera.lookAt(0, -1, 0);
@@ -173,7 +171,6 @@ class scene {
 		this.scroller.on((event) => {
 			this.progress += event.deltaY * 0.0001;
 			this.progress = Math.max(0, Math.min(1, this.progress));
-			console.log(this.progress);
 			if (this.customPass) {
 				const speed = event.deltaY * 0.0001;
 				this.customPass.uniforms['uBlurAmount'].value += speed;
@@ -183,7 +180,7 @@ class scene {
 		// road path
 		let points = [];
 		points.push(new THREE.Vector3(-2.5, 0, -3.8));
-		points.push(new THREE.Vector3(1.5, 0, 45));
+		points.push(new THREE.Vector3(1.5, 0, 85));
 		this.cameraPath = new THREE.CatmullRomCurve3(points);
 
 		// create curved plane geometry
@@ -297,6 +294,7 @@ class scene {
 				float divade = step(uDivade.x, (screenUv.y - screenUv.x + .1) * uDivade.y);
 				vec3 color2 = vec3(1.0, 0.0, 0.0) * divade;
 				color /= divade;
+				// color.a = 1.0 - fog;
 				gl_FragColor = mix(color, vec4(color2, 1.0), 1.0 -fog);
 			}
 			`
@@ -437,7 +435,7 @@ class scene {
 			}
 		});
 		const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-		background.scale.set(2, 2, 2);
+		background.scale.set(5, 5, 5);
 		this.bgMaterial = backgroundMaterial;
 		this.scene.add(background);
 
@@ -458,12 +456,6 @@ class scene {
 				}
 				if (this.bgMaterial) {
 					this.bgMaterial.uniforms.uDivade.value = this.uDivade;
-				}
-				if (this.tubeMaterial) {
-					this.tubeMaterial.uniforms.uDivade.value = this.uDivade;
-				}
-				if (this.customPass) {
-					this.customPass.uniforms.uDivade.value = this.uDivade;
 				}
 			}
 		});
@@ -518,31 +510,7 @@ class scene {
 		requestAnimationFrame(this.animate.bind(this));
 		this.stats.update();
 
-		// if (this.lightPosRaf) {
-		// 	if (this.material) {
-		// 		this.material.uniforms.iMouse.value = this.lightPosRaf;
-		// 	}
-		// }
-
-		// if (this.raycaster && this.mouse) {
-		// 	this.raycaster.setFromCamera(this.mouse, this.camera);
-		// 	const intersects = this.raycaster.intersectObjects(this.scene.children);
-		// 	if (intersects.length > 0) {
-		// 		const obj = intersects[0];
-
-		// 		if (this.material) {
-		// 			this.lightPosRaf.z = THREE.MathUtils.lerp(
-		// 				this.lightPosRaf.z,
-		// 				obj.object.position.z - obj.point.z,
-		// 				0.1
-		// 			);
-		// 			this.lightPosRaf.x = THREE.MathUtils.lerp(this.lightPosRaf.x, obj.point.x, 0.1);
-		// 			this.lightPosRaf.y = THREE.MathUtils.lerp(this.lightPosRaf.y, obj.point.y, 0.1);
-
-		// 			this.material.uniforms.iMouse.value = this.lightPosRaf;
-		// 		}
-		// 	}
-		// }
+		const time = this.clock.getElapsedTime();
 
 		// move camera on progress
 		if (this.camera && typeof this.progress === 'number') {
@@ -558,11 +526,11 @@ class scene {
 		}
 
 		if (this.material) {
-			this.material.uniforms.iTime.value = this.clock.getElapsedTime();
+			this.material.uniforms.iTime.value = time;
 			// this.material.uniforms.iCameraPosition.value = this.camera.position;
 		}
 		if (this.tubeMaterial) {
-			this.tubeMaterial.uniforms.iTime.value = this.clock.getElapsedTime();
+			this.tubeMaterial.uniforms.iTime.value = time;
 		}
 		if (this.customPass) {
 			// lerp to default state
@@ -587,6 +555,9 @@ class scene {
 		if (this.material) this.material.dispose();
 		if (this.geometry) this.geometry.dispose();
 		if (this.composer) this.composer.dispose();
+		if (this.tubeMaterial) this.tubeMaterial.dispose();
+		if (this.bgMaterial) this.bgMaterial.dispose();
+		if (this.customPass) this.customPass.dispose();
 	}
 }
 
