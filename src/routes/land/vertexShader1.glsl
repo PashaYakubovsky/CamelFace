@@ -87,7 +87,7 @@ void main() {
 
     vec3 p = position;
     float noise = snoise(vec3(vWorldPosition * 5.0));
-    // p.y += noise * .1;
+    p.y += noise * .05;
     
     vec4 _mvPosition = modelViewMatrix * vec4(p, 1.0);
     vPosition = position;

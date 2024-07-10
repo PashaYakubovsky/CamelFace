@@ -10,6 +10,7 @@ varying vec3 vWorldPosition;
 uniform vec2 iResolution;
 uniform sampler2D iDiffuse;
 uniform sampler2D iDiffuse2;
+uniform vec2 uDivade;
 
 
 void main() {
@@ -29,7 +30,7 @@ void main() {
 
     vec2 screenUv = gl_FragCoord.xy / iResolution.xy;
 
-    float divade = step(0.5, (screenUv.y - screenUv.x + .1) * 3.14);
+    float divade = step(uDivade.x, (screenUv.y - screenUv.x + .1) * uDivade.y);
 
     vec4 color = mix(t, t2, divade);
 

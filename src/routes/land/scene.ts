@@ -1,3 +1,4 @@
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
@@ -10,20 +11,19 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import Stats from 'stats.js';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import gsap from 'gsap';
 import Delaunator from 'delaunator';
 import PoissionDiskSampling from 'poisson-disk-sampling';
 import VirtualScroll from 'virtual-scroll';
 import { CustomPostEffectShader } from './dotScreen';
-import { Text } from '@pmndrs/vanilla';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import gsap from 'gsap';
 
 const SIZE = 15;
 const p = new PoissionDiskSampling({
 	shape: [SIZE, SIZE * 2],
-	minDistance: 0.1,
-	maxDistance: 0.3,
+	minDistance: 0.2,
+	maxDistance: 3,
 	tries: 10
 });
 const points3d = p.fill().map((p) => new THREE.Vector3(p[0], 0, p[1]));
@@ -43,6 +43,12 @@ class scene {
 	clock = new THREE.Clock();
 	private rafId: number | null = null;
 	stats = new Stats();
+	private scroller: VirtualScroll | null = null;
+	progress = 0;
+	uDivade = new THREE.Vector2(-6, 3.14);
+	private customPass: ShaderPass | null = null;
+	private tubeMaterial: THREE.ShaderMaterial | null = null;
+	private bgMaterial: THREE.ShaderMaterial | null = null;
 
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
@@ -133,7 +139,8 @@ class scene {
 				iAmbientRadius: { value: 0.5 },
 				iCameraPosition: { value: this.camera.position },
 				iDiffuse: { value: matcapTexture },
-				iDiffuse2: { value: matcapTexture2 }
+				iDiffuse2: { value: matcapTexture2 },
+				uDivade: { value: this.uDivade }
 			},
 			// wireframe: true,
 			// matcap: matcapTexture,
@@ -153,18 +160,10 @@ class scene {
 		this.scene.add(mesh2);
 
 		mesh.position.set(-(SIZE / 2), 0, -(SIZE * 0.4));
-		mesh2.position.set(-(SIZE / 2), 0, SIZE);
+		mesh2.position.set(-(SIZE / 2), 0, SIZE * 1.5);
 
 		this.camera.position.set(0, 0.5, -9);
 		this.camera.lookAt(0, -1, 0);
-		// this.camera.lookAt(0, -2, 3);
-		// const controls = new OrbitControls(this.camera, this.renderer.domElement);
-		// controls.target.set(mesh.position);
-		// controls.target.set(
-		// 	this.camera.position.x + 0.15,
-		// 	this.camera.position.y,
-		// 	this.camera.position.z
-		// );
 
 		this.scroller = new VirtualScroll({
 			useTouch: true,
@@ -212,6 +211,14 @@ class scene {
 		// create spheres on tube
 		const sphereGeometry = new THREE.SphereGeometry(0.05, 15, 15);
 		const sphereMaterial = new THREE.ShaderMaterial({
+			// blending: THREE.AdditiveBlending,
+			transparent: true,
+			depthTest: false,
+			uniforms: {
+				iTime: { value: 0 },
+				iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+				uDivade: { value: this.uDivade }
+			},
 			vertexShader: `
 			varying vec2 vUv;
 			varying vec3 vNormal;
@@ -232,16 +239,71 @@ class scene {
 			varying vec3 vNormal;
 			varying vec3 vPosition;
 			varying vec3 vViewPosition;
+			uniform vec2 iResolution;
+			uniform vec2 uDivade;
 
 			void main() {
     			float fog = smoothstep(-1., 20.0, length(vViewPosition*vec3(1.5, 1.7, 1.0)));
-				vec4 color = vec4(0.0, 0.0, 0.0, fog);
-				gl_FragColor = mix(color, vec4(1.0), fog);
+				vec4 color = vec4(vec3(1.0), 1.0 - fog);
+				vec2 screenUv = gl_FragCoord.xy / iResolution.xy;
+				float divade = step(uDivade.x, (screenUv.y - screenUv.x + .1) * uDivade.y);
+				color /= divade;
+				vec3 color2 = vec3(1.0, 0.0, 0.0) * divade;
+				if(divade > .2){
+					color2 = vec3(1.0, 0.0, 0.0) * divade;
+				} else {
+					color2 = vec3(0.0, 1.0, 0.0) * divade; 
+				}
+				gl_FragColor = mix(color, vec4(color.rgb, 1.0), 1.0 -fog);
+			}
+			`
+		});
+		const textMaterial = new THREE.ShaderMaterial({
+			blending: THREE.AdditiveBlending,
+			transparent: true,
+			depthTest: false,
+			uniforms: {
+				iTime: { value: 0 },
+				iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+				uDivade: { value: this.uDivade }
+			},
+			vertexShader: `
+			varying vec2 vUv;
+			varying vec3 vNormal;
+			varying vec3 vPosition;
+			varying vec3 vViewPosition;
+
+			void main() {
+				vUv = uv;
+				vNormal = normal;
+				vPosition = position;
+				vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+				vViewPosition = -mvPosition.xyz;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			}
+			`,
+			fragmentShader: `
+			varying vec2 vUv;
+			varying vec3 vNormal;
+			varying vec3 vPosition;
+			varying vec3 vViewPosition;
+			uniform vec2 iResolution;
+			uniform vec2 uDivade;
+
+			void main() {
+				float fog = smoothstep(-1., 20.0, length(vViewPosition*vec3(1.5, 1.7, 1.0)));
+				vec4 color = vec4(vec3(1.0), 1.0 - fog);
+				vec2 screenUv = gl_FragCoord.xy / iResolution.xy;
+				float divade = step(uDivade.x, (screenUv.y - screenUv.x + .1) * uDivade.y);
+				vec3 color2 = vec3(1.0, 0.0, 0.0) * divade;
+				color /= divade;
+				gl_FragColor = mix(color, vec4(color2, 1.0), 1.0 -fog);
 			}
 			`
 		});
 		// get points on tube path
 		const pointsOnTube = this.cameraPath.getPoints(10);
+
 		pointsOnTube.forEach((point, i) => {
 			const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 			sphere.position.copy(point);
@@ -249,33 +311,51 @@ class scene {
 			sphere.position.x += 0.2;
 			this.scene.add(sphere);
 
-			const text = Text({
-				text: [
-					'chromatic aberration',
-					'depth of field',
-					'procedural generated terrain',
-					'split view shader'
-				][Math.floor(Math.random() * 4)],
-				fontSize: 0.1,
-				textAlign: 'left'
-			});
-			const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-			const material = new THREE.MeshBasicMaterial({
-				color: 0xff0000,
-				transparent: true,
-				opacity: 0,
-				side: THREE.DoubleSide
-			});
-			const mesh = new THREE.Mesh(geometry, material);
+			// const text = Text({
+			// 	text: [
+			// 		'chromatic aberration',
+			// 		'depth of field',
+			// 		'procedural generated terrain',
+			// 		'split view shader'
+			// 	][Math.floor(Math.random() * 4)],
+			// 	fontSize: 0.1,
+			// 	textAlign: 'left',
+			// 	// strokeWidth: 0.5,
+			// 	depthOffset: 0.01
+			// });
 
-			mesh.add(text.mesh);
-			mesh.position.copy(point);
-			mesh.position.y += 0.1;
-			mesh.position.x -= 0.5;
-			// rotate 180
-			mesh.rotation.y = Math.PI;
-			this.scene.add(mesh);
-			console.log(mesh);
+			new FontLoader().load('fonts/helvetiker_regular.typeface.json', (font) => {
+				const textGeometry = new TextGeometry(
+					[
+						'chromatic aberration',
+						'depth of field',
+						'procedural generated terrain',
+						'split view shader'
+					][Math.floor(Math.random() * 4)],
+					{
+						font: font,
+						size: 0.1,
+						depth: 0.0004,
+						curveSegments: 5,
+						bevelThickness: 2,
+						bevelSize: 0.1,
+						bevelEnabled: false
+					}
+				);
+
+				textGeometry.computeBoundingBox();
+
+				const textMesh1 = new THREE.Mesh(textGeometry, textMaterial);
+
+				textMesh1.position.copy(point);
+				textMesh1.position.y += 0.1;
+
+				textMesh1.rotation.y = Math.PI;
+				textMesh1.scale.set(1, 1, 0.001);
+				this.scene.add(textMesh1);
+			});
+
+			// const controls = new OrbitControls(this.camera, this.renderer.domElement);
 		});
 
 		const backgroundGeometry = new THREE.BoxGeometry(50, 50, 50);
@@ -290,6 +370,7 @@ class scene {
 			uniform vec2 center;
 			uniform float scale;
 			uniform vec2 resolution;
+			uniform vec2 uDivade;
 
 			#define M_PI 3.14159265358979323846
 
@@ -297,7 +378,7 @@ class scene {
 
 			void main() {
 				vec2 screenUv = gl_FragCoord.xy / iResolution.xy;
-				float divade = step(0.5, (screenUv.y - screenUv.x + .1) * 3.14);
+				float divade = step(uDivade.x, (screenUv.y - screenUv.x + .1) * uDivade.y);
 
 				// get the current pixel position
 				vec2 uv = gl_FragCoord.xy / resolution.xy;
@@ -351,18 +432,41 @@ class scene {
 				radius: { value: 0.01 },
 				center: { value: new THREE.Vector2(0.5, 0.5) },
 				scale: { value: 1.0 },
-				resolution: { value: new THREE.Vector2(300, 300) }
+				resolution: { value: new THREE.Vector2(300, 300) },
+				uDivade: { value: this.uDivade }
 			}
 		});
 		const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
 		background.scale.set(2, 2, 2);
 		this.bgMaterial = backgroundMaterial;
-		// background.position.copy(this.camera.position);
-		// background.rotation.x = Math.PI;
 		this.scene.add(background);
 
-		// const controls = new OrbitControls(this.camera, this.renderer.domElement);
-		// controls.target.set(background.position.x, background.position.y, background.position.z);
+		// init animation
+		const tObj = {
+			value: -6
+		};
+		gsap.to(tObj, {
+			value: 6,
+			duration: 10,
+			repeat: -1,
+			ease: 'power4.inOut',
+			yoyo: true,
+			onUpdate: () => {
+				this.uDivade.x = tObj.value;
+				if (this.material) {
+					this.material.uniforms.uDivade.value = this.uDivade;
+				}
+				if (this.bgMaterial) {
+					this.bgMaterial.uniforms.uDivade.value = this.uDivade;
+				}
+				if (this.tubeMaterial) {
+					this.tubeMaterial.uniforms.uDivade.value = this.uDivade;
+				}
+				if (this.customPass) {
+					this.customPass.uniforms.uDivade.value = this.uDivade;
+				}
+			}
+		});
 	}
 
 	cameraPath: THREE.CatmullRomCurve3 | null = null;
@@ -370,24 +474,7 @@ class scene {
 	raycaster: THREE.Raycaster | null = null;
 	mouse: THREE.Vector2 | null = null;
 
-	onClick() {
-		// if (this.material) {
-		// 	gsap.fromTo(
-		// 		this.material.uniforms.iAmbientRadius,
-		// 		{
-		// 			value: this.material.uniforms.iAmbientRadius.value
-		// 		},
-		// 		{
-		// 			value: this.material.uniforms.iAmbientRadius.value === 0.5 ? 1.5 : 0.5,
-		// 			duration: 1,
-		// 			ease: 'power4.inOut',
-		// 			onUpdate: () => {
-		// 				if (this.material) this.material.needsUpdate = true;
-		// 			}
-		// 		}
-		// 	);
-		// }
-	}
+	onClick() {}
 
 	onMouseMove(event: MouseEvent) {
 		this.mouse = new THREE.Vector2(
@@ -462,7 +549,10 @@ class scene {
 			// this.camera.position.z = THREE.MathUtils.lerp(-6, 6, this.progress * 0.01);
 			const pointOnTube = this.cameraPath?.getPointAt(this.progress);
 			pointOnTube.y = 0.8;
-			if (pointOnTube) {
+			// if progress is 1, then loop back to 0
+			if (this.progress >= 1) {
+				this.progress = 0;
+			} else if (pointOnTube) {
 				this.camera.position.lerp(pointOnTube, 0.1);
 			}
 		}

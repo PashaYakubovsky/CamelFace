@@ -4,6 +4,7 @@ varying vec3 vWorldPosition;
 varying vec3 vViewPosition;
 uniform vec2 iResolution;
 varying vec2 vUv;
+uniform vec2 uDivade;
 
 
 //	Simplex 3D Noise 
@@ -82,12 +83,8 @@ float snoise(vec3 v){
 }
 
 void main() {
-    vec3 normal1 = normalize(cross(dFdx(vViewPosition), dFdy(vViewPosition)));
-
-    vec4 color = vec4(vec3(1.0, 0.1, 0.0),1.);
-
+    vec4 color = vec4(vec3(1.0, 0.0, 0.0),1.);
    
-
     // gl_FragColor = color;
     float grad = fract(vUv.y * 2.);
     if(vUv.y > 0.5) grad = 1. - grad;
@@ -105,7 +102,7 @@ void main() {
     float fog = smoothstep(2.0, 15.0, length(vViewPosition*vec3(5.,.2,1.)));
     vec2 screenUv = gl_FragCoord.xy / iResolution.xy;
 
-    float divade = step(0.5, (screenUv.y - screenUv.x + .5) * .14);
+    float divade = step(uDivade.x, (screenUv.y - screenUv.x + .5) * uDivade.y);
 
     color = mix(color, vec4(0.0, 0.0, 0.0, 0.0), fog);
     // color = mix(color, vec4(vec3(0.0), 1.0), grad);
