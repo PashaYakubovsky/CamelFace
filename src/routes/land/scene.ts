@@ -96,6 +96,10 @@ class scene {
 		customPass.uniforms['scale'].value = 2;
 		customPass.uniforms['angle'].value = 0;
 		customPass.uniforms['resolution'].value = new THREE.Vector2(500, 500);
+		customPass.uniforms['time'].value = 0;
+		customPass.uniforms['uBlurAmount'].value = 0;
+		customPass.uniforms['uMouse'].value = new THREE.Vector2(0, 0);
+		customPass.uniforms['uDivade'].value = this.uDivade;
 
 		this.customPass = customPass;
 		customPass.renderToScreen = true;
@@ -169,7 +173,7 @@ class scene {
 		});
 		this.progress = 0;
 		this.scroller.on((event) => {
-			this.progress += event.deltaY * 0.0001;
+			this.progress += event.deltaY * 0.00005;
 			this.progress = Math.max(0, Math.min(1, this.progress));
 			if (this.customPass) {
 				const speed = event.deltaY * 0.0001;
@@ -180,7 +184,7 @@ class scene {
 		// road path
 		let points = [];
 		points.push(new THREE.Vector3(-2.5, 0, -3.8));
-		points.push(new THREE.Vector3(1.5, 0, 85));
+		points.push(new THREE.Vector3(1.5, 0, 45));
 		this.cameraPath = new THREE.CatmullRomCurve3(points);
 
 		// create curved plane geometry
@@ -294,13 +298,12 @@ class scene {
 				float divade = step(uDivade.x, (screenUv.y - screenUv.x + .1) * uDivade.y);
 				vec3 color2 = vec3(1.0, 0.0, 0.0) * divade;
 				color /= divade;
-				// color.a = 1.0 - fog;
 				gl_FragColor = mix(color, vec4(color2, 1.0), 1.0 -fog);
 			}
 			`
 		});
 		// get points on tube path
-		const pointsOnTube = this.cameraPath.getPoints(10);
+		const pointsOnTube = this.cameraPath.getPoints(15);
 
 		pointsOnTube.forEach((point, i) => {
 			const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
@@ -321,25 +324,37 @@ class scene {
 			// 	// strokeWidth: 0.5,
 			// 	depthOffset: 0.01
 			// });
+			const texts = [
+				'',
+				'',
+				'',
+				'SHADERS',
+				'Episode IV',
+				'A NEW HOPE',
+				'In a Coding galaxy far, far away...',
+				'Frightened by the increasing power of shaders',
+				'Game developers from all over the universe are seeking for knowledge and guidance.',
+				'Shaders, mysterious and powerful',
+				'They rule the visuals of every modern video game.',
+				'Giving life to the worlds gamers explore.',
+				'They draw the line between a flat surface and a realistic texture',
+				'But with great power comes great responsibility.',
+				'And with great responsibility comes the need for knowledge.',
+				'And knowledge is what we are here to provide.',
+				'Welcome to the world of shaders.',
+				'Where the pixels are your playground.'
+			];
 
 			new FontLoader().load('fonts/helvetiker_regular.typeface.json', (font) => {
-				const textGeometry = new TextGeometry(
-					[
-						'chromatic aberration',
-						'depth of field',
-						'procedural generated terrain',
-						'split view shader'
-					][Math.floor(Math.random() * 4)],
-					{
-						font: font,
-						size: 0.1,
-						depth: 0.0004,
-						curveSegments: 5,
-						bevelThickness: 2,
-						bevelSize: 0.1,
-						bevelEnabled: false
-					}
-				);
+				const textGeometry = new TextGeometry(texts[i] || '', {
+					font: font,
+					size: 0.1,
+					depth: 0.0004,
+					curveSegments: 5,
+					bevelThickness: 2,
+					bevelSize: 0.1,
+					bevelEnabled: false
+				});
 
 				textGeometry.computeBoundingBox();
 
@@ -473,6 +488,13 @@ class scene {
 			(event.clientX / window.innerWidth) * 2 - 1,
 			-(event.clientY / window.innerHeight) * 2 + 1
 		);
+		if (this.customPass) {
+			const uvMouse = new THREE.Vector2(
+				event.clientX / window.innerWidth - 0.5,
+				-(event.clientY / window.innerHeight - 0.5)
+			);
+			this.customPass.uniforms['uMouse'].value = uvMouse;
+		}
 	}
 
 	onMouseWheel(event: WheelEvent) {
@@ -539,6 +561,7 @@ class scene {
 				0,
 				0.1
 			);
+			this.customPass.uniforms['time'].value = time;
 		}
 		// if (this.renderer) this.renderer.render(this.scene, this.camera);
 		if (this.composer) this.composer.render();
