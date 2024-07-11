@@ -162,7 +162,7 @@ class scene {
 		this.scene.add(mesh2);
 
 		mesh.position.set(-(SIZE / 2), 0, -(SIZE * 0.4));
-		mesh2.position.set(-(SIZE / 2), 0, SIZE * 1.6);
+		mesh2.position.set(-(SIZE / 2), 0, SIZE * 1.5);
 
 		this.camera.position.set(0, 0.5, -9);
 		this.camera.lookAt(0, -1, 0);
@@ -561,7 +561,7 @@ class scene {
 				0,
 				0.1
 			);
-			this.customPass.uniforms['time'].value = time;
+			this.customPass.uniforms['time'].value = time * 2;
 		}
 		// if (this.renderer) this.renderer.render(this.scene, this.camera);
 		if (this.composer) this.composer.render();
