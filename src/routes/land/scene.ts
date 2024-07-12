@@ -479,7 +479,11 @@ class scene {
 	raycaster: THREE.Raycaster | null = null;
 	mouse: THREE.Vector2 | null = null;
 
-	onClick() {}
+	onClick() {
+		if (this.customPass) {
+			this.customPass.uniforms.enableMouse.value = !this.customPass.uniforms.enableMouse.value;
+		}
+	}
 
 	onMouseMove(event: MouseEvent) {
 		this.mouse = new THREE.Vector2(

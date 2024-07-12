@@ -22,7 +22,8 @@ const CustomPostEffectShader = {
 		uMouse: { value: new Vector2(0, 0) },
 		uVelocity: { value: new Vector2(0, 0) },
 		time: { value: 0.0 },
-		uDivade: { value: new Vector2(0.5, 1.0) }
+		uDivade: { value: new Vector2(0.5, 1.0) },
+		enableMouse: { value: true }
 	},
 
 	vertexShader: /* glsl */ `
@@ -51,6 +52,7 @@ const CustomPostEffectShader = {
 		uniform vec2 uVelocity;
 		uniform float time;
 		uniform vec2 uDivade;
+		uniform bool enableMouse;
 
 		uniform sampler2D tDiffuse;
 
@@ -211,7 +213,7 @@ const CustomPostEffectShader = {
 
 			float divade = step(uDivade.x, (screenUv.y - screenUv.x - .2) * uDivade.y);
 
-			if(dist < radius + borderEdge + noise * 0.05 && dist > radius + noise * 0.05) {
+			if(dist < radius + borderEdge + noise * 0.05 && dist > radius + noise * 0.05 && enableMouse) {
 				if(divade < 0.5) {
 					sumcol = vec3(1.0);
 					sumw = vec3(1.0);
@@ -222,7 +224,7 @@ const CustomPostEffectShader = {
 			}
 			// handle inside distorted area
 			if(
-				dist < radius + noise * 0.05
+				dist < radius + noise * 0.05 && enableMouse
 			) {
 				vec3 col = texture2D(tDiffuse, vUv).rgb;
 
