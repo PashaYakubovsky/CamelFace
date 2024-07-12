@@ -22,7 +22,7 @@ import gsap from 'gsap';
 const SIZE = 25;
 const p = new PoissionDiskSampling({
 	shape: [SIZE, SIZE * 2],
-	minDistance: 0.2,
+	minDistance: 0.1,
 	maxDistance: 3,
 	tries: 2
 });
@@ -49,6 +49,8 @@ class scene {
 	private customPass: ShaderPass | null = null;
 	private tubeMaterial: THREE.ShaderMaterial | null = null;
 	private bgMaterial: THREE.ShaderMaterial | null = null;
+	tube: THREE.TubeGeometry | null = null;
+	spheres: THREE.Mesh[] = [];
 
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
@@ -157,6 +159,8 @@ class scene {
 		//frustum culling
 		mesh.frustumCulled = false;
 		mesh2.frustumCulled = true;
+		this.mesh = mesh;
+		this.mesh2 = mesh2;
 
 		this.scene.add(mesh);
 		this.scene.add(mesh2);
@@ -188,7 +192,7 @@ class scene {
 		this.cameraPath = new THREE.CatmullRomCurve3(points);
 
 		// create curved plane geometry
-		const tube = new THREE.TubeGeometry(this.cameraPath, 600, 0.09, 2, false);
+		this.tube = new THREE.TubeGeometry(this.cameraPath, 600, 0.09, 2, false);
 
 		this.tubeMaterial = new THREE.ShaderMaterial({
 			vertexShader: vertexShader1,
@@ -203,11 +207,11 @@ class scene {
 			// wireframe: true
 			blending: THREE.AdditiveBlending
 		});
-		const tubeMesh = new THREE.Mesh(tube, this.tubeMaterial);
-		tubeMesh.position.y = 0.05;
-		tubeMesh.position.x = 0.2;
-		tubeMesh.scale.set(1, 1.3, 1);
-		this.scene.add(tubeMesh);
+		this.tubeMesh = new THREE.Mesh(this.tube, this.tubeMaterial);
+		this.tubeMesh.position.y = 0.05;
+		this.tubeMesh.position.x = 0.2;
+		this.tubeMesh.scale.set(1, 1.3, 1);
+		this.scene.add(this.tubeMesh);
 
 		// create spheres on tube
 		const sphereGeometry = new THREE.SphereGeometry(0.05, 15, 15);
@@ -248,14 +252,8 @@ class scene {
 				vec4 color = vec4(vec3(1.0), 1.0 - fog);
 				vec2 screenUv = gl_FragCoord.xy / iResolution.xy;
 				float divade = step(uDivade.x, (screenUv.y - screenUv.x + .1) * uDivade.y);
-				color /= divade;
 				vec3 color2 = vec3(1.0, 0.0, 0.0) * divade;
-				if(divade > .2){
-					color2 = vec3(1.0, 0.0, 0.0) * divade;
-				} else {
-					color2 = vec3(0.0, 1.0, 0.0) * divade; 
-				}
-				gl_FragColor = mix(color, vec4(color.rgb, 1.0), 1.0 -fog);
+				gl_FragColor = color;
 			}
 			`
 		});
@@ -365,6 +363,7 @@ class scene {
 
 				textMesh1.rotation.y = Math.PI;
 				textMesh1.scale.set(1, 1, 0.001);
+				this.spheres.push(textMesh1);
 				this.scene.add(textMesh1);
 			});
 
@@ -415,7 +414,6 @@ class scene {
 				vec4 color = texture2D(iChannel0, uvPanorama);
 				vec4 color2 = texture2D(iChannel1, uvPanorama);
 
-				vec3 vViewPosition = normalize(vec3(0.0, 0.0, 1.0));
 				gl_FragColor = mix(vec4(0.0), vec4(1.0), divade);
 			}
 			`,
@@ -536,15 +534,22 @@ class scene {
 
 		// move camera on progress
 		if (this.camera && typeof this.progress === 'number') {
-			// this.camera.position.z = THREE.MathUtils.lerp(-6, 6, this.progress * 0.01);
 			const pointOnTube = this.cameraPath?.getPointAt(this.progress);
+			if (!pointOnTube) return;
+			// this.camera.position.z = THREE.MathUtils.lerp(-6, 6, this.progress * 0.01);
 			pointOnTube.y = 0.8;
 			// if progress is 1, then loop back to 0
 			if (this.progress >= 1) {
 				this.progress = 0;
-			} else if (pointOnTube) {
-				this.camera.position.lerp(pointOnTube, 0.1);
+				const point = this.cameraPath?.getPointAt(0);
+				if (!point) return;
+				this.camera.position.set(point?.x, point?.y, point?.z);
+				return;
+				// const nextPos = SIZE * 2 * (Math.random() > 0.5 ? -1 : 1);
+
+				// pointOnTube = this.cameraPath?.getPointAt(this.progress);
 			}
+			this.camera.position.lerp(pointOnTube, 0.1);
 		}
 
 		if (this.material) {

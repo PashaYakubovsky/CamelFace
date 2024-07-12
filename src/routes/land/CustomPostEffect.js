@@ -195,15 +195,10 @@ const CustomPostEffectShader = {
 			// maintain aspect ratio
 			float dist = length(screenUv - sCircle);
 			float borderEdge = 0.004;
-			float radius = 0.1;
+			float radius = 0.05;
 			float noise = snoise(vec3(vUv * 10.0, time * 0.1));
-
 			dist -= uBlurAmount;
-			if(dist < radius - noise * 0.1) {
-				// distort
-				blurAmount = uBlurAmount * 1.5 - noise * 0.1;
-
-			}
+			
 			vec2 toCenter = blurOrigin - vUv * resolution;
 			float offset = random(vec3(12.9898, 78.233, 151.7182), 0.0);
 			for(int i = 0; i < num_iter; i++) {
@@ -214,9 +209,9 @@ const CustomPostEffectShader = {
 				sumcol += w * texture2D(tDiffuse, vUv + toCenter * percent * blurAmount /resolution).rgb;
 			}
 
-			float divade = step(uDivade.x, (screenUv.y - screenUv.x + .1) * uDivade.y);
+			float divade = step(uDivade.x, (screenUv.y - screenUv.x - .2) * uDivade.y);
 
-			if(dist < radius + borderEdge + noise * 0.1 && dist > radius + noise * 0.1) {
+			if(dist < radius + borderEdge + noise * 0.05 && dist > radius + noise * 0.05) {
 				if(divade < 0.5) {
 					sumcol = vec3(1.0);
 					sumw = vec3(1.0);
@@ -224,6 +219,20 @@ const CustomPostEffectShader = {
 					sumcol = vec3(0.0);
 					sumw = vec3(0.0);
 				}
+			}
+			// handle inside distorted area
+			if(
+				dist < radius + noise * 0.05
+			) {
+				vec3 col = texture2D(tDiffuse, vUv).rgb;
+
+				if(divade < 0.5) {
+					col = vec3(1.0) - col;
+				}else {
+					col = vec3(1.0) - col * 0.5;
+				}
+				gl_FragColor = vec4(col, 1.0);
+				return;
 			}
 
 
