@@ -51,7 +51,7 @@ class scene {
 	private bgMaterial: THREE.ShaderMaterial | null = null;
 	tube: THREE.TubeGeometry | null = null;
 	spheres: THREE.Mesh[] = [];
-
+	textMeshes: THREE.Mesh[] = [];
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
 		this.renderer = new THREE.WebGLRenderer({
@@ -344,6 +344,7 @@ class scene {
 			];
 
 			new FontLoader().load('fonts/helvetiker_regular.typeface.json', (font) => {
+				this.font = font;
 				const textGeometry = new TextGeometry(texts[i] || '', {
 					font: font,
 					size: 0.1,
@@ -363,8 +364,9 @@ class scene {
 
 				textMesh1.rotation.y = Math.PI;
 				textMesh1.scale.set(1, 1, 0.001);
-				this.spheres.push(textMesh1);
+				// this.spheres.push(textMesh1);
 				this.scene.add(textMesh1);
+				this.textMeshes.push(textMesh1);
 			});
 
 			// const controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -472,6 +474,9 @@ class scene {
 				}
 			}
 		});
+
+		// setup raycaster
+		this.raycaster = new THREE.Raycaster();
 	}
 
 	cameraPath: THREE.CatmullRomCurve3 | null = null;
@@ -484,7 +489,8 @@ class scene {
 			this.customPass.uniforms.enableMouse.value = !this.customPass.uniforms.enableMouse.value;
 		}
 	}
-
+	lastRaycastCallTimestamp = 0;
+	animating = false;
 	onMouseMove(event: MouseEvent) {
 		this.mouse = new THREE.Vector2(
 			(event.clientX / window.innerWidth) * 2 - 1,
@@ -497,6 +503,32 @@ class scene {
 			);
 			this.customPass.uniforms['uMouse'].value = uvMouse;
 		}
+		requestAnimationFrame(() => {
+			if (this.lastRaycastCallTimestamp + 100 > Date.now() || this.animating) return;
+			this.lastRaycastCallTimestamp = Date.now();
+			// raycast
+			if (this.raycaster && this.mouse) {
+				this.raycaster.setFromCamera(this.mouse, this.camera);
+				const intersects = this.raycaster.intersectObjects(this.scene.children);
+				if (intersects.length > 0) {
+					const obj = intersects[0].object;
+					if (obj.id === this.raycastTextId) {
+						if (this.customPass) {
+							this.animating = true;
+							// clamp exponentialy blur amount to 0.75 from current value
+							gsap.to(this.customPass.uniforms['uBlurAmount'], {
+								value: 0.75,
+								duration: 0.75,
+								ease: 'expo.out',
+								onComplete: () => {
+									this.animating = false;
+								}
+							});
+						}
+					}
+				}
+			}
+		});
 	}
 
 	onMouseWheel(event: WheelEvent) {
@@ -548,6 +580,31 @@ class scene {
 				const point = this.cameraPath?.getPointAt(0);
 				if (!point) return;
 				this.camera.position.set(point?.x, point?.y, point?.z);
+
+				// change title of 1st sphere
+				this.textMeshes[3].geometry.dispose();
+				this.textMeshes[3].remove();
+				const pos = this.textMeshes[3].position;
+				this.scene.remove(this.textMeshes[3]);
+				this.textMeshes[3] = new THREE.Mesh(
+					new TextGeometry('You already be here?', {
+						font: this.font,
+						size: 0.1,
+						depth: 0.0004,
+						curveSegments: 5,
+						bevelThickness: 2,
+						bevelSize: 0.1,
+						bevelEnabled: false
+					}),
+					this.textMeshes[2].material
+				);
+				this.raycastTextId = this.textMeshes[3].id;
+				this.textMeshes[3].position.copy(pos);
+				this.textMeshes[3].position.y = 0.1;
+				this.textMeshes[3].rotation.y = Math.PI;
+				this.textMeshes[3].scale.set(1, 1, 0.001);
+				this.scene.add(this.textMeshes[3]);
+
 				return;
 				// const nextPos = SIZE * 2 * (Math.random() > 0.5 ? -1 : 1);
 
@@ -571,6 +628,17 @@ class scene {
 				0.1
 			);
 			this.customPass.uniforms['time'].value = time * 2;
+		}
+		if (this.textMeshes[3]) {
+			this.textMeshes[3].lookAt(this.camera.position);
+			// sin rotation
+			this.textMeshes[3].rotation.y = Math.sin(time * 2) * 0.1;
+			if (this.animating) {
+				// scale
+				this.textMeshes[3].scale.lerp(new THREE.Vector3(1.5, 1.5, 0.001), 0.1);
+			} else {
+				this.textMeshes[3].scale.lerp(new THREE.Vector3(1, 1, 0.001), 0.1);
+			}
 		}
 		// if (this.renderer) this.renderer.render(this.scene, this.camera);
 		if (this.composer) this.composer.render();

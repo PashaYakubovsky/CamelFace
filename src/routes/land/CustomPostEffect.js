@@ -190,7 +190,7 @@ const CustomPostEffectShader = {
 			vec3 sumcol = vec3(0.0);
 			vec3 sumw = vec3(0.0);
 			vec2 blurOrigin = resolution * 0.5;
-			float blurAmount = 0.0 + uBlurAmount;
+			float blurAmount = 0.0 + uBlurAmount * 0.6;
 			vec2 screenUv = vUv * screenRatio;
 
 			vec2 sCircle = uMouse + 0.5;
@@ -199,7 +199,7 @@ const CustomPostEffectShader = {
 			float borderEdge = 0.004;
 			float radius = 0.05;
 			float noise = snoise(vec3(vUv * 10.0, time * 0.1));
-			dist -= uBlurAmount;
+			dist -= uBlurAmount * 0.5 + noise * 0.05;
 			
 			vec2 toCenter = blurOrigin - vUv * resolution;
 			float offset = random(vec3(12.9898, 78.233, 151.7182), 0.0);
@@ -213,7 +213,7 @@ const CustomPostEffectShader = {
 
 			float divade = step(uDivade.x, (screenUv.y - screenUv.x - .2) * uDivade.y);
 
-			if(dist < radius + borderEdge + noise * 0.05 && dist > radius + noise * 0.05 && enableMouse) {
+			if(dist < radius + borderEdge + noise * 0.001 && dist > radius + noise * 0.001 && enableMouse) {
 				if(divade < 0.5) {
 					sumcol = vec3(1.0);
 					sumw = vec3(1.0);
@@ -224,7 +224,7 @@ const CustomPostEffectShader = {
 			}
 			// handle inside distorted area
 			if(
-				dist < radius + noise * 0.05 && enableMouse
+				dist < radius + noise * 0.001 && enableMouse
 			) {
 				vec3 col = texture2D(tDiffuse, vUv).rgb;
 
