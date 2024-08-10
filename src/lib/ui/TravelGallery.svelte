@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Post } from '../../types';
 	import { onMount } from 'svelte';
 	import Scene from '../../routes/scene';
 	import { gsap } from 'gsap';
@@ -10,18 +9,15 @@
 	import { goto } from '$app/navigation';
 	import { posts } from '$lib/posts';
 
-	// export let $posts: Post[] = [];
-
 	let canvasElement: HTMLCanvasElement;
 	let contentElements: HTMLElement[] = [];
 	let pageWrapperElement: HTMLDivElement | null = null;
-	// let element: HTMLDivElement;
 	let attractMode = false;
 	let attractTo = 0;
 	let rots: THREE.Euler[] = [];
 	let positions: THREE.Vector3[] = [];
 	let scales: THREE.Vector3[] = [];
-	let materials: THREE.Material[] = [];
+	let materials: THREE.ShaderMaterial[] = [];
 	let scene: Scene;
 	let navElements: HTMLButtonElement[] = [];
 	let currentIndex = 0;
@@ -318,11 +314,11 @@
 					ease: 'power0.inOut',
 					...scale
 				});
-				if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled = false;
+				if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled.value = false;
 
 				for (let i = 0; i < materials.length; i++) {
 					const mat = materials[i];
-					mat.uniforms.uMouse = { value: { x: 0.5, y: 0.5 } };
+					mat.uniforms.uMouse.value = { x: 0.5, y: 0.5 };
 				}
 
 				gsap.to(rots, {
@@ -395,13 +391,13 @@
 					scene.addColorToBGShader(scene.backgroundColors[currentIndex]);
 				}}
 				on:mouseleave={() => {
-					if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled = true;
+					if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled.value = true;
 				}}
 				class={`nav-item ${currentIndex === index ? 'nav-item_active' : ''}`}
 			>
-				<span class="nav-item__text">
+				<a href={post.slug} class="nav-item__text">
 					{post.title}
-				</span>
+				</a>
 			</button>
 		{/each}
 	</nav>
@@ -534,13 +530,21 @@
 		justify-content: center;
 		z-index: 10;
 		transition: 0.3s ease-in-out opacity;
+		@media (max-width: 768px) {
+			left: 0;
+			flex-direction: row;
+			bottom: 1rem;
+			width: 100%;
+			justify-content: space-around;
+			padding: 0.5rem 0;
+			top: auto;
+			bottom: 0;
+		}
 	}
 	.nav-item {
 		background-color: rgb(250, 248, 248);
 		color: rgb(47, 47, 47);
 		border: 1px solid currentColor;
-		min-height: 2vw;
-		min-width: 2vw;
 		align-self: flex-start;
 		margin-top: 0.5rem;
 		transition: 0.3s ease-in-out all;
@@ -549,6 +553,8 @@
 		overflow: hidden;
 		font-weight: 600;
 		border-radius: 2rem;
+		min-width: 1.5rem;
+		min-height: 1.5rem;
 	}
 	.nav-item_active {
 		background-color: rgb(47, 47, 47);
@@ -567,6 +573,12 @@
 	.nav-item:hover {
 		width: 100%;
 		height: fit-content;
+		@media (max-width: 768px) {
+			width: fit-content;
+		}
+	}
+	.post-info__content {
+		max-width: 95svw;
 	}
 
 	@media (max-width: 768px) {

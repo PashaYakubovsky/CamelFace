@@ -142,7 +142,62 @@ class TravelGalleryScene {
 
 		const manager = this.loaderManager;
 
+		let loader: THREE.Mesh;
+		let isComplied = false;
+
+		const textureLoader = new THREE.TextureLoader();
+		const texture_1 = textureLoader.load('locked_door.jpg');
+		const texture_2 = textureLoader.load('opened_door.jpg');
+		const isTablet = window.innerWidth > 768;
+		if (isTablet)
+			loader = new THREE.Mesh(
+				new THREE.PlaneGeometry(5, 5),
+				new THREE.ShaderMaterial({
+					uniforms: {
+						progress: { value: 0 },
+						sampleLockedDoor: { value: texture_1 },
+						sampleUnlockedDoor: { value: texture_2 },
+						aspectRatio: { value: window.innerWidth / window.innerHeight }
+					},
+					vertexShader: `
+						varying vec2 vUv;
+						void main() {
+							gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+							vUv = uv;
+						}
+					`,
+					fragmentShader: `
+						uniform float progress;
+						varying vec2 vUv;
+						uniform sampler2D sampleLockedDoor;
+						uniform sampler2D sampleUnlockedDoor;
+						uniform float aspectRatio;
+
+						void main() {
+							vec2 uv = vUv;
+							
+							// aspect ratio
+							uv.x *= aspectRatio;
+
+							vec4 colorLockedDoor = texture2D(sampleLockedDoor, vUv);
+							vec4 colorUnlockedDoor = texture2D(sampleUnlockedDoor, vUv);
+							// progress is a value between 0 and 100
+							float progressValue = progress / 90.0;
+							vec4 color = mix(colorLockedDoor, colorUnlockedDoor, clamp(0.0, 1.0, progressValue));
+
+							gl_FragColor = color;
+						}
+					`,
+					transparent: true
+				})
+			);
+		if (loader) {
+			loader.position.set(0, 0, -2);
+			this.scene.add(loader);
+		}
+
 		manager.onStart = (url, itemsLoaded, itemsTotal) => {
+			isComplied = false;
 			threejsLoading.update((v) => ({ ...v, loading: true, loaded: false }));
 
 			console.log(
@@ -164,12 +219,40 @@ class TravelGalleryScene {
 
 			threejsLoading.update((v) => ({ ...v, progress: progressInPercent }));
 
-			if (itemsLoaded === itemsTotal) {
-				threejsLoading.update((v) => ({
-					...v,
-					loaded: true,
-					loading: false
-				}));
+			if (itemsLoaded === itemsTotal && !isComplied) {
+				if (loader) {
+					const obj = {
+						progress: 0
+					};
+					gsap.to(obj, {
+						progress: 100,
+						duration: 1.5,
+						ease: 'power2.inOut',
+						onUpdate: () => {
+							(loader.material as THREE.ShaderMaterial).uniforms.progress.value = obj.progress;
+
+							console.log(obj.progress);
+
+							(loader.material as THREE.ShaderMaterial).needsUpdate = true;
+						},
+						onComplete: () => {
+							threejsLoading.update((v) => ({
+								...v,
+								loaded: true,
+								loading: false
+							}));
+							this.scene.remove(loader);
+						}
+					});
+				} else {
+					threejsLoading.update((v) => ({
+						...v,
+						loaded: true,
+						loading: false
+					}));
+				}
+
+				isComplied = true;
 			}
 		};
 
