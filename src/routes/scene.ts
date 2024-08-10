@@ -8,6 +8,13 @@ import { defineScreen, type Screens } from '$lib/mediaQuery';
 import { threejsLoading } from '$lib/loading';
 import gsap from 'gsap';
 
+import LinesScene from './lines/scene';
+import MorphScene from './morphing/scene';
+import HologramScene from './hologram/scene';
+import ParticlesScene from './particles/scene';
+import ParticlesInteractiveScene from './particles-interactive/scene';
+import LyapunovScene from './lyapunov/lyapunov';
+
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 };
 
@@ -65,6 +72,9 @@ const createGeometry = (isMobile: boolean, screens: Screens) => {
 };
 
 class TravelGalleryScene {
+	integratedScenes: ({ scene: THREE.Scene; camera: THREE.Camera; destroy: () => void } | null)[] =
+		[];
+	renderTargets: THREE.WebGLRenderTarget[] = [];
 	isMobile = window.innerWidth < 768;
 	scene: THREE.Scene = new THREE.Scene();
 	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
@@ -86,6 +96,7 @@ class TravelGalleryScene {
 	height = window.innerHeight;
 	intersected: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
 	hovered: Record<string, THREE.Intersection> = {};
+	rafId: number | null = null;
 	screens: Screens = {
 		is2Xl: false,
 		isXl: false,
@@ -148,6 +159,7 @@ class TravelGalleryScene {
 		const textureLoader = new THREE.TextureLoader();
 		const texture_1 = textureLoader.load('locked_door.jpg');
 		const texture_2 = textureLoader.load('opened_door.jpg');
+		let is_animating = false;
 		const isMoreThanTablet = window.innerWidth > 768;
 		if (isMoreThanTablet)
 			loader = new THREE.Mesh(
@@ -182,8 +194,8 @@ class TravelGalleryScene {
 							vec4 colorLockedDoor = texture2D(sampleLockedDoor, vUv);
 							vec4 colorUnlockedDoor = texture2D(sampleUnlockedDoor, vUv);
 							// progress is a value between 0 and 100
-							float progressValue = progress / 90.0;
-							vec4 color = mix(colorLockedDoor, colorUnlockedDoor, clamp(0.0, 1.0, progressValue));
+							float progressValue = progress / 100.0;
+							vec4 color = mix(colorLockedDoor, colorUnlockedDoor, progressValue);
 
 							gl_FragColor = color;
 						}
@@ -198,36 +210,38 @@ class TravelGalleryScene {
 
 		manager.onStart = (url, itemsLoaded, itemsTotal) => {
 			isComplied = false;
+			this.total = itemsTotal;
 			threejsLoading.update((v) => ({ ...v, loading: true, loaded: false }));
-
-			console.log(
-				'Started loading file: ' +
-					url +
-					'.\nLoaded ' +
-					itemsLoaded +
-					' of ' +
-					itemsTotal +
-					' files.'
-			);
+			// console.log(
+			// 	'Started loading file: ' +
+			// 		url +
+			// 		'.\nLoaded ' +
+			// 		itemsLoaded +
+			// 		' of ' +
+			// 		itemsTotal +
+			// 		' files.'
+			// );
 		};
 
 		manager.onProgress = (url, itemsLoaded, itemsTotal) => {
-			console.log(
-				'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.'
-			);
+			// console.log(
+			// 	'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.'
+			// );
 			const progressInPercent = (itemsLoaded / this.total) * 100;
+			console.log(progressInPercent);
 
 			threejsLoading.update((v) => ({ ...v, progress: progressInPercent }));
 
-			if (itemsLoaded === itemsTotal && !isComplied) {
+			if (itemsLoaded === itemsTotal && !isComplied && !is_animating) {
 				if (loader) {
+					is_animating = true;
 					const obj = {
 						progress: 0
 					};
 					gsap.to(obj, {
 						progress: 100,
-						duration: 1.5,
-						ease: 'power2.inOut',
+						duration: 1.25,
+						ease: 'power4.inOut',
 						onUpdate: () => {
 							(loader.material as THREE.ShaderMaterial).uniforms.progress.value = obj.progress;
 							(loader.material as THREE.ShaderMaterial).needsUpdate = true;
@@ -239,6 +253,7 @@ class TravelGalleryScene {
 								loading: false
 							}));
 							this.scene.remove(loader);
+							is_animating = false;
 						}
 					});
 				} else {
@@ -367,6 +382,32 @@ class TravelGalleryScene {
 		// );
 		this.total = posts.length;
 
+		this.integratedScenes = [
+			new LinesScene(null, {
+				renderToTarget: true
+			}),
+			new MorphScene(null, {
+				renderToTarget: true
+			}),
+			new HologramScene(null, {
+				renderToTarget: true
+			}),
+			new ParticlesScene(null, {
+				renderToTarget: true
+			}),
+			// new ParticlesInteractiveScene(null, {
+			// 	renderToTarget: true
+			// }),
+			null,
+			new LyapunovScene(null, {
+				renderToTarget: true
+			})
+		];
+
+		this.renderTargets = this.integratedScenes.map(
+			() => new THREE.WebGLRenderTarget(this.width, this.height)
+		);
+
 		for (let i = 0; i < posts.length; i++) {
 			const post = posts[i];
 			const media = post.backgroundImage as Media;
@@ -401,7 +442,20 @@ class TravelGalleryScene {
 			try {
 				const group = new THREE.Group();
 
-				material.uniforms.uTexture.value = texture;
+				const slugSetTexture: Record<string, THREE.Texture | undefined> = {
+					'/lines': this.renderTargets[0].texture,
+					'/morphing': this.renderTargets[1].texture,
+					'/hologram': this.renderTargets[2].texture,
+					'/particles': this.renderTargets[3].texture,
+					'/lyapunov': this.renderTargets[5].texture
+				};
+
+				const slug = post.slug;
+				if (slugSetTexture[slug]) {
+					material.uniforms.uTexture.value = slugSetTexture[slug];
+				} else {
+					material.uniforms.uTexture.value = texture;
+				}
 				material.uniforms.uTexture.value.needsUpdate = true;
 				material.uniforms.id = { value: i };
 				material.uniforms.uResolution.value = new THREE.Vector3(
@@ -572,7 +626,6 @@ class TravelGalleryScene {
 			// If a hit has not been flagged as hovered we must call onPointerOver
 			if (!this.hovered[hit.object.uuid]) {
 				this.hovered[hit.object.uuid] = hit;
-				const index = this.meshes.findIndex((m) => m.uuid === hit.object.uuid);
 
 				if (this.handleHoverIn) {
 					this.handleHoverIn();
@@ -601,13 +654,18 @@ class TravelGalleryScene {
 
 		this.renderer?.dispose();
 		this.scene.clear();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
+
+		if (this.integratedScenes.length > 0) {
+			this.integratedScenes.forEach((scene) => {
+				if (!scene) return;
+				scene.destroy();
+			});
+		}
 	}
 
 	private animate() {
-		requestAnimationFrame(() => this.animate());
-
-		if (this.renderer) this.renderer.render(this.scene, this.camera);
-
 		this.time += 0.05;
 
 		this.materials.forEach((material) => {
@@ -615,6 +673,39 @@ class TravelGalleryScene {
 		});
 
 		if (this.bgMaterial) this.bgMaterial.uniforms.uTime.value = this.time;
+
+		this.rafId = requestAnimationFrame(() => this.animate());
+
+		if (this.renderer) {
+			// Render the secondary scene to the render target
+			if (
+				this.renderTargets.length > 0 &&
+				this.integratedScenes.length === this.renderTargets.length
+			) {
+				for (let i = 0; i < this.integratedScenes.length; i++) {
+					try {
+						const iScene = this.integratedScenes[i];
+						if (!iScene) continue;
+						const { scene, camera } = iScene;
+						const renderTarget = this.renderTargets[i];
+
+						// Check if the scene, camera, and render target exist
+						if (!scene) throw new Error(`Scene at index ${i} is undefined`);
+						if (!camera) throw new Error(`Camera at index ${i} is undefined`);
+						if (!renderTarget) throw new Error(`RenderTarget at index ${i} is undefined`);
+
+						this.renderer.setRenderTarget(renderTarget);
+						this.renderer.render(scene, camera);
+						this.renderer.setRenderTarget(null); // Ensure rendering returns to the default framebuffer
+					} catch (err) {
+						// Added detailed error logging
+						console.error(`Error rendering scene ${i}:`, err);
+					}
+				}
+			}
+			// Render the main scene
+			this.renderer.render(this.scene, this.camera);
+		}
 	}
 
 	initGalleryAnimation() {

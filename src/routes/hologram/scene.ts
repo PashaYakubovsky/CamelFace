@@ -11,7 +11,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Sky } from 'three/examples/jsm/objects/Sky';
 
 class MophingScene {
-	private renderer: THREE.WebGLRenderer;
+	renderer: THREE.WebGLRenderer | null = null;
 	private mouse: THREE.Vector2;
 	private width = window.innerWidth;
 	private height = window.innerHeight;
@@ -19,6 +19,7 @@ class MophingScene {
 	stats?: Stats;
 	time = 0;
 	scene!: THREE.Scene;
+	rafId: number | null = null;
 	camera!: THREE.PerspectiveCamera;
 	gui!: GUI;
 	gltfLoader: GLTFLoader;
@@ -43,16 +44,24 @@ class MophingScene {
 	floorPlane!: THREE.Mesh;
 	sky!: Sky;
 
-	constructor(canvasElement: HTMLCanvasElement) {
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			alpha: true,
-			canvas: canvasElement
-		});
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setClearColor(new THREE.Color(this.debugObject.clearColor));
+	constructor(canvasElement: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
+		if (!opt?.renderToTarget && canvasElement) {
+			this.renderer = new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true,
+				canvas: canvasElement
+			});
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setClearColor(new THREE.Color(this.debugObject.clearColor));
 
+			this.stats = new Stats();
+			this.stats.dom.style.left = 'auto';
+			this.stats.dom.style.right = '0';
+			this.stats.dom.style.top = 'auto';
+			this.stats.dom.style.bottom = '0';
+			document.body.appendChild(this.stats.dom);
+		}
 		this.scene = new THREE.Scene();
 
 		/**
@@ -75,20 +84,15 @@ class MophingScene {
 		const directionalLight = new THREE.DirectionalLight(0xffffff, 12);
 		directionalLight.position.set(0, 0, 10);
 
-		this.stats = new Stats();
-		this.stats.dom.style.left = 'auto';
-		this.stats.dom.style.right = '0';
-		this.stats.dom.style.top = 'auto';
-		this.stats.dom.style.bottom = '0';
-		document.body.appendChild(this.stats.dom);
-
 		this.mouse = new THREE.Vector2();
 
 		// Controls
-		this.controls = new OrbitControls(this.camera, canvasElement);
-		this.controls.enableDamping = true;
-		// Disable controls
-		this.controls.enabled = this.debugObject.orbitControls;
+		if (this.renderer) {
+			this.controls = new OrbitControls(this.camera, canvasElement);
+			this.controls.enableDamping = true;
+			// Disable controls
+			this.controls.enabled = this.debugObject.orbitControls;
+		}
 
 		// Add objects
 		this.addObjects();
@@ -102,6 +106,14 @@ class MophingScene {
 		// Events
 		window.addEventListener('resize', this.onWindowResize.bind(this), false);
 		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+
+		if (opt?.renderToTarget) {
+			return {
+				scene: this.scene,
+				camera: this.camera,
+				destroy: this.destroy.bind(this)
+			};
+		}
 	}
 
 	addSky() {
@@ -207,11 +219,12 @@ class MophingScene {
 	}
 
 	addDebug() {
+		if (!this.renderer) return;
 		this.gui = new GUI({ width: 300 });
 
 		this.gui.open();
 		this.gui.addColor(this.debugObject, 'clearColor').onChange(() => {
-			this.renderer.setClearColor(this.debugObject.clearColor);
+			if (this.renderer) this.renderer.setClearColor(this.debugObject.clearColor);
 		});
 		this.gui.add(this.debugObject, 'orbitControls').onChange((value: boolean) => {
 			this.controls.enabled = value;
@@ -336,10 +349,11 @@ class MophingScene {
 		this.camera.aspect = this.width / this.height;
 		this.camera.updateProjectionMatrix();
 
-		// Update renderer
-		this.renderer.setSize(this.width, this.height);
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
+		if (this.renderer) {
+			// Update renderer
+			this.renderer.setSize(this.width, this.height);
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		}
 		// Update resolution uniform
 		if (this.material) {
 			this.material.uniforms.uResolution.value = new THREE.Vector2(
@@ -350,6 +364,7 @@ class MophingScene {
 	}
 
 	onMouseMove(event: MouseEvent): void {
+		if (!this.renderer) return;
 		// Get the bounding rectangle of the renderer
 		const rect = this.renderer.domElement.getBoundingClientRect();
 
@@ -389,9 +404,9 @@ class MophingScene {
 		this.camera.rotation.x = THREE.MathUtils.lerp(this.camera.rotation.x, this.mouse.y, 0.05);
 
 		// Render normal scene
-		this.renderer.render(this.scene, this.camera);
+		if (this.renderer) this.renderer.render(this.scene, this.camera);
 
-		requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(() => this.animate());
 
 		if (this.stats) this.stats.update();
 	}
@@ -413,9 +428,17 @@ class MophingScene {
 			}
 		});
 
-		this.renderer.dispose();
+		if (this.sky) this.scene.remove(this.sky);
+
+		if (this.floorPlane) this.scene.remove(this.floorPlane);
+
+		if (this.material) this.material.dispose();
+
+		if (this.renderer) this.renderer.dispose();
 
 		if (this.stats) this.stats.dom.remove();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

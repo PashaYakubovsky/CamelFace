@@ -22,6 +22,7 @@ class WobblyScene {
 	camera!: THREE.PerspectiveCamera;
 	gui!: GUI;
 	gltfLoader: GLTFLoader;
+	rafId: number | null = null;
 	dracoLoader: DRACOLoader;
 	material!: CustomShaderMaterial;
 	depthMaterial!: CustomShaderMaterial;
@@ -520,7 +521,7 @@ class WobblyScene {
 		// Render normal scene
 		this.renderer.render(this.scene, this.camera);
 
-		requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(() => this.animate());
 
 		if (this.stats) this.stats.update();
 	}
@@ -545,6 +546,8 @@ class WobblyScene {
 		});
 
 		if (this.stats) this.stats.dom.remove();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

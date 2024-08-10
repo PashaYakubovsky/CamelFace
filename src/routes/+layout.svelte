@@ -37,7 +37,6 @@
 		});
 
 		socket.on('users', (data: any) => {
-			console.log('users', data);
 			userSocketId = socket.id || '';
 			mouses = Object.values(data) || [];
 			mouses = mouses.map((mouse) => ({

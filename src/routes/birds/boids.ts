@@ -358,9 +358,10 @@ class BoidsScene {
 	}
 
 	clock = new THREE.Clock();
+	rafId: number | null = null;
 
 	public animate() {
-		requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 
 		this.drawFlocks();
 
@@ -609,6 +610,8 @@ class BoidsScene {
 		if (this.controls) this.controls.dispose();
 		if (this.renderer) this.renderer.dispose();
 		this.stats.dom.remove();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

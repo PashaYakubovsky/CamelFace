@@ -189,9 +189,9 @@ class BoidsScene {
 			}
 		});
 	}
-
+	rafId: number | null = null;
 	public animate() {
-		requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 
 		this.drawFlocks();
 
@@ -407,6 +407,8 @@ class BoidsScene {
 		if (this.gui) this.gui.destroy();
 		if (this.controls) this.controls.dispose();
 		if (this.renderer) this.renderer.dispose();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

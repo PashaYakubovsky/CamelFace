@@ -19,20 +19,21 @@ const options = {
 };
 
 class Particles {
-	private scene: THREE.Scene = new THREE.Scene();
+	scene: THREE.Scene = new THREE.Scene();
 	camera: THREE.PerspectiveCamera;
-	renderer: THREE.WebGLRenderer;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
-	private gui: GUI | null = null;
-	private controls: OrbitControls | null = null;
-	private instancedMesh: THREE.InstancedMesh | null = null;
-	private stats = new Stats();
+	renderer: THREE.WebGLRenderer | null = null;
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.PlaneGeometry | null = null;
+	gui: GUI | null = null;
+	controls: OrbitControls | null = null;
+	instancedMesh: THREE.InstancedMesh | null = null;
+	stats: Stats | null = null;
 	sizes = {
 		width: window.innerWidth,
 		height: window.innerHeight,
 		pixelRatio: window.devicePixelRatio
 	};
+	rafId: number | null = null;
 	displacement: Partial<{
 		canvas: HTMLCanvasElement;
 		context: CanvasRenderingContext2D;
@@ -51,40 +52,49 @@ class Particles {
 	bloomEffect: BloomEffect | null = null;
 	bloomEffectPass: EffectPass | null = null;
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(el: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
 		this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 		this.camera.position.z = 12;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el,
-			powerPreference: 'high-performance',
-			antialias: false,
-			stencil: false,
-			depth: false
-		});
+		if (!opt?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el,
+				powerPreference: 'high-performance',
+				antialias: false,
+				stencil: false,
+				depth: false
+			});
 
-		this.renderer.toneMapping = THREE.ReinhardToneMapping;
-		this.renderer.setClearColor('#050505');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setPixelRatio(window.devicePixelRatio);
+			this.renderer.toneMapping = THREE.ReinhardToneMapping;
+			this.renderer.setClearColor('#050505');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setPixelRatio(window.devicePixelRatio);
 
+			this.stats = new Stats();
+			this.stats.showPanel(0);
+		}
 		this.setInitialValues();
 		this.addDebug();
 		this.animate();
 
-		// add stats
-		this.stats.showPanel(0);
-		// document.body.appendChild(this.stats.dom);
-
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-		// add controls to the scene
-		this.controls.enableDamping = true;
-		this.controls.dampingFactor = 0.25;
-		this.controls.enableZoom = true;
-		this.controls.autoRotate = true;
-		this.controls.autoRotateSpeed = 0.5;
-		this.controls.enablePan = true;
-
+		if (this.renderer) {
+			this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+			// add controls to the scene
+			this.controls.enableDamping = true;
+			this.controls.dampingFactor = 0.25;
+			this.controls.enableZoom = true;
+			this.controls.autoRotate = true;
+			this.controls.autoRotateSpeed = 0.5;
+			this.controls.enablePan = true;
+		}
 		window.addEventListener('resize', this.onResize.bind(this));
+
+		if (opt?.renderToTarget) {
+			return {
+				scene: this.scene,
+				camera: this.camera,
+				destroy: this.destroy.bind(this)
+			};
+		}
 	}
 
 	setInitialValues() {
@@ -177,8 +187,9 @@ class Particles {
 		if (window.innerWidth < 768) {
 			particles.position.y = 10;
 		}
-
-		this.composer = new EffectComposer(this.renderer);
+		if (this.renderer) {
+			this.composer = new EffectComposer(this.renderer);
+		}
 		const renderPass = new RenderPass(this.scene, this.camera);
 
 		this.waterEffect = new WaterEffect({
@@ -200,9 +211,11 @@ class Particles {
 		this.bloomEffectPass.renderToScreen = true;
 		renderPass.renderToScreen = false;
 
-		this.composer.addPass(renderPass);
-		this.composer.addPass(waterPass);
-		this.composer.addPass(this.bloomEffectPass);
+		if (this.composer) {
+			this.composer.addPass(renderPass);
+			this.composer.addPass(waterPass);
+			this.composer.addPass(this.bloomEffectPass);
+		}
 	}
 
 	damping = 0.1;
@@ -214,6 +227,7 @@ class Particles {
 	}
 
 	addDebug() {
+		if (!this.renderer) return;
 		this.gui = new GUI();
 
 		const folderEffect = this.gui.addFolder('Water Effect');
@@ -266,7 +280,7 @@ class Particles {
 					if (this.bloomEffect) this.bloomEffect.distinction = options.bloomRadius;
 				});
 		}
-		const ditortionIntensity = this.waterEffect?.uniforms.get('uDistortionIntensity');
+		const distortionIntensity = this.waterEffect?.uniforms.get('uDistortionIntensity');
 		folderPostProcessing
 			.add(options, 'distortionIntensity')
 			.min(0)
@@ -296,8 +310,7 @@ class Particles {
 	}
 
 	animate() {
-		requestAnimationFrame(this.animate.bind(this));
-		this.stats.update();
+		if (this.stats) this.stats.update();
 
 		/**
 		 * Raycaster
@@ -327,6 +340,8 @@ class Particles {
 		}
 		if (this.composer) this.composer.render();
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
+
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 	}
 
 	destroy() {
@@ -342,6 +357,8 @@ class Particles {
 		}
 
 		this.cleanUp();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

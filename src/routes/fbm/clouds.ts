@@ -13,6 +13,7 @@ class cloudsScene {
 	public renderer: THREE.WebGLRenderer | null = null;
 	private material: THREE.ShaderMaterial | null = null;
 	private geometry: THREE.PlaneGeometry | null = null;
+	rafId: number | null = null;
 
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
@@ -75,7 +76,7 @@ class cloudsScene {
 	}
 
 	public animate() {
-		requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.01;
 		}
@@ -93,6 +94,7 @@ class cloudsScene {
 			}
 		});
 		if (this.renderer) this.renderer.dispose();
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

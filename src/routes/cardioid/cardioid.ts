@@ -14,16 +14,18 @@ const options = {
 
 class CardioidScene {
 	private scene: THREE.Scene = new THREE.Scene();
-	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
+	private material: THREE.ShaderMaterial | null = null;
+	private geometry: THREE.PlaneGeometry | null = null;
+	private gui: GUI | null = null;
+
+	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	public renderer: THREE.WebGLRenderer | null = null;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
-	private gui: GUI | null = null;
+	renderer: THREE.WebGLRenderer | null = null;
+	rafId: number | null = null;
 
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
@@ -45,7 +47,7 @@ class CardioidScene {
 		window.addEventListener('resize', this.onResize.bind(this));
 	}
 
-	public addControls() {
+	addControls() {
 		this.gui = new GUI();
 		if (!this.material) return;
 
@@ -68,7 +70,7 @@ class CardioidScene {
 		});
 	}
 
-	public init() {
+	init() {
 		this.geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 
 		this.material = new THREE.ShaderMaterial({
@@ -115,7 +117,7 @@ class CardioidScene {
 		this.renderer?.setSize(window.innerWidth, window.innerHeight);
 	}
 
-	public animate() {
+	animate() {
 		requestAnimationFrame(this.animate.bind(this));
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.006;
@@ -134,6 +136,7 @@ class CardioidScene {
 			}
 		});
 		this.renderer?.dispose();
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

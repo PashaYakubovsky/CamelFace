@@ -556,6 +556,7 @@
 		border-radius: 2rem;
 		min-width: 1.5rem;
 		min-height: 1.5rem;
+		font-family: 'Manrope', sans-serif;
 	}
 	.nav-item_active {
 		background-color: rgb(47, 47, 47);

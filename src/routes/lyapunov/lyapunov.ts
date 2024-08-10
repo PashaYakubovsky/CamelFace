@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 import { GUI } from 'lil-gui';
-import gsap from 'gsap';
 
 const options = {
 	Color: '#ff0000',
@@ -13,38 +12,50 @@ const options = {
 };
 
 class LyapunovScene {
-	private scene: THREE.Scene = new THREE.Scene();
-	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
+	scene: THREE.Scene = new THREE.Scene();
+	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	public renderer: THREE.WebGLRenderer | null = null;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
-	private gui: GUI | null = null;
+	renderer: THREE.WebGLRenderer | null = null;
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.PlaneGeometry | null = null;
+	gui: GUI | null = null;
+	rafId: number | null = null;
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(el: HTMLCanvasElement | null, opts?: { renderToTarget: boolean }) {
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el
-		});
+		if (!opts?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el
+			});
 
-		this.renderer.toneMapping = THREE.ReinhardToneMapping;
-		this.renderer.setClearColor('#000000');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.toneMapping = THREE.ReinhardToneMapping;
+			this.renderer.setClearColor('#000000');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+			this.addControls();
+
+			window.addEventListener('mousemove', this.onMouseMove.bind(this));
+			window.addEventListener('resize', this.onResize.bind(this));
+			window.addEventListener('wheel', this.onMouseWheel.bind(this));
+			window.addEventListener('keypress', this.mousePressed.bind(this));
+			window.addEventListener('click', this.onClick.bind(this));
+		}
 
 		this.init();
-		this.addControls();
 		this.setInitialValues();
 		this.animate();
 
-		window.addEventListener('mousemove', this.onMouseMove.bind(this));
-		window.addEventListener('resize', this.onResize.bind(this));
-		window.addEventListener('wheel', this.onMouseWheel.bind(this));
-		window.addEventListener('keypress', this.mousePressed.bind(this));
-		window.addEventListener('click', this.onClick.bind(this));
+		if (opts?.renderToTarget) {
+			return {
+				scene: this.scene,
+				camera: this.camera,
+				destroy: this.destroy.bind(this)
+			};
+		}
 	}
 
 	public setInitialValues() {
@@ -175,18 +186,23 @@ class LyapunovScene {
 		window.removeEventListener('wheel', this.onMouseWheel.bind(this));
 
 		this.renderer?.dispose();
+
+		if (this.material) {
+			this.material.dispose();
+		}
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 
 	public dir = 1;
 
 	public animate() {
-		requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.002 * this.dir;
 			if (this.material.uniforms.u_time.value > 5) {
 				this.dir *= -1;
 			}
-			if (this.material.uniforms.u_time.value < -10) {
+			if (this.material.uniforms.u_time.value < -5) {
 				this.dir *= -1;
 			}
 		}

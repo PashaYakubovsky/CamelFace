@@ -34,6 +34,7 @@ class LyapunovScene {
 	private controls: OrbitControls | null = null;
 	private instancedMesh: THREE.InstancedMesh | null = null;
 	private stats = new Stats();
+	rafId: number | null = null;
 
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
@@ -331,7 +332,7 @@ class LyapunovScene {
 
 	animate() {
 		this.drawMovers();
-		requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 		this.stats.update();
 		if (this.material) {
 			this.material.uniforms.uTime.value += 0.01;
@@ -352,6 +353,7 @@ class LyapunovScene {
 		if (this.stats) {
 			this.stats.dom.remove();
 		}
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

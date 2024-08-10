@@ -6,11 +6,15 @@ import fragmentShader from './fragmentShader.glsl';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import { GUI } from 'lil-gui';
 
+interface Options {
+	renderToTarget: boolean;
+}
+
 class ParticlesScene {
-	private renderer: THREE.WebGLRenderer;
-	private mouse: THREE.Vector2;
-	private width = window.innerWidth;
-	private height = window.innerHeight;
+	renderer: THREE.WebGLRenderer | null = null;
+	mouse: THREE.Vector2;
+	width = window.innerWidth;
+	height = window.innerHeight;
 	group: THREE.Group | undefined;
 	params = {
 		size: 256,
@@ -22,6 +26,7 @@ class ParticlesScene {
 	stats?: Stats;
 	time = 0;
 	material!: THREE.ShaderMaterial;
+	rafId: number | null = null;
 	count!: number;
 	scene!: THREE.Scene;
 	camera!: THREE.PerspectiveCamera;
@@ -39,21 +44,23 @@ class ParticlesScene {
 	skullMaterial!: THREE.MeshPhysicalMaterial;
 	gui!: GUI;
 
-	constructor(canvasElement: HTMLCanvasElement) {
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			alpha: true,
-			canvas: canvasElement,
-			powerPreference: 'high-performance'
-		});
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setClearColor(0x000000, 0);
-		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		this.renderer.toneMappingExposure = 1;
-		this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	constructor(canvasElement: HTMLCanvasElement | null, opt?: Options) {
+		if (!opt?.renderToTarget && canvasElement) {
+			this.renderer = new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true,
+				canvas: canvasElement,
+				powerPreference: 'high-performance'
+			});
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setClearColor(0x000000, 0);
+			this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			this.renderer.toneMappingExposure = 1;
+			this.renderer.shadowMap.enabled = true;
+			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		}
 
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.01, 20);
@@ -66,20 +73,22 @@ class ParticlesScene {
 		this.depthCamera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.01, 1);
 		this.depthCamera.position.z = 0.5;
 
-		// this.scene = new THREE.Scene();
-		this.stats = new Stats();
-		this.stats.dom.style.left = 'auto';
-		this.stats.dom.style.right = '0';
-		this.stats.dom.style.top = 'auto';
-		this.stats.dom.style.bottom = '0';
-		document.body.appendChild(this.stats.dom);
+		if (this.renderer) {
+			// this.scene = new THREE.Scene();
+			this.stats = new Stats();
+			this.stats.dom.style.left = 'auto';
+			this.stats.dom.style.right = '0';
+			this.stats.dom.style.top = 'auto';
+			this.stats.dom.style.bottom = '0';
+			document.body.appendChild(this.stats.dom);
+
+			window.addEventListener('resize', this.onWindowResize.bind(this), false);
+			window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+			window.addEventListener('click', this.onClick.bind(this), false);
+			window.addEventListener('wheel', this.onWheel.bind(this), false);
+		}
 
 		this.mouse = new THREE.Vector2();
-
-		window.addEventListener('resize', this.onWindowResize.bind(this), false);
-		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
-		window.addEventListener('click', this.onClick.bind(this), false);
-		window.addEventListener('wheel', this.onWheel.bind(this), false);
 
 		this.loader.load('/Skull.glb', (gltf) => {
 			this.skull = gltf.scene.getObjectByName('Prop_Skull') as THREE.Mesh;
@@ -95,18 +104,28 @@ class ParticlesScene {
 					reflectivity: 1,
 					transparent: true
 				});
-				this.skull.position.z = -0.7;
+				this.skull.position.z = -0.5;
 				this.skull.position.y = -0.2;
 				this.scene.add(this.skull);
 
 				this.addObjects();
 
-				this.addDebug();
-				this.animate();
-				// this.loadFont();
-				this.target = this.setupRenderTarget();
+				if (this.renderer) {
+					this.addDebug();
+					this.animate();
+					// this.loadFont();
+					this.target = this.setupRenderTarget();
+				}
 			}
 		});
+
+		if (opt?.renderToTarget) {
+			return {
+				scene: this.scene,
+				camera: this.camera,
+				destroy: this.destroy.bind(this)
+			};
+		}
 	}
 
 	getRenderTarget() {
@@ -197,16 +216,17 @@ class ParticlesScene {
 	}
 
 	onWindowResize(): void {
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+		if (this.renderer) this.renderer.setSize(window.innerWidth, window.innerHeight);
 	}
 
 	onMouseMove(event: MouseEvent): void {
-		const rect = this.renderer.domElement.getBoundingClientRect();
-		const x = event.clientX - rect.left;
-		const y = event.clientY - rect.top;
-
-		this.mouse.x = (x / this.width) * 2 - 1;
-		this.mouse.y = -(y / this.height) * 2 + 1;
+		if (this.renderer) {
+			const rect = this.renderer.domElement.getBoundingClientRect();
+			const x = event.clientX - rect.left;
+			const y = event.clientY - rect.top;
+			this.mouse.x = (x / this.width) * 2 - 1;
+			this.mouse.y = -(y / this.height) * 2 + 1;
+		}
 
 		if (this.material) this.material.uniforms.uMouse.value = this.mouse;
 
@@ -243,15 +263,17 @@ class ParticlesScene {
 		}
 
 		// render scene to target
-		if (this.target && this.depthCamera) {
+		if (this.target && this.depthCamera && this.renderer) {
 			this.renderer.setRenderTarget(this.target);
 			this.renderer.render(this.scene, this.depthCamera);
 			if (this.material) this.material.uniforms.uDepths.value = this.target.depthTexture;
 		}
 
 		// render to screen
-		this.renderer.setRenderTarget(null);
-		this.renderer.render(this.scene, this.camera);
+		if (this.renderer) {
+			this.renderer.setRenderTarget(null);
+			this.renderer.render(this.scene, this.camera);
+		}
 
 		// lerp camera to mouse pos with sin function
 		if (this.camera && this.skull) {
@@ -268,7 +290,7 @@ class ParticlesScene {
 			this.camera.lookAt(this.skull.position);
 		}
 
-		requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(() => this.animate());
 
 		if (this.stats) this.stats.update();
 	}
@@ -294,8 +316,10 @@ class ParticlesScene {
 		window.removeEventListener('click', this.onClick.bind(this));
 		window.removeEventListener('wheel', this.onWheel.bind(this));
 
-		this.renderer.dispose();
-		this.renderer.forceContextLoss();
+		if (this.renderer) {
+			this.renderer.dispose();
+			this.renderer.forceContextLoss();
+		}
 
 		this.scene.traverse((child) => {
 			if (child instanceof THREE.Mesh) {
@@ -305,6 +329,10 @@ class ParticlesScene {
 		});
 
 		if (this.stats) this.stats.dom.remove();
+
+		if (this.gui) this.gui.destroy();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 
 	pattern = new RegExp(/[a-zA-Z]/);

@@ -26,6 +26,7 @@ class ParticlesScene {
 	group: THREE.Group | undefined;
 	videoElement: HTMLVideoElement | undefined;
 	audio: HTMLAudioElement | undefined;
+	rafId: number | undefined;
 	params = {
 		count: 500000,
 		threshold: 0.1,
@@ -129,7 +130,7 @@ class ParticlesScene {
 
 		this.addDebug();
 
-		this.animate();
+		this.rafId = this.animate();
 	}
 
 	uploadNewFile(file: File) {
@@ -449,7 +450,7 @@ class ParticlesScene {
 		}
 	}
 
-	animate(): void {
+	animate(): number {
 		this.renderer.render(this.scene, this.camera);
 
 		if (this.stats) this.stats.update();
@@ -469,16 +470,19 @@ class ParticlesScene {
 			vert.needsUpdate = true;
 		}
 
-		requestAnimationFrame(() => this.animate());
+		return requestAnimationFrame(() => {
+			this.rafId = this.animate();
+		});
 	}
 
 	destroy(): void {
-		this.renderer.dispose();
+		if (this.stream) this.stream.getTracks().forEach((track) => track.stop());
 		this.scene.clear();
+		this.renderer.dispose();
 		this.gui?.destroy();
 		this.videoElement?.remove();
 		this.stats?.dom.remove();
-		if (this.stream) this.stream.getTracks().forEach((track) => track.stop());
+		if (typeof this.rafId === 'number') cancelAnimationFrame(this.rafId);
 	}
 
 	getUserMedia(): void {

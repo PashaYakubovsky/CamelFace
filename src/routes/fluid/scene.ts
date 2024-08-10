@@ -11,8 +11,8 @@ class FluidSimulationParent {
 	canvas: HTMLCanvasElement;
 	raf!: number;
 	mouse = new THREE.Vector2();
-	frustumSize: number = 1;
-	aspectRatio: number = 1;
+	frustumSize = 1;
+	aspectRatio = 1;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.canvas = canvasElement;

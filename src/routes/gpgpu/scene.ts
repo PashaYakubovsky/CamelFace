@@ -21,6 +21,7 @@ class GPGPUScene {
 	group: THREE.Group | undefined;
 	stats?: Stats;
 	time = 0;
+	rafId: number | null = null;
 	material!: THREE.ShaderMaterial;
 	scene!: THREE.Scene;
 	camera!: THREE.PerspectiveCamera;
@@ -483,7 +484,7 @@ class GPGPUScene {
 		// Render normal scene
 		this.renderer.render(this.scene, this.camera);
 
-		requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(() => this.animate());
 
 		if (this.stats) this.stats.update();
 	}
@@ -506,6 +507,8 @@ class GPGPUScene {
 		});
 
 		if (this.stats) this.stats.dom.remove();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 
 	onWheel(event: WheelEvent) {}

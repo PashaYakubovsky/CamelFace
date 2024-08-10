@@ -10,17 +10,18 @@ class ParticlesScene {
 	private camera: THREE.PerspectiveCamera;
 	private raycaster: THREE.Raycaster;
 	private mouse: THREE.Vector2;
-	public particles: THREE.Points | undefined;
+	particles: THREE.Points | undefined;
 	private geometry: THREE.BufferGeometry;
-	public material: THREE.ShaderMaterial | undefined;
+	material: THREE.ShaderMaterial | undefined;
 	private count: number;
 	private positions: Float32Array;
 	private colors: Float32Array;
 	private sizes: Float32Array;
-	public gui: GUI | undefined;
-	public group: THREE.Group | undefined;
-	public audio: HTMLAudioElement | undefined;
-	public params: {
+	rafId: number | null = null;
+	gui: GUI | undefined;
+	group: THREE.Group | undefined;
+	audio: HTMLAudioElement | undefined;
+	params: {
 		count: number;
 		size: number;
 		radius: number;
@@ -31,7 +32,7 @@ class ParticlesScene {
 		insideColor: string;
 		outsideColor: string;
 	};
-	public time = 0;
+	time = 0;
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -120,7 +121,7 @@ class ParticlesScene {
 		this.audio.src = '/galaxy.mp3';
 	}
 
-	public addDebug() {
+	addDebug() {
 		this.gui = new GUI();
 		this.gui
 			.add(this.params, 'count')
@@ -160,7 +161,7 @@ class ParticlesScene {
 			.onFinishChange(this.calculateGeometry.bind(this));
 	}
 
-	public calculateGeometry(): void {
+	calculateGeometry(): void {
 		const insideColor = new THREE.Color(this.params.insideColor);
 		const outsideColor = new THREE.Color(this.params.outsideColor);
 
@@ -218,13 +219,13 @@ class ParticlesScene {
 		this.geometry.attributes.position.needsUpdate = true;
 	}
 
-	public onWindowResize(): void {
+	onWindowResize(): void {
 		this.camera.aspect = window.innerWidth / window.innerHeight;
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 	}
 
-	public onMouseMove(event: MouseEvent): void {
+	onMouseMove(event: MouseEvent): void {
 		this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
 		this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -233,7 +234,7 @@ class ParticlesScene {
 		this.raycaster.setFromCamera(this.mouse, this.camera);
 	}
 
-	public fadeOut(instance: ParticlesScene): void {
+	fadeOut(instance: ParticlesScene): void {
 		const tl = gsap.timeline();
 
 		if (window.location.hostname !== 'localhost') {
@@ -319,7 +320,7 @@ class ParticlesScene {
 		window.removeEventListener('mousemove', this.onMouseMove, false);
 	}
 
-	public animate(): void {
+	animate(): void {
 		this.renderer.render(this.scene, this.camera);
 
 		this.time += 0.01;
@@ -332,13 +333,15 @@ class ParticlesScene {
 			this.particles.rotation.y += 0.001;
 		}
 
-		requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(() => this.animate());
 	}
 
-	public destroy(): void {
+	destroy(): void {
 		this.renderer.dispose();
 		this.scene.clear();
 		this.gui?.destroy();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

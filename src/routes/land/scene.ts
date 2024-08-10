@@ -563,7 +563,6 @@ class scene {
 	}
 
 	public animate() {
-		requestAnimationFrame(this.animate.bind(this));
 		this.stats.update();
 
 		const time = this.clock.getElapsedTime();
@@ -642,6 +641,8 @@ class scene {
 		}
 		// if (this.renderer) this.renderer.render(this.scene, this.camera);
 		if (this.composer) this.composer.render();
+
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 	}
 
 	destroy() {

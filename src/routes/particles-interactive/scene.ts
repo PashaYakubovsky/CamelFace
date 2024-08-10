@@ -1,4 +1,3 @@
-import { gsap } from 'gsap/all';
 import GUI from 'lil-gui';
 import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
@@ -8,11 +7,12 @@ import simFragmentShader from './simFragmentShader.glsl';
 import Stats from 'three/examples/jsm/libs/stats.module';
 
 class ParticlesScene {
-	private renderer: THREE.WebGLRenderer;
-	private mouse: THREE.Vector2;
-	private width = window.innerWidth;
-	private height = window.innerHeight;
+	renderer: THREE.WebGLRenderer | null = null;
+	mouse: THREE.Vector2;
+	width = window.innerWidth;
+	height = window.innerHeight;
 	gui: GUI | undefined;
+	rafId: number | null = null;
 	group: THREE.Group | undefined;
 	params = {
 		size: 256,
@@ -38,34 +38,35 @@ class ParticlesScene {
 	scene!: THREE.Scene;
 	camera!: THREE.OrthographicCamera;
 
-	constructor(canvasElement: HTMLCanvasElement) {
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			alpha: true,
-			canvas: canvasElement,
-			powerPreference: 'high-performance'
-		});
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setClearColor(0x000000, 0);
-		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		this.renderer.toneMappingExposure = 1;
-		this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	constructor(canvasElement: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
+		if (!opt?.renderToTarget && canvasElement) {
+			this.renderer = new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true,
+				canvas: canvasElement,
+				powerPreference: 'high-performance'
+			});
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setClearColor(0x000000, 0);
+			this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			this.renderer.toneMappingExposure = 1;
+			this.renderer.shadowMap.enabled = true;
+			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+			// this.scene = new THREE.Scene();
+			this.stats = new Stats();
+			this.stats.dom.style.left = 'auto';
+			this.stats.dom.style.right = '0';
+			this.stats.dom.style.top = 'auto';
+			this.stats.dom.style.bottom = '0';
+			document.body.appendChild(this.stats.dom);
+		}
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1);
 		this.camera.lookAt(0, 0, 1);
 		this.camera.position.z = 0.5;
-
-		// this.scene = new THREE.Scene();
-		this.stats = new Stats();
-		this.stats.dom.style.left = 'auto';
-		this.stats.dom.style.right = '0';
-		this.stats.dom.style.top = 'auto';
-		this.stats.dom.style.bottom = '0';
-		document.body.appendChild(this.stats.dom);
 
 		this.mouse = new THREE.Vector2();
 
@@ -74,8 +75,19 @@ class ParticlesScene {
 
 		this.setupFBO();
 		this.addObjects();
-		this.addDebug();
+
+		if (!opt?.renderToTarget) {
+			this.addDebug();
+		}
 		this.animate();
+
+		if (opt?.renderToTarget) {
+			return {
+				scene: this.scene,
+				camera: this.camera,
+				destroy: this.destroy.bind(this)
+			};
+		}
 	}
 
 	getRenderTarget() {
@@ -168,10 +180,12 @@ class ParticlesScene {
 		this.fboMesh = new THREE.Mesh(geometry, this.fboMaterial);
 		this.fboScene.add(this.fboMesh);
 
-		this.renderer.setRenderTarget(this.fbo);
-		this.renderer.render(this.fboScene, this.fboCamera);
-		this.renderer.setRenderTarget(this.fbo1);
-		this.renderer.render(this.fboScene, this.fboCamera);
+		if (this.renderer) {
+			this.renderer.setRenderTarget(this.fbo);
+			this.renderer.render(this.fboScene, this.fboCamera);
+			this.renderer.setRenderTarget(this.fbo1);
+			this.renderer.render(this.fboScene, this.fboCamera);
+		}
 	}
 
 	addObjects() {
@@ -291,11 +305,13 @@ class ParticlesScene {
 	}
 
 	onWindowResize(): void {
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+		if (this.renderer) this.renderer.setSize(window.innerWidth, window.innerHeight);
 	}
 
 	onMouseMove(event: MouseEvent): void {
-		const rect = this.renderer.domElement.getBoundingClientRect();
+		const rect = this.renderer
+			? this.renderer.domElement.getBoundingClientRect()
+			: document.body.getBoundingClientRect();
 		const x = event.clientX - rect.left;
 		const y = event.clientY - rect.top;
 
@@ -316,18 +332,19 @@ class ParticlesScene {
 		if (this.fboMaterial) this.fboMaterial.uniforms.uTime.value = this.time;
 		if (this.material) this.material.uniforms.uTime.value = this.time;
 
-		requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(() => this.animate());
 
 		// render to fbo
 		if (this.fboMaterial) this.fboMaterial.uniforms.uPositions.value = this.fbo1.texture;
 		if (this.material) this.material.uniforms.uPositions.value = this.fbo1.texture;
 		// render to fbo
-		this.renderer.setRenderTarget(this.fbo);
-		this.renderer.render(this.fboScene, this.fboCamera);
-		// render to screen
-		this.renderer.setRenderTarget(null);
-		this.renderer.render(this.scene, this.camera);
-
+		if (this.renderer) {
+			this.renderer.setRenderTarget(this.fbo);
+			this.renderer.render(this.fboScene, this.fboCamera);
+			// render to screen
+			this.renderer.setRenderTarget(null);
+			this.renderer.render(this.scene, this.camera);
+		}
 		// swap render targets
 		const temp = this.fbo;
 		this.fbo = this.fbo1;
@@ -342,8 +359,10 @@ class ParticlesScene {
 		}
 		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
 
-		this.renderer.dispose();
-		this.renderer.forceContextLoss();
+		if (this.renderer) {
+			this.renderer.dispose();
+			this.renderer.forceContextLoss();
+		}
 
 		if (this.material) this.material.dispose();
 		if (this.fboMaterial) this.fboMaterial.dispose();
@@ -352,6 +371,8 @@ class ParticlesScene {
 		if (this.fbo1) this.fbo1.dispose();
 
 		if (this.stats) this.stats.dom.remove();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

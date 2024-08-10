@@ -22,6 +22,7 @@ class MophingScene {
 	camera!: THREE.PerspectiveCamera;
 	gui!: GUI;
 	gltfLoader: GLTFLoader;
+	rafId: number | null = null;
 	dracoLoader: DRACOLoader;
 	material!: THREE.ShaderMaterial;
 	controls: OrbitControls;
@@ -357,7 +358,7 @@ class MophingScene {
 		// Render normal scene
 		this.renderer.render(this.scene, this.camera);
 
-		requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(() => this.animate());
 
 		if (this.stats) this.stats.update();
 	}
@@ -382,6 +383,8 @@ class MophingScene {
 		});
 
 		if (this.stats) this.stats.dom.remove();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 

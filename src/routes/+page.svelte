@@ -74,8 +74,12 @@
 		};
 	});
 
-	onMount(async () => {
-		await getPosts();
+	let isLoaded = false;
+	onMount(() => {
+		if (isLoaded) return;
+		getPosts().then(() => {
+			isLoaded = true;
+		});
 	});
 </script>
 

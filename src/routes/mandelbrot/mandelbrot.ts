@@ -25,6 +25,7 @@ class MandelbrotScene {
 	private material: THREE.ShaderMaterial | null = null;
 	private geometry: THREE.PlaneGeometry | null = null;
 	private gui: GUI | null = null;
+	rafId: number | null = null;
 
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
@@ -245,6 +246,15 @@ class MandelbrotScene {
 		if (this.gui) {
 			this.gui.destroy();
 		}
+		if (this.material) {
+			this.material.dispose();
+		}
+		if (this.rafId) cancelAnimationFrame(this.rafId);
+
+		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+		window.removeEventListener('resize', this.onResize.bind(this));
+		window.removeEventListener('wheel', this.onMouseWheel.bind(this));
+		window.removeEventListener('keypress', this.mousePressed.bind(this));
 	}
 }
 

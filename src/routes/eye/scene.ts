@@ -14,13 +14,13 @@ import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 
 class scene {
 	private scene: THREE.Scene = new THREE.Scene();
-	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
+	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	public renderer: THREE.WebGLRenderer | null = null;
+	renderer: THREE.WebGLRenderer | null = null;
 	private material: THREE.ShaderMaterial | null = null;
 	private geometry: THREE.PlaneGeometry | null = null;
 	private composer: EffectComposer | null = null;
@@ -28,6 +28,7 @@ class scene {
 	private rafPos = new THREE.Vector2(0, 0);
 	private basePos = new THREE.Vector2(0, 0);
 	clock = new THREE.Clock();
+	rafId: number | null = null;
 
 	constructor(el: HTMLCanvasElement) {
 		this.camera.position.z = 1;
@@ -48,7 +49,7 @@ class scene {
 		window.addEventListener('resize', this.onResize.bind(this));
 	}
 
-	public init() {
+	init() {
 		// width and height 100% of the screen
 		this.geometry = new THREE.PlaneGeometry(5, 5, 32, 32);
 		// make geometry responsive
@@ -260,9 +261,9 @@ class scene {
 	degree = 1;
 	order = 1;
 	dir = 1;
-	public animate() {
+	animate() {
 		const d = this.clock.getDelta() * 100;
-		requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.01;
 		}

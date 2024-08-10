@@ -10,7 +10,7 @@ import GUI from 'lil-gui';
 import gsap from 'gsap';
 
 class MorphingScene {
-	private renderer: THREE.WebGLRenderer;
+	renderer: THREE.WebGLRenderer | null = null;
 	private mouse: THREE.Vector2;
 	private width = window.innerWidth;
 	private height = window.innerHeight;
@@ -20,6 +20,7 @@ class MorphingScene {
 	scene!: THREE.Scene;
 	camera!: THREE.PerspectiveCamera;
 	gui!: GUI;
+	rafId: number | null = null;
 	gltfLoader: GLTFLoader;
 	dracoLoader: DRACOLoader;
 	raycastPlane!: THREE.Mesh;
@@ -49,16 +50,29 @@ class MorphingScene {
 		color2: '#0576f0'
 	};
 
-	constructor(canvasElement: HTMLCanvasElement) {
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			alpha: true,
-			canvas: canvasElement
-		});
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setClearColor(new THREE.Color('#160920'), 0);
+	constructor(
+		canvasElement: HTMLCanvasElement | null,
+		opt?: {
+			renderToTarget?: boolean;
+		}
+	) {
+		if (!opt?.renderToTarget && canvasElement) {
+			this.renderer = new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true,
+				canvas: canvasElement
+			});
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setClearColor(new THREE.Color('#160920'), 0);
 
+			this.stats = new Stats();
+			this.stats.dom.style.left = 'auto';
+			this.stats.dom.style.right = '0';
+			this.stats.dom.style.top = 'auto';
+			this.stats.dom.style.bottom = '0';
+			document.body.appendChild(this.stats.dom);
+		}
 		this.scene = new THREE.Scene();
 
 		/**
@@ -75,20 +89,15 @@ class MorphingScene {
 		this.gltfLoader = new GLTFLoader();
 		this.gltfLoader.setDRACOLoader(this.dracoLoader);
 
-		this.stats = new Stats();
-		this.stats.dom.style.left = 'auto';
-		this.stats.dom.style.right = '0';
-		this.stats.dom.style.top = 'auto';
-		this.stats.dom.style.bottom = '0';
-		document.body.appendChild(this.stats.dom);
-
 		this.mouse = new THREE.Vector2();
 
 		// Controls
-		this.controls = new OrbitControls(this.camera, canvasElement);
-		this.controls.enableDamping = true;
-		// Disable controls
-		this.controls.enabled = false;
+		if (this.renderer) {
+			this.controls = new OrbitControls(this.camera, canvasElement);
+			this.controls.enableDamping = true;
+			// Disable controls
+			this.controls.enabled = false;
+		}
 
 		// Add objects
 		this.addObjects();
@@ -103,14 +112,24 @@ class MorphingScene {
 		this.scene.add(this.raycastPlane);
 
 		// Debug
-		this.addDebug();
+		if (this.renderer) this.addDebug();
 
 		// initial render
 		this.animate();
 
 		// Events
-		window.addEventListener('resize', this.onWindowResize.bind(this), false);
-		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+		if (this.renderer) {
+			window.addEventListener('resize', this.onWindowResize.bind(this), false);
+			window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+		}
+
+		if (opt?.renderToTarget) {
+			return {
+				scene: this.scene,
+				camera: this.camera,
+				destroy: this.destroy.bind(this)
+			};
+		}
 	}
 
 	onReady() {
@@ -227,7 +246,7 @@ class MorphingScene {
 
 		this.gui.open();
 		this.gui.addColor(this.debugObject, 'clearColor').onChange(() => {
-			this.renderer.setClearColor(this.debugObject.clearColor);
+			if (this.renderer) this.renderer.setClearColor(this.debugObject.clearColor);
 		});
 		this.gui
 			.add(this.debugObject, 'progress')
@@ -295,8 +314,10 @@ class MorphingScene {
 		this.camera.updateProjectionMatrix();
 
 		// Update renderer
-		this.renderer.setSize(this.width, this.height);
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		if (this.renderer) {
+			this.renderer.setSize(this.width, this.height);
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		}
 
 		// Update resolution uniform
 		if (this.particles.material) {
@@ -309,16 +330,18 @@ class MorphingScene {
 
 	onMouseMove(event: MouseEvent): void {
 		// Get the bounding rectangle of the renderer
-		const rect = this.renderer.domElement.getBoundingClientRect();
+		if (this.renderer) {
+			const rect = this.renderer.domElement.getBoundingClientRect();
 
-		// Calculate the mouse's position within the renderer (0, 0 is the top left corner)
-		const x = event.clientX - rect.left;
-		const y = event.clientY - rect.top;
+			// Calculate the mouse's position within the renderer (0, 0 is the top left corner)
+			const x = event.clientX - rect.left;
+			const y = event.clientY - rect.top;
 
-		// Normalizing the x, y coordinates (which will be in pixels)
-		// to a range suitable for shaders (-1 to 1 for x and 1 to -1 for y)
-		this.mouse.x = (x / rect.width) * 2 - 1;
-		this.mouse.y = -(y / rect.height) * 2 + 1;
+			// Normalizing the x, y coordinates (which will be in pixels)
+			// to a range suitable for shaders (-1 to 1 for x and 1 to -1 for y)
+			this.mouse.x = (x / rect.width) * 2 - 1;
+			this.mouse.y = -(y / rect.height) * 2 + 1;
+		}
 
 		console.log('[morph:mouse]', this.mouse);
 
@@ -384,10 +407,11 @@ class MorphingScene {
 			this.particles.material.uniforms.uTime.value = this.time;
 		}
 
-		// Render normal scene
-		this.renderer.render(this.scene, this.camera);
+		if (this.renderer)
+			// Render normal scene
+			this.renderer.render(this.scene, this.camera);
 
-		requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(() => this.animate());
 
 		if (this.stats) this.stats.update();
 	}
@@ -401,8 +425,14 @@ class MorphingScene {
 
 		if (this.gui) this.gui.destroy();
 
-		this.renderer.dispose();
-		this.renderer.forceContextLoss();
+		if (this.controls) this.controls.dispose();
+
+		if (this.particles.points) this.scene.remove(this.particles.points);
+
+		if (this.renderer) {
+			this.renderer.dispose();
+			this.renderer.forceContextLoss();
+		}
 
 		this.scene.traverse((child) => {
 			if (child instanceof THREE.Mesh) {
@@ -412,6 +442,8 @@ class MorphingScene {
 		});
 
 		if (this.stats) this.stats.dom.remove();
+
+		if (this.rafId) cancelAnimationFrame(this.rafId);
 	}
 }
 
