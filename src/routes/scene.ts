@@ -148,8 +148,8 @@ class TravelGalleryScene {
 		const textureLoader = new THREE.TextureLoader();
 		const texture_1 = textureLoader.load('locked_door.jpg');
 		const texture_2 = textureLoader.load('opened_door.jpg');
-		const isTablet = window.innerWidth > 768;
-		if (isTablet)
+		const isMoreThanTablet = window.innerWidth > 768;
+		if (isMoreThanTablet)
 			loader = new THREE.Mesh(
 				new THREE.PlaneGeometry(5, 5),
 				new THREE.ShaderMaterial({
