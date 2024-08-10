@@ -23,7 +23,11 @@
 	};
 
 	onMount(() => {
-		const socket = io(PUBLIC_CMS_API);
+		const socket = io(PUBLIC_CMS_API, {
+			// http polling
+			transports: ['polling'],
+			upgrade: true
+		});
 
 		socket.on('connect', () => {
 			console.log('connected');
@@ -36,6 +40,7 @@
 		});
 
 		socket.on('users', (data: any) => {
+			console.log('users', data);
 			userSocketId = socket.id || '';
 			mouses = Object.values(data) || [];
 			mouses = mouses.map((mouse) => ({
