@@ -47,7 +47,6 @@
 		"delaunator": "^5.0.1",
 		"glslify": "^7.1.1",
 		"gsap": "npm:@gsap/business@^3.12.5",
-		"i": "^0.3.7",
 		"mongodb": "^6.5.0",
 		"npm": "^10.8.2",
 		"poisson-disk-sampling": "^2.3.1",

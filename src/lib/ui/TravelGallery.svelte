@@ -131,6 +131,7 @@
 		};
 
 		const init = async () => {
+			// main scene setup
 			scene = new Scene(canvasElement);
 			scene.textColors = $posts.map((post) => post.textColor);
 			goBackButtonElement = document.querySelector('#goBackButton') as HTMLButtonElement;

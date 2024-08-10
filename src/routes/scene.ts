@@ -230,9 +230,6 @@ class TravelGalleryScene {
 						ease: 'power2.inOut',
 						onUpdate: () => {
 							(loader.material as THREE.ShaderMaterial).uniforms.progress.value = obj.progress;
-
-							console.log(obj.progress);
-
 							(loader.material as THREE.ShaderMaterial).needsUpdate = true;
 						},
 						onComplete: () => {

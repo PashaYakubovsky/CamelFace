@@ -35,7 +35,6 @@ export const getPhoto = async () => {
 
 export const getPosts = async () => {
 	loading.update((state) => ({ ...state, loading: true }));
-
 	try {
 		const response: AxiosResponse<PayloadCMSResponse<Post[]>> = await axios.get(
 			`${PUBLIC_CMS_API}/posts`,
