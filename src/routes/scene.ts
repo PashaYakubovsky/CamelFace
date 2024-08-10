@@ -210,29 +210,16 @@ class TravelGalleryScene {
 
 		manager.onStart = (url, itemsLoaded, itemsTotal) => {
 			isComplied = false;
-			this.total = itemsTotal;
+			this.total = Math.max(this.total, itemsTotal);
 			threejsLoading.update((v) => ({ ...v, loading: true, loaded: false }));
-			// console.log(
-			// 	'Started loading file: ' +
-			// 		url +
-			// 		'.\nLoaded ' +
-			// 		itemsLoaded +
-			// 		' of ' +
-			// 		itemsTotal +
-			// 		' files.'
-			// );
 		};
 
-		manager.onProgress = (url, itemsLoaded, itemsTotal) => {
-			// console.log(
-			// 	'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.'
-			// );
+		manager.onProgress = (url, itemsLoaded) => {
 			const progressInPercent = (itemsLoaded / this.total) * 100;
-			console.log(progressInPercent);
 
 			threejsLoading.update((v) => ({ ...v, progress: progressInPercent }));
 
-			if (itemsLoaded === itemsTotal && !isComplied && !is_animating) {
+			if (itemsLoaded === this.total && !isComplied && !is_animating) {
 				if (loader) {
 					is_animating = true;
 					const obj = {
