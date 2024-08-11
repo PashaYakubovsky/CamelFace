@@ -407,7 +407,7 @@
 				}}
 				class={`nav-item ${currentIndex === index ? 'nav-item_active' : ''}`}
 			>
-				<span href={post.slug} class="nav-item__text">
+				<span } class="nav-item__text">
 					{post.title}
 				</span>
 			</button>
@@ -426,6 +426,9 @@
 					data-content={post.title}
 					style={`color:${scene?.textColors?.[index]}`}
 					class="text-[5.2vw] leading-normal font-bold"
+					on:click={() => {
+						goto(post.slug);
+					}}
 				>
 					{post.title}
 				</h2>
