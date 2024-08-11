@@ -45,7 +45,7 @@ class LyapunovScene {
 
 		this.init();
 		this.setInitialValues();
-		this.animate.bind(this);
+		this.animate();
 
 		if (!opts?.renderToTarget) {
 			this.addControls();
@@ -191,7 +191,6 @@ class LyapunovScene {
 	public dir = 1;
 
 	public animate() {
-		this.rafId = requestAnimationFrame(this.animate.bind(this));
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.002 * this.dir;
 			if (this.material.uniforms.u_time.value > 5) {
@@ -202,6 +201,8 @@ class LyapunovScene {
 			}
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
+
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 	}
 }
 
