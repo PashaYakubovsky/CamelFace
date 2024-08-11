@@ -28,86 +28,97 @@ const p = new PoissionDiskSampling({
 });
 const points3d = p.fill().map((p) => new THREE.Vector3(p[0], 0, p[1]));
 
-class scene {
-	private scene: THREE.Scene = new THREE.Scene();
-	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
+class LandScene {
+	scene: THREE.Scene = new THREE.Scene();
+	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		35,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		500
 	);
-	public renderer: THREE.WebGLRenderer | null = null;
-	private material: CustomShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
-	private composer: EffectComposer | null = null;
+	renderer: THREE.WebGLRenderer | null = null;
+	material: CustomShaderMaterial | null = null;
+	geometry: THREE.PlaneGeometry | null = null;
+	composer: EffectComposer | null = null;
 	clock = new THREE.Clock();
-	private rafId: number | null = null;
+	rafId: number | null = null;
 	stats = new Stats();
-	private scroller: VirtualScroll | null = null;
+	scroller: VirtualScroll | null = null;
 	progress = 0;
 	uDivade = new THREE.Vector2(-6, 3.14);
-	private customPass: ShaderPass | null = null;
-	private tubeMaterial: THREE.ShaderMaterial | null = null;
-	private bgMaterial: THREE.ShaderMaterial | null = null;
+	customPass: ShaderPass | null = null;
+	tubeMaterial: THREE.ShaderMaterial | null = null;
+	bgMaterial: THREE.ShaderMaterial | null = null;
 	tube: THREE.TubeGeometry | null = null;
 	spheres: THREE.Mesh[] = [];
 	textMeshes: THREE.Mesh[] = [];
-	constructor(el: HTMLCanvasElement) {
+	constructor(
+		el: HTMLCanvasElement | null,
+		opt?: {
+			renderToTarget: boolean;
+		}
+	) {
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el,
-			antialias: true,
-			alpha: true
-		});
-		this.renderer.setClearColor('#000000');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+		if (!opt?.renderToTarget) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el,
+				antialias: true,
+				alpha: true
+			});
+			this.renderer.setClearColor('#000000');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		}
 		this.init();
 		this.animate();
-
-		window.addEventListener('mousemove', this.onMouseMove.bind(this));
-		window.addEventListener('resize', this.onResize.bind(this));
-		window.addEventListener('wheel', this.onMouseWheel.bind(this));
-		window.addEventListener('click', this.onClick.bind(this));
+		if (!opt?.renderToTarget) {
+			window.addEventListener('mousemove', this.onMouseMove.bind(this));
+			window.addEventListener('resize', this.onResize.bind(this));
+			window.addEventListener('wheel', this.onMouseWheel.bind(this));
+			window.addEventListener('click', this.onClick.bind(this));
+		}
 	}
 
 	public init() {
-		if (!this.renderer) return;
-		this.stats.showPanel(0);
-		document.body.appendChild(this.stats.dom);
 		const renderPass = new RenderPass(this.scene, this.camera);
 		const fxaaPass = new ShaderPass(FXAAShader);
 		const outputPass = new OutputPass();
-		const composer = new EffectComposer(this.renderer);
-		const canvas = this.renderer.domElement;
-		composer.setSize(canvas.offsetWidth, canvas.offsetHeight);
 
-		const pixelRatio = window.devicePixelRatio;
-		fxaaPass.material.uniforms['resolution'].value.x =
-			1 / (this.renderer.domElement.offsetWidth * pixelRatio);
-		fxaaPass.material.uniforms['resolution'].value.y =
-			1 / (this.renderer.domElement.offsetHeight * pixelRatio);
+		if (this.renderer) {
+			this.stats.showPanel(0);
+			document.body.appendChild(this.stats.dom);
 
-		fxaaPass.renderToScreen = true;
-		composer.addPass(renderPass);
-		composer.addPass(fxaaPass);
-		composer.addPass(outputPass);
+			const composer = new EffectComposer(this.renderer);
+			const canvas = this.renderer.domElement;
+			composer.setSize(canvas.offsetWidth, canvas.offsetHeight);
 
-		const customPass = new ShaderPass(CustomPostEffectShader);
-		customPass.uniforms['scale'].value = 2;
-		customPass.uniforms['angle'].value = 0;
-		customPass.uniforms['resolution'].value = new THREE.Vector2(500, 500);
-		customPass.uniforms['time'].value = 0;
-		customPass.uniforms['uBlurAmount'].value = 0;
-		customPass.uniforms['uMouse'].value = new THREE.Vector2(0, 0);
-		customPass.uniforms['uDivade'].value = this.uDivade;
+			const pixelRatio = window.devicePixelRatio;
+			fxaaPass.material.uniforms['resolution'].value.x =
+				1 / (this.renderer.domElement.offsetWidth * pixelRatio);
+			fxaaPass.material.uniforms['resolution'].value.y =
+				1 / (this.renderer.domElement.offsetHeight * pixelRatio);
 
-		this.customPass = customPass;
-		customPass.renderToScreen = true;
-		composer.addPass(customPass);
+			fxaaPass.renderToScreen = true;
+			composer.addPass(renderPass);
+			composer.addPass(fxaaPass);
+			composer.addPass(outputPass);
 
-		this.composer = composer;
+			const customPass = new ShaderPass(CustomPostEffectShader);
+			customPass.uniforms['scale'].value = 2;
+			customPass.uniforms['angle'].value = 0;
+			customPass.uniforms['resolution'].value = new THREE.Vector2(500, 500);
+			customPass.uniforms['time'].value = 0;
+			customPass.uniforms['uBlurAmount'].value = 0;
+			customPass.uniforms['uMouse'].value = new THREE.Vector2(0, 0);
+			customPass.uniforms['uDivade'].value = this.uDivade;
+
+			this.customPass = customPass;
+			customPass.renderToScreen = true;
+			composer.addPass(customPass);
+
+			this.composer = composer;
+		}
 
 		// add light
 		const ambientLight = new THREE.AmbientLight(new THREE.Color('white'), 10.5);
@@ -641,6 +652,7 @@ class scene {
 		}
 		// if (this.renderer) this.renderer.render(this.scene, this.camera);
 		if (this.composer) this.composer.render();
+		else if (this.renderer) this.renderer.render(this.scene, this.camera);
 
 		this.rafId = requestAnimationFrame(this.animate.bind(this));
 	}
@@ -662,4 +674,4 @@ class scene {
 	}
 }
 
-export default scene;
+export default LandScene;

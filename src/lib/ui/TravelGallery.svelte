@@ -28,6 +28,7 @@
 	let initHappen = false;
 	let showInfoBlocks = false;
 	let allTextureLoaded = false;
+	let rafId: number | null = null;
 
 	let users = [] as {
 		id: string;
@@ -71,10 +72,19 @@
 		contentElements.forEach((content, idx) => {
 			if (idx !== currentIndex) {
 				content.classList.add('hidden');
-			} else if (idx === currentIndex && content.classList.contains('hidden')) {
+				// stop animation loop in inner scene
+				const integratedScene = scene.integratedScenes[idx];
+				if (integratedScene && typeof integratedScene.rafId === 'number') {
+					cancelAnimationFrame(integratedScene.rafId);
+					integratedScene.rafId = null;
+				}
+			} else if (idx === currentIndex && content.classList.contains('hidden') && scene.loaded) {
 				content.classList.remove('hidden');
+				console.log('SHOW', scene.integratedScenes[idx], $posts[idx]);
+
+				// animate html content
 				gsap.fromTo(
-					content.querySelector('.post-info__content'),
+					'.post-info__content',
 					{
 						opacity: 0,
 						yPercent: 20,
@@ -87,6 +97,25 @@
 						ease: 'power0.inOut'
 					}
 				);
+				// start animation loop in inner scene
+				const integratedScene = scene.integratedScenes[idx];
+				if (integratedScene) {
+					if (integratedScene.rafId) {
+						cancelAnimationFrame(integratedScene.rafId);
+						integratedScene.rafId = null;
+					}
+
+					integratedScene.animate();
+				}
+
+				if (!canvasElement.classList.contains('canvas-ready')) {
+					canvasElement.classList.add('canvas-ready');
+				} else {
+					canvasElement.classList.remove('canvas-ready');
+					setTimeout(() => {
+						canvasElement.classList.add('canvas-ready');
+					}, 2000);
+				}
 			}
 		});
 	}
@@ -179,7 +208,7 @@
 				}
 
 				if (initAnimation) {
-					requestAnimationFrame(raf);
+					rafId = requestAnimationFrame(raf);
 					return;
 				}
 
@@ -211,7 +240,9 @@
 					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
 				}
 
-				requestAnimationFrame(raf);
+				// console.log(scene.integratedScenes[currentIndex], $posts[currentIndex]);
+
+				rafId = requestAnimationFrame(raf);
 			};
 
 			if (scene && !scene.isMobile) {
@@ -244,33 +275,10 @@
 			scene.destroy();
 			window.removeEventListener('wheel', handleWheel);
 			window.removeEventListener('keydown', handleKeydown);
+			if (rafId) cancelAnimationFrame(rafId);
 		};
 	});
-
-	const randomColorFromString = (str: string) => {
-		let hash = 0;
-		for (let i = 0; i < str.length; i++) {
-			hash = str.charCodeAt(i) + ((hash << 5) - hash);
-		}
-		let color = '#';
-		for (let i = 0; i < 3; i++) {
-			let value = (hash >> (i * 8)) & 0xff;
-			color += ('00' + value.toString(16)).substr(-2);
-		}
-		return color;
-	};
 </script>
-
-{#each Object.values(users) as user}
-	<div
-		class="user-mouse"
-		style={`color:${randomColorFromString(user?.id)};transform:translate(${user.x * 100}%,${
-			user.y * 100
-		}%);transition:0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) transform`}
-	>
-		<span>{user.name}</span>
-	</div>
-{/each}
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
 	<canvas bind:this={canvasElement} />
@@ -384,6 +392,9 @@
 				on:click={() => {
 					if (scene.isMobile) {
 						currentIndex = index;
+					} else {
+						// route to post
+						goto(post.slug);
 					}
 				}}
 				on:mouseenter={() => {
@@ -396,9 +407,9 @@
 				}}
 				class={`nav-item ${currentIndex === index ? 'nav-item_active' : ''}`}
 			>
-				<a href={post.slug} class="nav-item__text">
+				<span href={post.slug} class="nav-item__text">
 					{post.title}
-				</a>
+				</span>
 			</button>
 		{/each}
 	</nav>
@@ -425,51 +436,12 @@
 				>
 					{@html post.content}
 				</p>
-				<!-- <button
-					on:mouseenter={() => {
-						handleHoverIn({ color: scene.textColors[index], start: $pageTransition.start });
-					}}
-					on:mouseleave={() => {
-						handleHoverOut({ start: $pageTransition.start });
-					}}
-					on:click={() => {
-						pageTransition.update((state) => ({
-							...state,
-							start: true,
-							toPage: '/posts/' + post.id
-						}));
-					}}
-					style={`color:${scene?.textColors?.[index]}`}
-					class="bg-transparent border-none cursor-pointer p-0 text-lg leading-5 flex items-center justify-start gap-4 uppercase w-fit"
-				>
-					Read more
-					<svg
-						width="24"
-						height="24"
-						xmlns="http://www.w3.org/2000/svg"
-						fill-rule="evenodd"
-						clip-rule="evenodd"
-					>
-						<path
-							class="fill-[currentColor]"
-							d="M21.883 12l-7.527 6.235.644.765 9-7.521-9-7.479-.645.764 7.529 6.236h-21.884v1h21.883z"
-						/>
-					</svg>
-				</button> -->
 			</div>
 		</section>
 	{/each}
-
-	<!-- <div bind:this={element} class="scrollWrapper" /> -->
 </div>
 
 <style>
-	/* button:hover svg {
-		transform: translateX(0.5rem);
-	}
-	svg {
-		transition: 0.3s ease-in-out transform;
-	} */
 	h2 {
 		overflow: hidden;
 		transition: clip-path 0.3s ease-in-out;
@@ -497,29 +469,7 @@
 		top: 0;
 		left: 0;
 	}
-	.user-mouse {
-		width: 0.5rem;
-		height: 0.5rem;
-		border-radius: 50%;
-		position: absolute;
-		z-index: 10;
-		background-color: currentColor;
-		text-align: center;
-	}
-	.user-mouse > span {
-		position: absolute;
-		top: 0;
-		left: 100%;
-		transform: translateX(0.5rem);
-		opacity: 0;
-		transition: 0.3s ease-in opacity;
-	}
-	.user-mouse > span:hover {
-		opacity: 1;
-	}
-	.user-mouse:hover > span {
-		opacity: 1;
-	}
+
 	.gallery-nav {
 		position: fixed;
 		top: 50%;
@@ -588,6 +538,9 @@
 			-webkit-text-fill-color: currentColor;
 		}
 		canvas {
+			height: 100vh !important;
+		}
+		.canvas-ready {
 			height: 35% !important;
 		}
 	}

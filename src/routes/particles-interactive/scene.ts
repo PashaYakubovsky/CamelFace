@@ -6,7 +6,7 @@ import simVertexShader from './simVertexShader.glsl';
 import simFragmentShader from './simFragmentShader.glsl';
 import Stats from 'three/examples/jsm/libs/stats.module';
 
-class ParticlesScene {
+class ParticlesInteractiveScene {
 	renderer: THREE.WebGLRenderer | null = null;
 	mouse: THREE.Vector2;
 	width = window.innerWidth;
@@ -376,4 +376,4 @@ class ParticlesScene {
 	}
 }
 
-export default ParticlesScene;
+export default ParticlesInteractiveScene;

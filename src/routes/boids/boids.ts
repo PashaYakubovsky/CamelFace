@@ -12,17 +12,17 @@ const options = {
 };
 
 class BoidsScene {
-	private scene: THREE.Scene = new THREE.Scene();
+	scene: THREE.Scene = new THREE.Scene();
 	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	private renderer: THREE.WebGLRenderer | null = null;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.BufferGeometry | null = null;
-	private gui: GUI | null = null;
+	renderer: THREE.WebGLRenderer | null = null;
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.BufferGeometry | null = null;
+	gui: GUI | null = null;
 	rotation = new THREE.Vector3(0, 0, 0);
 	controls: OrbitControls | null = null;
 	mousePos = { x: 0, y: 0 };
@@ -44,25 +44,26 @@ class BoidsScene {
 	};
 	mouse = new THREE.Vector3();
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(el: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el
-		});
+		if (!opt?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el
+			});
 
-		this.renderer.toneMapping = THREE.ReinhardToneMapping;
-		this.renderer.setClearColor('#000000');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-
+			this.renderer.toneMapping = THREE.ReinhardToneMapping;
+			this.renderer.setClearColor('#000000');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+		}
 		this.init();
-		this.addControls();
+		if (!opt?.renderToTarget && this.renderer) {
+			this.addControls();
+			this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+			window.addEventListener('mousemove', this.onMouseMove.bind(this));
+			window.addEventListener('resize', this.onResize.bind(this));
+			window.addEventListener('wheel', this.onMouseWheel.bind(this));
+		}
 		this.animate();
-
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-
-		window.addEventListener('mousemove', this.onMouseMove.bind(this));
-		window.addEventListener('resize', this.onResize.bind(this));
-		window.addEventListener('wheel', this.onMouseWheel.bind(this));
 	}
 
 	public init() {

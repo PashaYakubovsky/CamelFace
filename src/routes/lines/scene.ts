@@ -10,7 +10,7 @@ interface Options {
 	renderToTarget: boolean;
 }
 
-class ParticlesScene {
+class LinesScene {
 	renderer: THREE.WebGLRenderer | null = null;
 	mouse: THREE.Vector2;
 	width = window.innerWidth;
@@ -110,22 +110,15 @@ class ParticlesScene {
 
 				this.addObjects();
 
+				this.animate();
+
 				if (this.renderer) {
 					this.addDebug();
-					this.animate();
 					// this.loadFont();
 					this.target = this.setupRenderTarget();
 				}
 			}
 		});
-
-		if (opt?.renderToTarget) {
-			return {
-				scene: this.scene,
-				camera: this.camera,
-				destroy: this.destroy.bind(this)
-			};
-		}
 	}
 
 	getRenderTarget() {
@@ -345,4 +338,4 @@ class ParticlesScene {
 	}
 }
 
-export default ParticlesScene;
+export default LinesScene;

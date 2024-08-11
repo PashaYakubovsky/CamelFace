@@ -73,10 +73,12 @@ class Particles {
 			this.stats.showPanel(0);
 		}
 		this.setInitialValues();
-		this.addDebug();
 		this.animate();
 
+		window.addEventListener('pointermove', this.handlePointerMove.bind(this));
+
 		if (this.renderer) {
+			this.addDebug();
 			this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 			// add controls to the scene
 			this.controls.enableDamping = true;
@@ -85,16 +87,26 @@ class Particles {
 			this.controls.autoRotate = true;
 			this.controls.autoRotateSpeed = 0.5;
 			this.controls.enablePan = true;
+			window.addEventListener('resize', this.onResize.bind(this));
 		}
-		window.addEventListener('resize', this.onResize.bind(this));
+	}
 
-		if (opt?.renderToTarget) {
-			return {
-				scene: this.scene,
-				camera: this.camera,
-				destroy: this.destroy.bind(this)
-			};
-		}
+	handlePointerMove(event: PointerEvent) {
+		if (
+			!this.displacement.screenCursor ||
+			!this.displacement.canvasCursor ||
+			!this.displacement.canvasCursorPrevious
+		)
+			return;
+
+		const point = {
+			x: event.clientX / this.sizes.width,
+			y: event.clientY / this.sizes.height
+		};
+		this.displacement.screenCursor.x = point.x;
+		this.displacement.screenCursor.y = point.y;
+
+		if (this.waterTexture) this.waterTexture.addPoint(point);
 	}
 
 	setInitialValues() {
@@ -118,24 +130,6 @@ class Particles {
 		this.displacement.screenCursor = new THREE.Vector2(9999, 9999);
 		this.displacement.canvasCursor = new THREE.Vector2(9999, 9999);
 		this.displacement.canvasCursorPrevious = new THREE.Vector2(9999, 9999);
-
-		window.addEventListener('pointermove', (event) => {
-			if (
-				!this.displacement.screenCursor ||
-				!this.displacement.canvasCursor ||
-				!this.displacement.canvasCursorPrevious
-			)
-				return;
-
-			const point = {
-				x: event.clientX / this.sizes.width,
-				y: event.clientY / this.sizes.height
-			};
-			this.displacement.screenCursor.x = point.x;
-			this.displacement.screenCursor.y = point.y;
-
-			if (this.waterTexture) this.waterTexture.addPoint(point);
-		});
 
 		// Initial canvas
 		this.waterTexture = new WaterTexture({
@@ -163,6 +157,8 @@ class Particles {
 		particlesGeometry.setAttribute('aIntensity', new THREE.BufferAttribute(intensitiesArray, 1));
 		particlesGeometry.setAttribute('aAngle', new THREE.BufferAttribute(anglesArray, 1));
 		this.textureLoader = new THREE.TextureLoader();
+		const texture = this.textureLoader.load('/bg.jpg');
+
 		const particlesMaterial = new THREE.ShaderMaterial({
 			vertexShader: vertexShader,
 			fragmentShader: fragmentShader,
@@ -173,7 +169,7 @@ class Particles {
 						this.sizes.height * this.sizes.pixelRatio
 					)
 				),
-				uPictureTexture: new THREE.Uniform(this.textureLoader.load('/bg.jpg')),
+				uPictureTexture: new THREE.Uniform(texture),
 				uDisplacementTexture: new THREE.Uniform(this.displacement.texture),
 				uTime: { value: 0 },
 				uColor: { value: new THREE.Color(options.color) }
@@ -227,7 +223,6 @@ class Particles {
 	}
 
 	addDebug() {
-		if (!this.renderer) return;
 		this.gui = new GUI();
 
 		const folderEffect = this.gui.addFolder('Water Effect');
@@ -349,11 +344,16 @@ class Particles {
 			this.gui.destroy();
 		}
 		window.removeEventListener('resize', this.onResize.bind(this));
+		window.removeEventListener('pointermove', this.handlePointerMove);
 
 		this.renderer?.dispose();
 
 		if (this.stats) {
 			this.stats.dom.remove();
+		}
+
+		if (this.controls) {
+			this.controls.dispose();
 		}
 
 		this.cleanUp();

@@ -122,14 +122,6 @@ class MorphingScene {
 			window.addEventListener('resize', this.onWindowResize.bind(this), false);
 			window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 		}
-
-		if (opt?.renderToTarget) {
-			return {
-				scene: this.scene,
-				camera: this.camera,
-				destroy: this.destroy.bind(this)
-			};
-		}
 	}
 
 	onReady() {

@@ -19,8 +19,8 @@ const options = {
 	nBody: 2
 };
 
-class LyapunovScene {
-	private scene: THREE.Scene = new THREE.Scene();
+class AttractionScene {
+	scene: THREE.Scene = new THREE.Scene();
 	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
@@ -28,47 +28,51 @@ class LyapunovScene {
 		1000
 	);
 	renderer: THREE.WebGLRenderer | null = null;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
-	private gui: GUI | null = null;
-	private controls: OrbitControls | null = null;
-	private instancedMesh: THREE.InstancedMesh | null = null;
-	private stats = new Stats();
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.PlaneGeometry | null = null;
+	gui: GUI | null = null;
+	controls: OrbitControls | null = null;
+	instancedMesh: THREE.InstancedMesh | null = null;
+	stats = new Stats();
 	rafId: number | null = null;
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(el: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el
-		});
+		if (!opt?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el
+			});
 
-		this.renderer.toneMapping = THREE.ReinhardToneMapping;
-		this.renderer.setClearColor('#050505');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-
+			this.renderer.toneMapping = THREE.ReinhardToneMapping;
+			this.renderer.setClearColor('#050505');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+		}
 		this.init();
-		this.addDebug();
+		if (!opt?.renderToTarget && el) {
+			this.addDebug();
+			// add stats
+			this.stats.showPanel(0);
+			document.body.appendChild(this.stats.dom);
+		}
 		this.setInitialValues();
 		this.animate();
 
-		// add stats
-		this.stats.showPanel(0);
-		document.body.appendChild(this.stats.dom);
+		if (this.renderer) {
+			this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+			// add controls to the scene
+			this.controls.enableDamping = true;
+			this.controls.dampingFactor = 0.25;
+			this.controls.enableZoom = true;
+			this.controls.autoRotate = true;
+			this.controls.autoRotateSpeed = 0.5;
+			this.controls.enablePan = true;
 
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-		// add controls to the scene
-		this.controls.enableDamping = true;
-		this.controls.dampingFactor = 0.25;
-		this.controls.enableZoom = true;
-		this.controls.autoRotate = true;
-		this.controls.autoRotateSpeed = 0.5;
-		this.controls.enablePan = true;
-
-		window.addEventListener('mousemove', this.onMouseMove.bind(this));
-		window.addEventListener('resize', this.onResize.bind(this));
-		window.addEventListener('wheel', this.onMouseWheel.bind(this));
-		window.addEventListener('keypress', this.mousePressed.bind(this));
-		window.addEventListener('click', this.onClick.bind(this));
+			window.addEventListener('mousemove', this.onMouseMove.bind(this));
+			window.addEventListener('resize', this.onResize.bind(this));
+			window.addEventListener('wheel', this.onMouseWheel.bind(this));
+			window.addEventListener('keypress', this.mousePressed.bind(this));
+			window.addEventListener('click', this.onClick.bind(this));
+		}
 	}
 
 	setInitialValues() {
@@ -357,4 +361,4 @@ class LyapunovScene {
 	}
 }
 
-export default LyapunovScene;
+export default AttractionScene;

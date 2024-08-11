@@ -36,8 +36,6 @@ class LyapunovScene {
 			this.renderer.setClearColor('#000000');
 			this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-			this.addControls();
-
 			window.addEventListener('mousemove', this.onMouseMove.bind(this));
 			window.addEventListener('resize', this.onResize.bind(this));
 			window.addEventListener('wheel', this.onMouseWheel.bind(this));
@@ -47,14 +45,10 @@ class LyapunovScene {
 
 		this.init();
 		this.setInitialValues();
-		this.animate();
+		this.animate.bind(this);
 
-		if (opts?.renderToTarget) {
-			return {
-				scene: this.scene,
-				camera: this.camera,
-				destroy: this.destroy.bind(this)
-			};
+		if (!opts?.renderToTarget) {
+			this.addControls();
 		}
 	}
 
@@ -83,6 +77,7 @@ class LyapunovScene {
 		this.gui.domElement.addEventListener('click', (e) => {
 			e.stopPropagation();
 		});
+
 		if (!this.material) return;
 
 		this.gui.addColor(options, 'Color').onChange(() => {

@@ -12,13 +12,13 @@ function lerp(start: number, end: number, t: number) {
 }
 
 class ParticlesScene {
-	private renderer: THREE.WebGLRenderer;
-	private textureLoader: THREE.TextureLoader;
-	private scene: THREE.Scene;
-	private camera: THREE.PerspectiveCamera;
-	private raycaster!: THREE.Raycaster;
-	private mouse: THREE.Vector2;
-	private material: THREE.ShaderMaterial | undefined;
+	renderer: THREE.WebGLRenderer | undefined;
+	textureLoader: THREE.TextureLoader;
+	scene: THREE.Scene;
+	camera: THREE.PerspectiveCamera;
+	raycaster!: THREE.Raycaster;
+	mouse: THREE.Vector2;
+	material: THREE.ShaderMaterial | undefined;
 	particlesGeo: THREE.BufferGeometry | undefined;
 	raycasetPlane!: THREE.Mesh;
 	particles: THREE.Points | undefined;
@@ -37,13 +37,13 @@ class ParticlesScene {
 		hoverScale: 0.1,
 		hoverStrength: 0.1,
 		noise: false,
-		hoverNoise: true,
+		hoverNoise: false,
 		shaderNoise: true,
 		particlesWidth: 10,
 		particlesHeight: 7,
 		orbitControls: false,
-		shaderNoiseRoughness: 0.65,
-		shaderNoiseScale: 3.5
+		shaderNoiseRoughness: 0.4,
+		shaderNoiseScale: 8.02
 	};
 	stats?: Stats;
 	stream: MediaStream | undefined;
@@ -53,33 +53,35 @@ class ParticlesScene {
 	controls: OrbitControls | undefined;
 	videoTexture: THREE.VideoTexture | undefined;
 
-	constructor(canvasElement: HTMLCanvasElement) {
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			alpha: true,
-			canvas: canvasElement,
-			powerPreference: 'high-performance'
-		});
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setClearColor(0x000000, 0);
-		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		this.renderer.toneMappingExposure = 1;
-		this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	constructor(canvasElement: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
+		if (!opt?.renderToTarget && canvasElement) {
+			this.renderer = new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true,
+				canvas: canvasElement,
+				powerPreference: 'high-performance'
+			});
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setClearColor(0x000000, 0);
+			this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			this.renderer.toneMappingExposure = 1;
+			this.renderer.shadowMap.enabled = true;
+			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+			this.stats = new Stats();
+			this.stats.dom.style.position = 'absolute';
+			this.stats.dom.style.top = 'auto';
+			this.stats.dom.style.bottom = '0';
+			this.stats.dom.style.right = '1rem';
+			this.stats.dom.style.left = 'auto';
+			this.stats.dom.style.zIndex = '1000';
+
+			document.body.appendChild(this.stats.dom);
+		}
 
 		this.scene = new THREE.Scene();
-
-		this.stats = new Stats();
-		this.stats.dom.style.position = 'absolute';
-		this.stats.dom.style.top = 'auto';
-		this.stats.dom.style.bottom = '0';
-		this.stats.dom.style.right = '1rem';
-		this.stats.dom.style.left = 'auto';
-		this.stats.dom.style.zIndex = '1000';
-
-		document.body.appendChild(this.stats.dom);
 
 		this.addObjects();
 
@@ -92,14 +94,14 @@ class ParticlesScene {
 		this.camera.position.set(0, 0, 15);
 
 		this.textureLoader = new THREE.TextureLoader();
-		this.textureLoader.load('/ambient2.jpg', (texture) => {
+		this.textureLoader.load('/hand.jpg', (texture) => {
 			if (this.material) {
 				this.texture = texture;
 				this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
 
 				// get width and height of texture and set particlesWidth and particlesHeight
 				const img = new Image();
-				img.src = '/ambient2.jpg';
+				img.src = '/hand.jpg';
 				img.onload = () => {
 					this.applySizeFromImage(img);
 				};
@@ -111,26 +113,28 @@ class ParticlesScene {
 		// set max visible distance
 		this.camera.far = 1000;
 
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-		this.controls.enableDamping = true;
-		this.controls.dampingFactor = 0.25;
-		this.controls.maxPolarAngle = Math.PI / 2;
-		this.controls.minPolarAngle = Math.PI / 3;
-		this.controls.maxAzimuthAngle = Math.PI / 2;
-		this.controls.minAzimuthAngle = -Math.PI / 2;
-		this.controls.zoomToCursor = true;
-
-		this.controls.enabled = this.params.orbitControls;
-
+		if (!opt?.renderToTarget && this.renderer) {
+			this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+			this.controls.enableDamping = true;
+			this.controls.dampingFactor = 0.25;
+			this.controls.maxPolarAngle = Math.PI / 2;
+			this.controls.minPolarAngle = Math.PI / 3;
+			this.controls.maxAzimuthAngle = Math.PI / 2;
+			this.controls.minAzimuthAngle = -Math.PI / 2;
+			this.controls.zoomToCursor = true;
+			this.controls.enabled = this.params.orbitControls;
+		}
 		this.raycaster = new THREE.Raycaster();
 		this.mouse = new THREE.Vector2();
 
-		window.addEventListener('resize', this.onWindowResize.bind(this), false);
-		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+		if (!opt?.renderToTarget) {
+			window.addEventListener('resize', this.onWindowResize.bind(this), false);
+			window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 
-		this.addDebug();
+			this.addDebug();
+		}
 
-		this.rafId = this.animate();
+		this.animate();
 	}
 
 	uploadNewFile(file: File) {
@@ -274,7 +278,13 @@ class ParticlesScene {
 				1,
 				1
 			),
-			new THREE.MeshBasicMaterial({ wireframe: true, depthTest: false, side: THREE.DoubleSide })
+			new THREE.MeshBasicMaterial({
+				wireframe: false,
+				depthTest: false,
+				side: THREE.DoubleSide,
+				transparent: true,
+				opacity: 0
+			})
 		);
 		this.raycasetPlane.position.x = -2;
 		this.scene.add(this.raycasetPlane);
@@ -424,7 +434,7 @@ class ParticlesScene {
 	onWindowResize(): void {
 		this.camera.aspect = window.innerWidth / window.innerHeight;
 		this.camera.updateProjectionMatrix();
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+		if (this.renderer) this.renderer.setSize(window.innerWidth, window.innerHeight);
 	}
 
 	onMouseMove(event: MouseEvent): void {
@@ -450,9 +460,7 @@ class ParticlesScene {
 		}
 	}
 
-	animate(): number {
-		this.renderer.render(this.scene, this.camera);
-
+	animate(): void {
 		if (this.stats) this.stats.update();
 
 		this.time += 0.01;
@@ -470,15 +478,17 @@ class ParticlesScene {
 			vert.needsUpdate = true;
 		}
 
-		return requestAnimationFrame(() => {
-			this.rafId = this.animate();
+		if (this.renderer) this.renderer.render(this.scene, this.camera);
+
+		this.rafId = requestAnimationFrame(() => {
+			this.animate.bind(this)();
 		});
 	}
 
 	destroy(): void {
 		if (this.stream) this.stream.getTracks().forEach((track) => track.stop());
 		this.scene.clear();
-		this.renderer.dispose();
+		if (this.renderer) this.renderer.dispose();
 		this.gui?.destroy();
 		this.videoElement?.remove();
 		this.stats?.dom.remove();

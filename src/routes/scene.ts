@@ -8,12 +8,16 @@ import { defineScreen, type Screens } from '$lib/mediaQuery';
 import { threejsLoading } from '$lib/loading';
 import gsap from 'gsap';
 
-import LinesScene from './lines/scene';
+// import LinesScene from './lines/scene';
 import MorphScene from './morphing/scene';
 import HologramScene from './hologram/scene';
 import ParticlesScene from './particles/scene';
-import ParticlesInteractiveScene from './particles-interactive/scene';
+// import ParticlesInteractiveScene from './particles-interactive/scene';
 import LyapunovScene from './lyapunov/lyapunov';
+import NoiseInteractiveScene from './particles-noise/scene';
+import BoidsScene from './boids/boids';
+import AttractionScene from './mutual-attraction/scene';
+import LandScene from './land/scene';
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 };
@@ -72,9 +76,14 @@ const createGeometry = (isMobile: boolean, screens: Screens) => {
 };
 
 class TravelGalleryScene {
-	integratedScenes: ({ scene: THREE.Scene; camera: THREE.Camera; destroy: () => void } | null)[] =
-		[];
-	renderTargets: THREE.WebGLRenderTarget[] = [];
+	integratedScenes: ({
+		scene: THREE.Scene;
+		camera: THREE.Camera;
+		destroy: () => void;
+		rafId?: number | null;
+		animate: () => void;
+	} | null)[] = [];
+	renderTargets: (THREE.WebGLRenderTarget | null)[] = [];
 	isMobile = window.innerWidth < 768;
 	scene: THREE.Scene = new THREE.Scene();
 	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
@@ -97,6 +106,7 @@ class TravelGalleryScene {
 	intersected: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
 	hovered: Record<string, THREE.Intersection> = {};
 	rafId: number | null = null;
+	loaded = false;
 	screens: Screens = {
 		is2Xl: false,
 		isXl: false,
@@ -156,29 +166,33 @@ class TravelGalleryScene {
 		let loader: THREE.Mesh;
 		let isComplied = false;
 
+		const loaderContainerEl = document.createElement('div');
+		loaderContainerEl.classList.add('loader-container');
+		document.body.appendChild(loaderContainerEl);
+
 		const textureLoader = new THREE.TextureLoader();
 		const texture_1 = textureLoader.load('locked_door.jpg');
 		const texture_2 = textureLoader.load('opened_door.jpg');
 		let is_animating = false;
 		const isMoreThanTablet = window.innerWidth > 768;
-		if (isMoreThanTablet)
-			loader = new THREE.Mesh(
-				new THREE.PlaneGeometry(5, 5),
-				new THREE.ShaderMaterial({
-					uniforms: {
-						progress: { value: 0 },
-						sampleLockedDoor: { value: texture_1 },
-						sampleUnlockedDoor: { value: texture_2 },
-						aspectRatio: { value: window.innerWidth / window.innerHeight }
-					},
-					vertexShader: `
+		const aspectRatio = window.innerWidth / window.innerHeight;
+		loader = new THREE.Mesh(
+			new THREE.PlaneGeometry(3.5, 3.5 * aspectRatio),
+			new THREE.ShaderMaterial({
+				uniforms: {
+					progress: { value: 0 },
+					sampleLockedDoor: { value: texture_1 },
+					sampleUnlockedDoor: { value: texture_2 },
+					aspectRatio: { value: aspectRatio }
+				},
+				vertexShader: `
 						varying vec2 vUv;
 						void main() {
 							gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 							vUv = uv;
 						}
 					`,
-					fragmentShader: `
+				fragmentShader: `
 						uniform float progress;
 						varying vec2 vUv;
 						uniform sampler2D sampleLockedDoor;
@@ -200,9 +214,9 @@ class TravelGalleryScene {
 							gl_FragColor = color;
 						}
 					`,
-					transparent: true
-				})
-			);
+				transparent: true
+			})
+		);
 		if (loader) {
 			loader.position.set(0, 0, -2);
 			this.scene.add(loader);
@@ -218,6 +232,8 @@ class TravelGalleryScene {
 			const progressInPercent = (itemsLoaded / this.total) * 100;
 
 			threejsLoading.update((v) => ({ ...v, progress: progressInPercent }));
+
+			loaderContainerEl.textContent = `Loaded ${itemsLoaded}/${this.total}`;
 
 			if (itemsLoaded === this.total && !isComplied && !is_animating) {
 				if (loader) {
@@ -241,8 +257,12 @@ class TravelGalleryScene {
 							}));
 							this.scene.remove(loader);
 							is_animating = false;
+							if (loaderContainerEl) {
+								loaderContainerEl.remove();
+							}
 						}
 					});
+					this.loaded = true;
 				} else {
 					threejsLoading.update((v) => ({
 						...v,
@@ -370,26 +390,41 @@ class TravelGalleryScene {
 		this.total = posts.length;
 
 		this.integratedScenes = [
-			new LinesScene(null, {
+			new LyapunovScene(null, {
 				renderToTarget: true
 			}),
-			new MorphScene(null, {
+			new NoiseInteractiveScene(null, {
 				renderToTarget: true
 			}),
-			new HologramScene(null, {
+			new BoidsScene(null, {
 				renderToTarget: true
 			}),
-			new ParticlesScene(null, {
+			new AttractionScene(null, {
 				renderToTarget: true
 			}),
 			// new ParticlesInteractiveScene(null, {
 			// 	renderToTarget: true
 			// }),
 			null,
-			new LyapunovScene(null, {
+			new HologramScene(null, {
+				renderToTarget: true
+			}),
+			new MorphScene(null, {
+				renderToTarget: true
+			}),
+			// new LinesScene(null, {
+			// 	renderToTarget: true
+			// }),
+			null,
+			new LandScene(null, {
+				renderToTarget: true
+			}),
+			// null,
+			new ParticlesScene(null, {
 				renderToTarget: true
 			})
 		];
+		this.integratedScenes.reverse();
 
 		this.renderTargets = this.integratedScenes.map(
 			() => new THREE.WebGLRenderTarget(this.width, this.height)
@@ -430,14 +465,20 @@ class TravelGalleryScene {
 				const group = new THREE.Group();
 
 				const slugSetTexture: Record<string, THREE.Texture | undefined> = {
-					'/lines': this.renderTargets[0].texture,
-					'/morphing': this.renderTargets[1].texture,
-					'/hologram': this.renderTargets[2].texture,
-					'/particles': this.renderTargets[3].texture,
-					'/lyapunov': this.renderTargets[5].texture
+					'/lyapunov': this.renderTargets[9]?.texture,
+					'/particles-noise': this.renderTargets[8]?.texture,
+					'/boids': this.renderTargets[7]?.texture,
+					'/mutual-attraction': this.renderTargets[6]?.texture,
+					// '/lines': this.renderTargets[5].texture,
+					// '/particles-interactive': this.renderTargets[4]?.texture,
+					'/hologram': this.renderTargets[4]?.texture,
+					'/morphing': this.renderTargets[3]?.texture,
+					'/land': this.renderTargets[1]?.texture,
+					'/particles': this.renderTargets[0]?.texture
 				};
 
 				const slug = post.slug;
+
 				if (slugSetTexture[slug]) {
 					material.uniforms.uTexture.value = slugSetTexture[slug];
 				} else {
@@ -673,16 +714,14 @@ class TravelGalleryScene {
 					try {
 						const iScene = this.integratedScenes[i];
 						if (!iScene) continue;
-						const { scene, camera } = iScene;
+						// if (iScene instanceof ParticlesScene) {
+						// 	debugger;
+						// }
+						if (!iScene.rafId) continue;
 						const renderTarget = this.renderTargets[i];
 
-						// Check if the scene, camera, and render target exist
-						if (!scene) throw new Error(`Scene at index ${i} is undefined`);
-						if (!camera) throw new Error(`Camera at index ${i} is undefined`);
-						if (!renderTarget) throw new Error(`RenderTarget at index ${i} is undefined`);
-
 						this.renderer.setRenderTarget(renderTarget);
-						this.renderer.render(scene, camera);
+						this.renderer.render(iScene.scene, iScene.camera);
 						this.renderer.setRenderTarget(null); // Ensure rendering returns to the default framebuffer
 					} catch (err) {
 						// Added detailed error logging

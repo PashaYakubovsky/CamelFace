@@ -12,19 +12,19 @@ const options = {
 };
 
 class BoidsScene {
-	private scene: THREE.Scene = new THREE.Scene();
+	scene: THREE.Scene = new THREE.Scene();
 	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	private renderer: THREE.WebGLRenderer | null = null;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.BufferGeometry | null = null;
-	private loaderGltf: GLTFLoader | null = null;
-	private gui: GUI | null = null;
-	private stats = new Stats();
+	renderer: THREE.WebGLRenderer | null = null;
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.BufferGeometry | null = null;
+	loaderGltf: GLTFLoader | null = null;
+	gui: GUI | null = null;
+	stats = new Stats();
 	rotation = new THREE.Vector3(0, 0, 0);
 	controls: OrbitControls | null = null;
 	mousePos = { x: 0, y: 0 };
@@ -51,22 +51,24 @@ class BoidsScene {
 
 	instancedMesh: THREE.InstancedMesh | null = null;
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(el: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el
-		});
+		if (!opt?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el
+			});
 
-		this.renderer.toneMapping = THREE.ReinhardToneMapping;
-		this.renderer.setClearColor('#000000');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.toneMapping = THREE.ReinhardToneMapping;
+			this.renderer.setClearColor('#000000');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+			this.stats.showPanel(0);
+			document.body.appendChild(this.stats.dom);
+		}
 
 		const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 		this.scene.add(ambientLight);
 		this.addSky();
-
-		this.stats.showPanel(0);
-		document.body.appendChild(this.stats.dom);
 
 		this.loaderGltf = new GLTFLoader();
 		this.loaderGltf.load('/Hummingbird.glb', (gltf) => {
@@ -89,11 +91,13 @@ class BoidsScene {
 			this.init();
 		});
 
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		if (this.renderer) {
+			this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-		window.addEventListener('mousemove', this.onMouseMove.bind(this));
-		window.addEventListener('resize', this.onResize.bind(this));
-		window.addEventListener('wheel', this.onMouseWheel.bind(this));
+			window.addEventListener('mousemove', this.onMouseMove.bind(this));
+			window.addEventListener('resize', this.onResize.bind(this));
+			window.addEventListener('wheel', this.onMouseWheel.bind(this));
+		}
 	}
 
 	public init() {
@@ -402,6 +406,7 @@ class BoidsScene {
 		};
 
 		const updateSky = () => {
+			if (!this.sky) return;
 			const uniforms = this.sky.material.uniforms;
 			uniforms['turbidity'].value = effectController.turbidity;
 			uniforms['rayleigh'].value = effectController.rayleigh;
