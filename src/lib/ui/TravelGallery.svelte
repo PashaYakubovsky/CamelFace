@@ -407,7 +407,7 @@
 				}}
 				class={`nav-item ${currentIndex === index ? 'nav-item_active' : ''}`}
 			>
-				<span } class="nav-item__text">
+				<span class="nav-item__text">
 					{post.title}
 				</span>
 			</button>
