@@ -1,4 +1,3 @@
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
@@ -60,7 +59,7 @@ class LandScene {
 	) {
 		this.camera.position.z = 1;
 
-		if (!opt?.renderToTarget) {
+		if (!opt?.renderToTarget && el) {
 			this.renderer = new THREE.WebGLRenderer({
 				canvas: el,
 				antialias: true,
@@ -71,6 +70,7 @@ class LandScene {
 			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		}
 		this.init();
+		this.animate.bind(this);
 		this.animate();
 		if (!opt?.renderToTarget) {
 			window.addEventListener('mousemove', this.onMouseMove.bind(this));
@@ -615,7 +615,6 @@ class LandScene {
 				this.textMeshes[3].scale.set(1, 1, 0.001);
 				this.scene.add(this.textMeshes[3]);
 
-				return;
 				// const nextPos = SIZE * 2 * (Math.random() > 0.5 ? -1 : 1);
 
 				// pointOnTube = this.cameraPath?.getPointAt(this.progress);

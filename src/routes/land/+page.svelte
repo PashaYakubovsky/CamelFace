@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import cloudsScene from './scene';
+	import LandScene from './scene';
 	import { loading } from '$lib/loading';
 
 	let canvasElement: HTMLCanvasElement;
@@ -8,7 +8,7 @@
 
 	onMount(() => {
 		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new cloudsScene(canvasElement);
+		const scene = new LandScene(canvasElement);
 
 		return () => {
 			scene.destroy();
