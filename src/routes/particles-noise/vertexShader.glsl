@@ -143,6 +143,7 @@ float rotateSdfStar( in vec2 p, in float r, in int n, in float m, in float a )
     float dim = 10.0;
     vec2 mouse = (mouseUVCoords) * dim;
     vec2 starPos = p - mouse;
+    starPos.x += dim * 0.5;
     // starPos.x -= 3.5;
     float b = sdStar(
         starPos,

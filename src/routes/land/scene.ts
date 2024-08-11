@@ -670,6 +670,9 @@ class LandScene {
 		if (this.tubeMaterial) this.tubeMaterial.dispose();
 		if (this.bgMaterial) this.bgMaterial.dispose();
 		if (this.customPass) this.customPass.dispose();
+		if (this.stats) {
+			this.stats.dom.remove();
+		}
 	}
 }
 

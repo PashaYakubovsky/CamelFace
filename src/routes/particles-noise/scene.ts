@@ -454,7 +454,7 @@ class ParticlesScene {
 				// normalize uv
 				uv.x = uv.x + 0.3;
 
-				console.log(this.mouse);
+				console.log(this.mouse, 'mouse');
 				if (this.material) this.material.uniforms.mouseUVCoords.value = uv;
 			} catch {}
 		}
