@@ -81,12 +81,11 @@ class LinesScene {
 			this.stats.dom.style.top = 'auto';
 			this.stats.dom.style.bottom = '0';
 			document.body.appendChild(this.stats.dom);
-
-			window.addEventListener('resize', this.onWindowResize.bind(this), false);
-			window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
-			window.addEventListener('click', this.onClick.bind(this), false);
 			window.addEventListener('wheel', this.onWheel.bind(this), false);
 		}
+		window.addEventListener('resize', this.onWindowResize.bind(this), false);
+		window.addEventListener('click', this.onClick.bind(this), false);
+		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 
 		this.mouse = new THREE.Vector2();
 
@@ -109,13 +108,13 @@ class LinesScene {
 				this.scene.add(this.skull);
 
 				this.addObjects();
+				this.target = this.setupRenderTarget();
 
 				this.animate();
 
 				if (this.renderer) {
 					this.addDebug();
 					// this.loadFont();
-					this.target = this.setupRenderTarget();
 				}
 			}
 		});
@@ -190,7 +189,6 @@ class LinesScene {
 		renderTarget.depthTexture = new THREE.DepthTexture();
 		renderTarget.depthTexture.type = THREE.UnsignedShortType;
 		renderTarget.depthTexture.format = THREE.DepthFormat;
-
 		return renderTarget;
 	}
 
@@ -213,13 +211,13 @@ class LinesScene {
 	}
 
 	onMouseMove(event: MouseEvent): void {
-		if (this.renderer) {
-			const rect = this.renderer.domElement.getBoundingClientRect();
-			const x = event.clientX - rect.left;
-			const y = event.clientY - rect.top;
-			this.mouse.x = (x / this.width) * 2 - 1;
-			this.mouse.y = -(y / this.height) * 2 + 1;
-		}
+		const rect = this.renderer
+			? this.renderer.domElement.getBoundingClientRect()
+			: document.body.getBoundingClientRect();
+		const x = event.clientX - rect.left;
+		const y = event.clientY - rect.top;
+		this.mouse.x = (x / this.width) * 2 - 1;
+		this.mouse.y = -(y / this.height) * 2 + 1;
 
 		if (this.material) this.material.uniforms.uMouse.value = this.mouse;
 

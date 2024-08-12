@@ -8,11 +8,11 @@ import { defineScreen, type Screens } from '$lib/mediaQuery';
 import { threejsLoading } from '$lib/loading';
 import gsap from 'gsap';
 
-// import LinesScene from './lines/scene';
+import LinesScene from './lines/scene';
 import MorphScene from './morphing/scene';
 import HologramScene from './hologram/scene';
 import ParticlesScene from './particles/scene';
-// import ParticlesInteractiveScene from './particles-interactive/scene';
+import ParticlesInteractiveScene from './particles-interactive/scene';
 import LyapunovScene from './lyapunov/lyapunov';
 import NoiseInteractiveScene from './particles-noise/scene';
 import BoidsScene from './boids/boids';
@@ -414,6 +414,12 @@ class TravelGalleryScene {
 			}),
 			new GalaxyScene(null, {
 				renderToTarget: true
+			}),
+			new LinesScene(null, {
+				renderToTarget: true
+			}),
+			new ParticlesInteractiveScene(null, {
+				renderToTarget: true
 			})
 		];
 		this.integratedScenes.reverse();
@@ -436,8 +442,12 @@ class TravelGalleryScene {
 				'/mutual-attraction': this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof AttractionScene) return i;
 				})?.texture,
-				// '/lines': this.renderTargets[5].texture,
-				// '/particles-interactive': this.renderTargets[4]?.texture,
+				'/lines': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof LinesScene) return i;
+				})?.texture,
+				'/particles-interactive': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof ParticlesInteractiveScene) return i;
+				})?.texture,
 				'/hologram': this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof HologramScene) return i;
 				})?.texture,
@@ -502,20 +512,26 @@ class TravelGalleryScene {
 			}),
 			'/galaxy': this.integratedScenes.find((i) => {
 				if (i instanceof GalaxyScene) return i;
+			}),
+			'/lines': this.integratedScenes.find((i) => {
+				if (i instanceof LinesScene) return i;
+			}),
+			'/particles-interactive': this.integratedScenes.find((i) => {
+				if (i instanceof ParticlesInteractiveScene) return i;
 			})
 		} as Record<string, IntegratedScene>;
 
 		for (let i = 0; i < posts.length; i++) {
 			const post = posts[i];
+			let texture: THREE.Texture | undefined;
+			// if (!(post.slug in this.integratedScenesDict)) {
 			const media = post.backgroundImage as Media;
 
 			const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
-
 			const file = await fetch(src);
 			const blob = await file.blob();
 			const url = URL.createObjectURL(blob);
-
-			const texture = await this.textureLoader.loadAsync(url);
+			texture = await this.textureLoader.loadAsync(url);
 			texture.minFilter = THREE.LinearFilter;
 			texture.magFilter = THREE.LinearFilter;
 			texture.colorSpace = THREE.SRGBColorSpace;
@@ -523,19 +539,20 @@ class TravelGalleryScene {
 			// take the average color of the image
 			const canvas = document.createElement('canvas');
 			const context = canvas.getContext('2d');
-			if (!context) return;
+			if (!context) continue;
 			context.drawImage(texture.image, 0, 0);
 			const data = context.getImageData(0, 0, 1, 1).data;
 			const color = new THREE.Color(`rgb(${data[0]}, ${data[1]}, ${data[2]})`);
 			this.backgroundColors.push(color.getStyle());
 			canvas.remove();
-
 			textures.push(texture);
+			// } else {
+			// 	this.backgroundColors.push('#000');
+			// }
 
 			// Apply texture to the material
 			if (!this.material || !this.geometry) return;
 			const material = this.material.clone();
-
 			try {
 				const group = new THREE.Group();
 
@@ -778,15 +795,38 @@ class TravelGalleryScene {
 					try {
 						const iScene = this.integratedScenes[i];
 						if (!iScene) continue;
-						// if (iScene instanceof ParticlesScene) {
-						// 	debugger;
-						// }
+
 						if (!iScene.rafId) continue;
+
+						if (iScene instanceof ParticlesInteractiveScene) {
+							// render to fbo
+							if (iScene.material) iScene.material.uniforms.uPositions.value = iScene.fbo1.texture;
+
+							// swap render targets
+							const temp = iScene.fbo;
+							iScene.fbo = iScene.fbo1;
+							iScene.fbo1 = temp;
+							this.renderer.setRenderTarget(iScene.fbo);
+							this.renderer.render(iScene.fboScene, iScene.fboCamera);
+						}
+
 						const renderTarget = this.renderTargets[i];
 
 						this.renderer.setRenderTarget(renderTarget);
 						this.renderer.render(iScene.scene, iScene.camera);
 						this.renderer.setRenderTarget(null); // Ensure rendering returns to the default framebuffer
+
+						if (iScene instanceof LinesScene) {
+							if (!iScene.target) {
+								continue;
+							}
+							this.renderer.setRenderTarget(iScene.target);
+							this.renderer.render(iScene.scene, iScene.depthCamera);
+							if (iScene.material) {
+								iScene.material.uniforms.uDepths.value = iScene.target.depthTexture;
+							}
+							this.renderer.setRenderTarget(null);
+						}
 					} catch (err) {
 						// Added detailed error logging
 						console.error(`Error rendering scene ${i}:`, err);

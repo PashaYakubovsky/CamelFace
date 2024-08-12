@@ -80,14 +80,6 @@ class ParticlesInteractiveScene {
 			this.addDebug();
 		}
 		this.animate();
-
-		if (opt?.renderToTarget) {
-			return {
-				scene: this.scene,
-				camera: this.camera,
-				destroy: this.destroy.bind(this)
-			};
-		}
 	}
 
 	getRenderTarget() {
@@ -332,23 +324,23 @@ class ParticlesInteractiveScene {
 		if (this.fboMaterial) this.fboMaterial.uniforms.uTime.value = this.time;
 		if (this.material) this.material.uniforms.uTime.value = this.time;
 
-		this.rafId = requestAnimationFrame(() => this.animate());
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 
-		// render to fbo
-		if (this.fboMaterial) this.fboMaterial.uniforms.uPositions.value = this.fbo1.texture;
-		if (this.material) this.material.uniforms.uPositions.value = this.fbo1.texture;
-		// render to fbo
 		if (this.renderer) {
+			// render to fbo
+			if (this.fboMaterial) this.fboMaterial.uniforms.uPositions.value = this.fbo1.texture;
+			if (this.material) this.material.uniforms.uPositions.value = this.fbo1.texture;
+
 			this.renderer.setRenderTarget(this.fbo);
 			this.renderer.render(this.fboScene, this.fboCamera);
 			// render to screen
 			this.renderer.setRenderTarget(null);
 			this.renderer.render(this.scene, this.camera);
+			// swap render targets
+			const temp = this.fbo;
+			this.fbo = this.fbo1;
+			this.fbo1 = temp;
 		}
-		// swap render targets
-		const temp = this.fbo;
-		this.fbo = this.fbo1;
-		this.fbo1 = temp;
 
 		if (this.stats) this.stats.update();
 	}
