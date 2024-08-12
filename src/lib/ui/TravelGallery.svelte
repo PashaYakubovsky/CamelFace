@@ -104,6 +104,7 @@
 				// start animation loop in inner scene
 
 				if (integratedScene) {
+					console.log(integratedScene, 'SHOW');
 					if (integratedScene.rafId) {
 						cancelAnimationFrame(integratedScene.rafId);
 						integratedScene.rafId = null;

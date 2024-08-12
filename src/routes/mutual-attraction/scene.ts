@@ -67,12 +67,12 @@ class AttractionScene {
 			this.controls.autoRotateSpeed = 0.5;
 			this.controls.enablePan = true;
 
-			window.addEventListener('mousemove', this.onMouseMove.bind(this));
 			window.addEventListener('resize', this.onResize.bind(this));
 			window.addEventListener('wheel', this.onMouseWheel.bind(this));
 			window.addEventListener('keypress', this.mousePressed.bind(this));
 			window.addEventListener('click', this.onClick.bind(this));
 		}
+		window.addEventListener('mousemove', this.onMouseMove.bind(this));
 	}
 
 	setInitialValues() {
