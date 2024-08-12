@@ -18,6 +18,10 @@ import NoiseInteractiveScene from './particles-noise/scene';
 import BoidsScene from './boids/boids';
 import AttractionScene from './mutual-attraction/scene';
 import LandScene from './land/scene';
+import MandelbrotScene from './mandelbrot/mandelbrot';
+import FBMScene from './fbm/clouds';
+import CardioidScene from './cardioid/cardioid';
+import GalaxyScene from './galaxy/scene';
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 };
@@ -75,14 +79,16 @@ const createGeometry = (isMobile: boolean, screens: Screens) => {
 	return new THREE.PlaneGeometry(geometry[0], geometry[1], 10, 10);
 };
 
+type IntegratedScene = {
+	scene: THREE.Scene;
+	camera: THREE.Camera;
+	destroy: () => void;
+	rafId?: number | null;
+	animate: () => void;
+};
+
 class TravelGalleryScene {
-	integratedScenes: ({
-		scene: THREE.Scene;
-		camera: THREE.Camera;
-		destroy: () => void;
-		rafId?: number | null;
-		animate: () => void;
-	} | null)[] = [];
+	integratedScenes: (IntegratedScene | null)[] = [];
 	renderTargets: (THREE.WebGLRenderTarget | null)[] = [];
 	isMobile = window.innerWidth < 768;
 	scene: THREE.Scene = new THREE.Scene();
@@ -106,6 +112,7 @@ class TravelGalleryScene {
 	intersected: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
 	hovered: Record<string, THREE.Intersection> = {};
 	rafId: number | null = null;
+	integratedScenesDict: Record<string, IntegratedScene> = {};
 	loaded = false;
 	screens: Screens = {
 		is2Xl: false,
@@ -163,7 +170,6 @@ class TravelGalleryScene {
 
 		const manager = this.loaderManager;
 
-		let loader: THREE.Mesh;
 		let isComplied = false;
 
 		const loaderContainerEl = document.createElement('div');
@@ -173,10 +179,8 @@ class TravelGalleryScene {
 		const textureLoader = new THREE.TextureLoader();
 		const texture_1 = textureLoader.load('locked_door.jpg');
 		const texture_2 = textureLoader.load('opened_door.jpg');
-		let is_animating = false;
-		const isMoreThanTablet = window.innerWidth > 768;
 		const aspectRatio = window.innerWidth / window.innerHeight;
-		loader = new THREE.Mesh(
+		const loader = new THREE.Mesh(
 			new THREE.PlaneGeometry(3.5, 3.5 * aspectRatio),
 			new THREE.ShaderMaterial({
 				uniforms: {
@@ -233,36 +237,21 @@ class TravelGalleryScene {
 
 			threejsLoading.update((v) => ({ ...v, progress: progressInPercent }));
 
+			(loader.material as THREE.ShaderMaterial).uniforms.progress.value = progressInPercent;
+			(loader.material as THREE.ShaderMaterial).needsUpdate = true;
+
 			loaderContainerEl.textContent = `Loaded ${itemsLoaded}/${this.total}`;
 
-			if (itemsLoaded === this.total && !isComplied && !is_animating) {
+			if (itemsLoaded === this.total && !isComplied) {
 				if (loader) {
-					is_animating = true;
-					const obj = {
-						progress: 0
-					};
-					gsap.to(obj, {
-						progress: 100,
-						duration: 1.25,
-						ease: 'power4.inOut',
-						onUpdate: () => {
-							(loader.material as THREE.ShaderMaterial).uniforms.progress.value = obj.progress;
-							(loader.material as THREE.ShaderMaterial).needsUpdate = true;
-						},
-						onComplete: () => {
-							threejsLoading.update((v) => ({
-								...v,
-								loaded: true,
-								loading: false
-							}));
-							this.scene.remove(loader);
-							is_animating = false;
-							if (loaderContainerEl) {
-								loaderContainerEl.remove();
-							}
-						}
-					});
 					this.loaded = true;
+					this.scene.remove(loader);
+					loaderContainerEl.remove();
+					threejsLoading.update((v) => ({
+						...v,
+						loaded: true,
+						loading: false
+					}));
 				} else {
 					threejsLoading.update((v) => ({
 						...v,
@@ -372,7 +361,6 @@ class TravelGalleryScene {
 
 	async addGallery({ posts }: { posts: Post[] }) {
 		const textures: THREE.Texture[] = [];
-
 		// // Create video node and texture
 		// this.videoNode = document.createElement('video');
 		// this.videoNode.loop = true;
@@ -402,25 +390,29 @@ class TravelGalleryScene {
 			new AttractionScene(null, {
 				renderToTarget: true
 			}),
-			// new ParticlesInteractiveScene(null, {
-			// 	renderToTarget: true
-			// }),
-			null,
 			new HologramScene(null, {
 				renderToTarget: true
 			}),
 			new MorphScene(null, {
 				renderToTarget: true
 			}),
-			// new LinesScene(null, {
-			// 	renderToTarget: true
-			// }),
-			null,
+
 			new LandScene(null, {
 				renderToTarget: true
 			}),
-			// null,
 			new ParticlesScene(null, {
+				renderToTarget: true
+			}),
+			new MandelbrotScene(null, {
+				renderToTarget: true
+			}),
+			new FBMScene(null, {
+				renderToTarget: true
+			}),
+			new CardioidScene(null, {
+				renderToTarget: true
+			}),
+			new GalaxyScene(null, {
 				renderToTarget: true
 			})
 		];
@@ -429,6 +421,89 @@ class TravelGalleryScene {
 		this.renderTargets = this.integratedScenes.map(
 			() => new THREE.WebGLRenderTarget(this.width, this.height)
 		);
+
+		const getSlugSet = () => {
+			const slugSetTexture: Record<string, THREE.Texture | undefined> = {
+				'/lyapunov': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof LyapunovScene) return i;
+				})?.texture,
+				'/particles-noise': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof NoiseInteractiveScene) return i;
+				})?.texture,
+				'/boids': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof BoidsScene) return i;
+				})?.texture,
+				'/mutual-attraction': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof AttractionScene) return i;
+				})?.texture,
+				// '/lines': this.renderTargets[5].texture,
+				// '/particles-interactive': this.renderTargets[4]?.texture,
+				'/hologram': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof HologramScene) return i;
+				})?.texture,
+				'/morphing': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof MorphScene) return i;
+				})?.texture,
+				'/land': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof LandScene) return i;
+				})?.texture,
+				'/particles': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof ParticlesScene) return i;
+				})?.texture,
+				'/mandelbrot': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof MandelbrotScene) return i;
+				})?.texture,
+				'/fbm': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof FBMScene) return i;
+				})?.texture,
+				'/cardioid': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof CardioidScene) return i;
+				})?.texture,
+				'/galaxy': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof GalaxyScene) return i;
+				})?.texture
+			};
+			return slugSetTexture;
+		};
+
+		this.integratedScenesDict = {
+			'/lyapunov': this.integratedScenes.find((i) => {
+				if (i instanceof LyapunovScene) return i;
+			}),
+			'/particles-noise': this.integratedScenes.find((i) => {
+				if (i instanceof NoiseInteractiveScene) return i;
+			}),
+			'/boids': this.integratedScenes.find((i) => {
+				if (i instanceof BoidsScene) return i;
+			}),
+			'/mutual-attraction': this.integratedScenes.find((i) => {
+				if (i instanceof AttractionScene) return i;
+			}),
+			'/hologram': this.integratedScenes.find((i) => {
+				if (i instanceof HologramScene) return i;
+			}),
+			'/morphing': this.integratedScenes.find((i) => {
+				if (i instanceof MorphScene) return i;
+			}),
+			'/land': this.integratedScenes.find((i) => {
+				if (i instanceof LandScene) return i;
+			}),
+			'/particles': this.integratedScenes.find((i) => {
+				if (i instanceof ParticlesScene) return i;
+			}),
+			'/mandelbrot': this.integratedScenes.find((i) => {
+				if (i instanceof MandelbrotScene) return i;
+			}),
+			'/fbm': this.integratedScenes.find((i) => {
+				if (i instanceof FBMScene) return i;
+			}),
+			'/cardioid': this.integratedScenes.find((i) => {
+				if (i instanceof CardioidScene) return i;
+			}),
+			'/galaxy': this.integratedScenes.find((i) => {
+				if (i instanceof GalaxyScene) return i;
+			})
+		} as Record<string, IntegratedScene>;
 
 		for (let i = 0; i < posts.length; i++) {
 			const post = posts[i];
@@ -464,18 +539,7 @@ class TravelGalleryScene {
 			try {
 				const group = new THREE.Group();
 
-				const slugSetTexture: Record<string, THREE.Texture | undefined> = {
-					'/lyapunov': this.renderTargets[9]?.texture,
-					'/particles-noise': this.renderTargets[8]?.texture,
-					'/boids': this.renderTargets[7]?.texture,
-					'/mutual-attraction': this.renderTargets[6]?.texture,
-					// '/lines': this.renderTargets[5].texture,
-					// '/particles-interactive': this.renderTargets[4]?.texture,
-					'/hologram': this.renderTargets[4]?.texture,
-					'/morphing': this.renderTargets[3]?.texture,
-					'/land': this.renderTargets[1]?.texture,
-					'/particles': this.renderTargets[0]?.texture
-				};
+				const slugSetTexture = getSlugSet();
 
 				const slug = post.slug;
 

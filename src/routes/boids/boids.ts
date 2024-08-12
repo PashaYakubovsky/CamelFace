@@ -31,7 +31,7 @@ class BoidsScene {
 		velocity: new THREE.Vector3(0.228, 0.215, 0.202),
 		acceleration: new THREE.Vector3(86.22, 90.84, 90.84),
 		force: 0.7,
-		particles: 877,
+		particles: 277,
 		cohesionRadius: 0.61,
 		alignmentRadius: 0.18,
 		perceptionRadius: 3.06,
@@ -192,8 +192,6 @@ class BoidsScene {
 	}
 	rafId: number | null = null;
 	public animate() {
-		this.rafId = requestAnimationFrame(this.animate.bind(this));
-
 		this.drawFlocks();
 
 		if (this.material) {
@@ -201,6 +199,8 @@ class BoidsScene {
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
 		if (this.material) this.material.uniforms.uCameraPos.value = this.camera.position;
+
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 	}
 
 	public addControls() {

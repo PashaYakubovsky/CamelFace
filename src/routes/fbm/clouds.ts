@@ -2,27 +2,28 @@ import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 
-class cloudsScene {
-	private scene: THREE.Scene = new THREE.Scene();
-	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
+class CloudsScene {
+	scene: THREE.Scene = new THREE.Scene();
+	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	public renderer: THREE.WebGLRenderer | null = null;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
+	renderer: THREE.WebGLRenderer | null = null;
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.PlaneGeometry | null = null;
 	rafId: number | null = null;
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(el: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el
-		});
-		this.renderer.setClearColor('#000000');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-
+		if (!opt?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el
+			});
+			this.renderer.setClearColor('#000000');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+		}
 		this.init();
 		this.animate();
 
@@ -76,7 +77,9 @@ class cloudsScene {
 	}
 
 	public animate() {
-		this.rafId = requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(() => {
+			this.animate();
+		});
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.01;
 		}
@@ -98,4 +101,4 @@ class cloudsScene {
 	}
 }
 
-export default cloudsScene;
+export default CloudsScene;

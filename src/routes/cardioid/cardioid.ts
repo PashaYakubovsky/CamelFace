@@ -13,38 +13,43 @@ const options = {
 };
 
 class CardioidScene {
-	private scene: THREE.Scene = new THREE.Scene();
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
-	private gui: GUI | null = null;
+	scene: THREE.Scene;
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.PlaneGeometry | null = null;
+	gui: GUI | null = null;
 
-	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
-		75,
-		window.innerWidth / window.innerHeight,
-		0.1,
-		1000
-	);
+	camera: THREE.PerspectiveCamera;
 	renderer: THREE.WebGLRenderer | null = null;
 	rafId: number | null = null;
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(el: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
+		if (!opt?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el
+			});
+
+			// this.renderer.toneMapping = THREE.ReinhardToneMapping;
+			this.renderer.setClearColor('#000000');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			// this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		}
+		this.scene = new THREE.Scene();
+		this.camera = new THREE.PerspectiveCamera(
+			75,
+			window.innerWidth / window.innerHeight,
+			0.1,
+			1000
+		);
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el
-		});
-
-		// this.renderer.toneMapping = THREE.ReinhardToneMapping;
-		this.renderer.setClearColor('#000000');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		// this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-
 		this.init();
 		// this.addPostProcessing();
-		this.addControls();
-		this.animate();
-
+		if (!opt?.renderToTarget && el) {
+			this.addControls();
+		}
 		window.addEventListener('mousemove', this.onMouseMove.bind(this));
 		window.addEventListener('resize', this.onResize.bind(this));
+		this.onResize();
+		this.animate();
 	}
 
 	addControls() {
@@ -118,7 +123,7 @@ class CardioidScene {
 	}
 
 	animate() {
-		requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.006;
 		}

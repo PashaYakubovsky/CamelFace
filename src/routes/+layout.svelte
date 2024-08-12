@@ -19,7 +19,6 @@
 
 	const createMouseHandler = (socket: any) => (e: MouseEvent) => {
 		const { clientX, clientY } = e;
-		console.log('mousemove', { x: clientX, y: clientY });
 		socket.emit('mousemove', { x: clientX, y: clientY });
 	};
 

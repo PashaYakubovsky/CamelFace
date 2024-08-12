@@ -6,60 +6,66 @@ import gsap from 'gsap';
 
 const options = {
 	Color: '#8fe9ff',
-	['Scroll mode']: true,
-	['Recursive step']: 100,
-	['Mouse mode']: true,
-	['Zoom to number']: 1,
+	['Scroll mode']: false,
+	['Recursive step']: 17,
+	['Mouse mode']: false,
+	['Zoom to number']: 0.5,
 	['Zoom duration']: 1
 };
 
 class MandelbrotScene {
-	private scene: THREE.Scene = new THREE.Scene();
-	public camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
+	scene: THREE.Scene = new THREE.Scene();
+	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
 		1000
 	);
-	public renderer: THREE.WebGLRenderer | null = null;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
-	private gui: GUI | null = null;
+	renderer: THREE.WebGLRenderer | null = null;
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.PlaneGeometry | null = null;
+	gui: GUI | null = null;
 	rafId: number | null = null;
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(el: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el
-		});
+		if (!opt?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el
+			});
 
-		this.renderer.toneMapping = THREE.ReinhardToneMapping;
-		this.renderer.setClearColor('#000000');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.toneMapping = THREE.ReinhardToneMapping;
+			this.renderer.setClearColor('#000000');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+		}
 
 		this.init();
-		this.addControls();
+		if (this.renderer) {
+			this.addControls();
+		}
 		this.setInitialValues();
 		this.animate();
 
-		window.addEventListener('mousemove', this.onMouseMove.bind(this));
-		window.addEventListener('resize', this.onResize.bind(this));
-		window.addEventListener('wheel', this.onMouseWheel.bind(this));
-		window.addEventListener('keypress', this.mousePressed.bind(this));
+		if (this.renderer) {
+			window.addEventListener('mousemove', this.onMouseMove.bind(this));
+			window.addEventListener('resize', this.onResize.bind(this));
+			window.addEventListener('wheel', this.onMouseWheel.bind(this));
+			window.addEventListener('keypress', this.mousePressed.bind(this));
+		}
 	}
 
 	public setInitialValues() {
 		const mouseMode = localStorage.getItem('mouseMode');
-		const zoomValue = localStorage.getItem('zoomValue');
+		// const zoomValue = localStorage.getItem('zoomValue');
 		const mousePosition = localStorage.getItem('mousePosition');
 
 		if (mouseMode) {
 			options['Mouse mode'] = mouseMode === 'true';
 		}
-		if (zoomValue) {
-			options['Zoom to number'] = parseFloat(zoomValue);
-			if (this.material) this.material.uniforms.u_zoom.value = parseFloat(zoomValue);
-		}
+		// if (zoomValue) {
+		// 	options['Zoom to number'] = parseFloat(zoomValue);
+		// 	if (this.material) this.material.uniforms.u_zoom.value = parseFloat(zoomValue);
+		// }
 		if (mousePosition) {
 			const [x, y] = mousePosition.split(' ');
 			if (this.material) {
@@ -176,7 +182,7 @@ class MandelbrotScene {
 				u_resolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
 				u_mouse: { value: new THREE.Vector2() },
 				u_color: { value: new THREE.Color(options.Color) },
-				u_zoom: { value: 1 },
+				u_zoom: { value: options['Zoom to number'] },
 				u_scroll_mode: { value: options['Scroll mode'] },
 				u_m_count: { value: options['Recursive step'] },
 				u_mouse_mode: { value: options['Mouse mode'] }
@@ -212,7 +218,7 @@ class MandelbrotScene {
 
 			this.material.uniforms.u_zoom.value += speed;
 			options['Zoom to number'] = this.material.uniforms.u_zoom.value;
-			this.gui?.controllers[3].updateDisplay();
+			this.gui?.controllers[3]?.updateDisplay();
 
 			// save zoom value to local storage
 			localStorage.setItem('zoomValue', this.material.uniforms.u_zoom.value.toString());
@@ -232,11 +238,19 @@ class MandelbrotScene {
 	}
 
 	public animate() {
-		requestAnimationFrame(this.animate.bind(this));
+		this.rafId = requestAnimationFrame(this.animate.bind(this));
+		// console.log('animate');
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.001;
 		}
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
+
+		// if this render to target mode run camera movement animation
+		if (!this.renderer) {
+			this.camera.position.x = Math.sin(this.material.uniforms.u_time.value) * -1.5;
+			this.camera.position.y = Math.cos(this.material.uniforms.u_time.value) * 0.5;
+			this.camera.lookAt(this.scene.position);
+		}
 	}
 
 	destroy() {

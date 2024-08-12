@@ -193,10 +193,10 @@ class LyapunovScene {
 	public animate() {
 		if (this.material) {
 			this.material.uniforms.u_time.value += 0.002 * this.dir;
-			if (this.material.uniforms.u_time.value > 5) {
+			if (this.material.uniforms.u_time.value > 3) {
 				this.dir *= -1;
 			}
-			if (this.material.uniforms.u_time.value < -5) {
+			if (this.material.uniforms.u_time.value < -3) {
 				this.dir *= -1;
 			}
 		}

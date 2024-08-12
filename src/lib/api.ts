@@ -41,6 +41,9 @@ export const getPosts = async () => {
 			{
 				headers: {
 					'Content-Type': 'application/json'
+				},
+				params: {
+					limit: 100
 				}
 			}
 		);

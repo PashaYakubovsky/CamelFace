@@ -5,18 +5,18 @@ import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 
 class ParticlesScene {
-	private renderer: THREE.WebGLRenderer;
-	private scene: THREE.Scene;
-	private camera: THREE.PerspectiveCamera;
-	private raycaster: THREE.Raycaster;
-	private mouse: THREE.Vector2;
+	renderer: THREE.WebGLRenderer | undefined;
+	scene: THREE.Scene;
+	camera: THREE.PerspectiveCamera;
+	raycaster: THREE.Raycaster;
+	mouse: THREE.Vector2;
 	particles: THREE.Points | undefined;
-	private geometry: THREE.BufferGeometry;
+	geometry: THREE.BufferGeometry;
 	material: THREE.ShaderMaterial | undefined;
-	private count: number;
-	private positions: Float32Array;
-	private colors: Float32Array;
-	private sizes: Float32Array;
+	count: number;
+	positions: Float32Array;
+	colors: Float32Array;
+	sizes: Float32Array;
 	rafId: number | null = null;
 	gui: GUI | undefined;
 	group: THREE.Group | undefined;
@@ -34,21 +34,22 @@ class ParticlesScene {
 	};
 	time = 0;
 
-	constructor(canvasElement: HTMLCanvasElement) {
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			alpha: true,
-			canvas: canvasElement
-		});
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setClearColor(0x000000, 0);
-		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		this.renderer.toneMappingExposure = 1;
-		this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
+	constructor(canvasElement: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
+		if (!opt?.renderToTarget && canvasElement) {
+			this.renderer = new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true,
+				canvas: canvasElement
+			});
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setClearColor(0x000000, 0);
+			this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			this.renderer.toneMappingExposure = 1;
+			this.renderer.shadowMap.enabled = true;
+			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		}
 		this.scene = new THREE.Scene();
 
 		this.camera = new THREE.PerspectiveCamera(
@@ -111,10 +112,11 @@ class ParticlesScene {
 		this.group.position.set(-0.5, -2, 0);
 		this.scene.add(this.group);
 
-		window.addEventListener('resize', this.onWindowResize.bind(this), false);
-		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
-
-		this.addDebug();
+		if (this.renderer) {
+			window.addEventListener('resize', this.onWindowResize.bind(this), false);
+			window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+			this.addDebug();
+		}
 		this.animate();
 
 		this.audio = new Audio();
@@ -222,7 +224,7 @@ class ParticlesScene {
 	onWindowResize(): void {
 		this.camera.aspect = window.innerWidth / window.innerHeight;
 		this.camera.updateProjectionMatrix();
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+		if (this.renderer) this.renderer.setSize(window.innerWidth, window.innerHeight);
 	}
 
 	onMouseMove(event: MouseEvent): void {
@@ -321,7 +323,7 @@ class ParticlesScene {
 	}
 
 	animate(): void {
-		this.renderer.render(this.scene, this.camera);
+		if (this.renderer) this.renderer.render(this.scene, this.camera);
 
 		this.time += 0.01;
 		if (this.material) {
@@ -337,7 +339,8 @@ class ParticlesScene {
 	}
 
 	destroy(): void {
-		this.renderer.dispose();
+		if (this.audio) this.audio.pause();
+		if (this.renderer) this.renderer.dispose();
 		this.scene.clear();
 		this.gui?.destroy();
 

@@ -118,9 +118,9 @@ class MorphingScene {
 		this.animate();
 
 		// Events
+		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 		if (this.renderer) {
 			window.addEventListener('resize', this.onWindowResize.bind(this), false);
-			window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 		}
 	}
 
@@ -322,18 +322,18 @@ class MorphingScene {
 
 	onMouseMove(event: MouseEvent): void {
 		// Get the bounding rectangle of the renderer
-		if (this.renderer) {
-			const rect = this.renderer.domElement.getBoundingClientRect();
+		const rect = this.renderer
+			? this.renderer.domElement.getBoundingClientRect()
+			: document.body.getBoundingClientRect();
 
-			// Calculate the mouse's position within the renderer (0, 0 is the top left corner)
-			const x = event.clientX - rect.left;
-			const y = event.clientY - rect.top;
+		// Calculate the mouse's position within the renderer (0, 0 is the top left corner)
+		const x = event.clientX - rect.left;
+		const y = event.clientY - rect.top;
 
-			// Normalizing the x, y coordinates (which will be in pixels)
-			// to a range suitable for shaders (-1 to 1 for x and 1 to -1 for y)
-			this.mouse.x = (x / rect.width) * 2 - 1;
-			this.mouse.y = -(y / rect.height) * 2 + 1;
-		}
+		// Normalizing the x, y coordinates (which will be in pixels)
+		// to a range suitable for shaders (-1 to 1 for x and 1 to -1 for y)
+		this.mouse.x = (x / rect.width) * 2 - 1;
+		this.mouse.y = -(y / rect.height) * 2 + 1;
 
 		console.log('[morph:mouse]', this.mouse);
 

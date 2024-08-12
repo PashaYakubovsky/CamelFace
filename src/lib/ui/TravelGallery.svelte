@@ -73,14 +73,18 @@
 			if (idx !== currentIndex) {
 				content.classList.add('hidden');
 				// stop animation loop in inner scene
-				const integratedScene = scene.integratedScenes[idx];
+				const integratedScene = scene.integratedScenesDict[$posts[idx].slug];
+				console.log(integratedScene, 'HIDE');
+
 				if (integratedScene && typeof integratedScene.rafId === 'number') {
 					cancelAnimationFrame(integratedScene.rafId);
 					integratedScene.rafId = null;
 				}
 			} else if (idx === currentIndex && content.classList.contains('hidden') && scene.loaded) {
 				content.classList.remove('hidden');
-				console.log('SHOW', scene.integratedScenes[idx], $posts[idx]);
+				const integratedScene = scene.integratedScenesDict[$posts[idx].slug];
+				console.log(integratedScene, 'SHOW');
+				// get instance of inner scene by post slug
 
 				// animate html content
 				gsap.fromTo(
@@ -98,7 +102,7 @@
 					}
 				);
 				// start animation loop in inner scene
-				const integratedScene = scene.integratedScenes[idx];
+
 				if (integratedScene) {
 					if (integratedScene.rafId) {
 						cancelAnimationFrame(integratedScene.rafId);
