@@ -198,7 +198,7 @@
 
 			const raf = () => {
 				position += speed;
-				speed *= 0.8;
+				speed *= 0.7;
 				rounded = Math.round(position);
 				let diff = rounded - position;
 				let nextIndex = +position.toFixed(0);
@@ -252,9 +252,8 @@
 
 				if (attractMode) {
 					position += -(position - attractTo) * 0.1;
-					currentIndex = Math.round(position);
 				} else {
-					// position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
+					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
 				}
 
 				// console.log(scene.integratedScenes[currentIndex], $posts[currentIndex]);

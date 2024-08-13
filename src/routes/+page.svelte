@@ -45,7 +45,7 @@
 	const randomTitle = () => {
 		const randomIndex = Math.floor(Math.random() * titles.length);
 		const randomT = titles[randomIndex];
-		title = '';
+		title = randomT[0];
 		const dur = 500;
 
 		const id = setInterval(() => {
