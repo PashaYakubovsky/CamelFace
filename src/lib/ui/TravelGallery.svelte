@@ -8,6 +8,7 @@
 	import { onlineUsers } from '$lib/onlineUsers';
 	import { goto } from '$app/navigation';
 	import { posts } from '$lib/posts';
+	import Page from '../../routes/+page.svelte';
 
 	let canvasElement: HTMLCanvasElement;
 	let contentElements: HTMLElement[] = [];
@@ -74,7 +75,6 @@
 				content.classList.add('hidden');
 				// stop animation loop in inner scene
 				const integratedScene = scene.integratedScenesDict[$posts[idx].slug];
-				console.log(integratedScene, 'HIDE');
 
 				if (integratedScene && typeof integratedScene.rafId === 'number') {
 					cancelAnimationFrame(integratedScene.rafId);
@@ -172,8 +172,19 @@
 			navElements = Array.from(document.querySelectorAll('nav > button')) as HTMLButtonElement[];
 			contentElements = Array.from(document.querySelectorAll('.post-info')) as HTMLElement[];
 			await scene.addGallery({ posts: $posts.slice() });
-			rots = scene.groups.map((g) => g.rotation);
+
+			// fake loader
+			scene.groups.forEach((g) => {
+				g.visible = false;
+			});
+			const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+			await wait(3000);
+
+			scene.groups.forEach((g) => {
+				g.visible = true;
+			});
 			positions = scene.groups.map((g) => g.position);
+			rots = scene.groups.map((g) => g.rotation);
 			scales = scene.groups.map((g) => g.scale);
 			materials = scene.groups.map((g) => g.children[0].material);
 

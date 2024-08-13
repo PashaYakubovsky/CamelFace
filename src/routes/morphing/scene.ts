@@ -406,6 +406,17 @@ class MorphingScene {
 		this.rafId = requestAnimationFrame(() => this.animate());
 
 		if (this.stats) this.stats.update();
+
+		// run preview animation for morphing
+		if (!this.renderer) {
+			if (this.particles.material) {
+				this.particles.material.uniforms.uProgress.value = THREE.MathUtils.lerp(
+					this.particles.material.uniforms.uProgress.value,
+					Math.sin(this.time * 0.5),
+					0.5
+				);
+			}
+		}
 	}
 
 	onClick(e: MouseEvent): void {

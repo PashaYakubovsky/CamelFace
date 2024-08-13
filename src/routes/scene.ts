@@ -269,6 +269,28 @@ class TravelGalleryScene {
 			console.log('There was an error loading ' + url);
 		};
 
+		gsap.fromTo(
+			loader.material.uniforms.progress,
+			{
+				value: 0
+			},
+			{
+				value: 100,
+				onComplete: () => {
+					this.loaded = true;
+					this.scene.remove(loader);
+					loaderContainerEl.remove();
+					threejsLoading.update((v) => ({
+						...v,
+						loaded: true,
+						loading: false
+					}));
+				},
+				duration: 3,
+				ease: 'power2.inOut'
+			}
+		);
+
 		this.scene.add(this.camera);
 
 		window.addEventListener('mousemove', (e) => this.onMouseMove(e));
@@ -525,27 +547,26 @@ class TravelGalleryScene {
 			const post = posts[i];
 			let texture: THREE.Texture | undefined;
 			// if (!(post.slug in this.integratedScenesDict)) {
-			const media = post.backgroundImage as Media;
-
-			const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
-			const file = await fetch(src);
-			const blob = await file.blob();
-			const url = URL.createObjectURL(blob);
-			texture = await this.textureLoader.loadAsync(url);
-			texture.minFilter = THREE.LinearFilter;
-			texture.magFilter = THREE.LinearFilter;
-			texture.colorSpace = THREE.SRGBColorSpace;
-
-			// take the average color of the image
-			const canvas = document.createElement('canvas');
-			const context = canvas.getContext('2d');
-			if (!context) continue;
-			context.drawImage(texture.image, 0, 0);
-			const data = context.getImageData(0, 0, 1, 1).data;
-			const color = new THREE.Color(`rgb(${data[0]}, ${data[1]}, ${data[2]})`);
-			this.backgroundColors.push(color.getStyle());
-			canvas.remove();
-			textures.push(texture);
+			// if (i % 3 === 0) {
+			// 	const media = post.backgroundImage as Media;
+			// 	const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
+			// 	const file = await fetch(src);
+			// 	const blob = await file.blob();
+			// 	const url = URL.createObjectURL(blob);
+			// 	texture = await this.textureLoader.loadAsync(url);
+			// 	texture.minFilter = THREE.LinearFilter;
+			// 	texture.magFilter = THREE.LinearFilter;
+			// 	texture.colorSpace = THREE.SRGBColorSpace;
+			// 	// take the average color of the image
+			// 	const canvas = document.createElement('canvas');
+			// 	const context = canvas.getContext('2d');
+			// 	if (!context) continue;
+			// 	context.drawImage(texture.image, 0, 0);
+			// 	const data = context.getImageData(0, 0, 1, 1).data;
+			// 	const color = new THREE.Color(`rgb(${data[0]}, ${data[1]}, ${data[2]})`);
+			// 	this.backgroundColors.push(color.getStyle());
+			// 	canvas.remove();
+			// 	textures.push(texture);
 			// } else {
 			// 	this.backgroundColors.push('#000');
 			// }
