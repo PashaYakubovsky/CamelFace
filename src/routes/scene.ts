@@ -571,6 +571,8 @@ class TravelGalleryScene {
 			// 	this.backgroundColors.push('#000');
 			// }
 
+			this.backgroundColors.push(post.backgroundColor);
+
 			// Apply texture to the material
 			if (!this.material || !this.geometry) return;
 			const material = this.material.clone();

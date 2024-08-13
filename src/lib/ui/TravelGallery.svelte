@@ -254,7 +254,7 @@
 					position += -(position - attractTo) * 0.1;
 					currentIndex = Math.round(position);
 				} else {
-					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
+					// position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
 				}
 
 				// console.log(scene.integratedScenes[currentIndex], $posts[currentIndex]);
