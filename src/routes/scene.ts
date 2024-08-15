@@ -22,6 +22,9 @@ import MandelbrotScene from './mandelbrot/mandelbrot';
 import FBMScene from './fbm/clouds';
 import CardioidScene from './cardioid/cardioid';
 import GalaxyScene from './galaxy/scene';
+import EyeScene from './eye/scene';
+import FresnelScene from './fresnel/scene';
+import WobblyScene from './wobbly/scene';
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 };
@@ -442,6 +445,15 @@ class TravelGalleryScene {
 			}),
 			new ParticlesInteractiveScene(null, {
 				renderToTarget: true
+			}),
+			new EyeScene(null, {
+				renderToTarget: true
+			}),
+			new FresnelScene(null, {
+				renderToTarget: true
+			}),
+			new WobblyScene(null, {
+				renderToTarget: true
 			})
 		];
 		this.integratedScenes.reverse();
@@ -493,6 +505,15 @@ class TravelGalleryScene {
 				})?.texture,
 				'/galaxy': this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof GalaxyScene) return i;
+				})?.texture,
+				'/eye': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof EyeScene) return i;
+				})?.texture,
+				'/fresnel': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof FresnelScene) return i;
+				})?.texture,
+				'/wobbly': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof WobblyScene) return i;
 				})?.texture
 			};
 			return slugSetTexture;
@@ -540,6 +561,15 @@ class TravelGalleryScene {
 			}),
 			'/particles-interactive': this.integratedScenes.find((i) => {
 				if (i instanceof ParticlesInteractiveScene) return i;
+			}),
+			'/eye': this.integratedScenes.find((i) => {
+				if (i instanceof EyeScene) return i;
+			}),
+			'/fresnel': this.integratedScenes.find((i) => {
+				if (i instanceof FresnelScene) return i;
+			}),
+			'/wobbly': this.integratedScenes.find((i) => {
+				if (i instanceof WobblyScene) return i;
 			})
 		} as Record<string, IntegratedScene>;
 

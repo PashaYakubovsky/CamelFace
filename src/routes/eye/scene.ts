@@ -1,4 +1,3 @@
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as THREE from 'three';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
@@ -13,7 +12,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 
 class scene {
-	private scene: THREE.Scene = new THREE.Scene();
+	scene: THREE.Scene = new THREE.Scene();
 	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		75,
 		window.innerWidth / window.innerHeight,
@@ -21,25 +20,32 @@ class scene {
 		1000
 	);
 	renderer: THREE.WebGLRenderer | null = null;
-	private material: THREE.ShaderMaterial | null = null;
-	private geometry: THREE.PlaneGeometry | null = null;
-	private composer: EffectComposer | null = null;
-	private eyeMaterial: CustomShaderMaterial | null = null;
-	private rafPos = new THREE.Vector2(0, 0);
-	private basePos = new THREE.Vector2(0, 0);
+	material: THREE.ShaderMaterial | null = null;
+	geometry: THREE.PlaneGeometry | null = null;
+	composer: EffectComposer | null = null;
+	eyeMaterial: CustomShaderMaterial | null = null;
+	rafPos = new THREE.Vector2(0, 0);
+	basePos = new THREE.Vector2(0, 0);
 	clock = new THREE.Clock();
 	rafId: number | null = null;
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(
+		el: HTMLCanvasElement | null,
+		opt?: {
+			renderToTarget?: boolean;
+		}
+	) {
 		this.camera.position.z = 1;
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el,
-			antialias: true,
-			alpha: true
-		});
-		this.renderer.setClearColor('#000000');
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		if (!opt?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el,
+				antialias: true,
+				alpha: true
+			});
+			this.renderer.setClearColor('#000000');
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		}
 
 		this.init();
 		this.animate();
@@ -227,7 +233,7 @@ class scene {
 			if (this.eyeMaterial) {
 				const x = event.clientX;
 				const y = event.clientY;
-				const canvas = this.renderer?.domElement;
+				const canvas = this.renderer?.domElement || document.body;
 				if (!canvas) return;
 				const rect = canvas.getBoundingClientRect();
 				const x1 = ((x - rect.left) / rect.width) * 2 - 1;

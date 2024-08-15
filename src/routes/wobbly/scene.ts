@@ -11,11 +11,11 @@ import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils';
 
 class WobblyScene {
-	private renderer: THREE.WebGLRenderer;
-	private mouse: THREE.Vector2;
-	private width = window.innerWidth;
-	private height = window.innerHeight;
-	private pixelRatio = Math.min(window.devicePixelRatio, 2);
+	renderer: THREE.WebGLRenderer | null = null;
+	mouse: THREE.Vector2;
+	width = window.innerWidth;
+	height = window.innerHeight;
+	pixelRatio = Math.min(window.devicePixelRatio, 2);
 	stats?: Stats;
 	time = 0;
 	scene!: THREE.Scene;
@@ -65,22 +65,29 @@ class WobblyScene {
 	geometry!: THREE.BufferGeometry;
 	wobble!: THREE.Mesh | THREE.Group;
 
-	constructor(canvasElement: HTMLCanvasElement) {
+	constructor(
+		canvasElement: HTMLCanvasElement | null,
+		opt?: {
+			renderToTarget: boolean;
+		}
+	) {
 		this.height = window.innerHeight;
 		this.width = window.innerWidth;
 		this.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: canvasElement,
-			antialias: true
-		});
-		this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		this.renderer.toneMappingExposure = 1;
-		this.renderer.setSize(this.width, this.height);
-		this.renderer.setPixelRatio(this.pixelRatio);
-		this.renderer.setClearColor(new THREE.Color(this.debugObject.clearColor));
+		if (!opt?.renderToTarget && canvasElement) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: canvasElement,
+				antialias: true
+			});
+			this.renderer.shadowMap.enabled = true;
+			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			this.renderer.toneMappingExposure = 1;
+			this.renderer.setSize(this.width, this.height);
+			this.renderer.setPixelRatio(this.pixelRatio);
+			this.renderer.setClearColor(new THREE.Color(this.debugObject.clearColor));
+		}
 
 		this.scene = new THREE.Scene();
 
@@ -110,27 +117,31 @@ class WobblyScene {
 		this.scene.add(this.camera);
 
 		// Stats
-		this.stats = new Stats();
-		this.stats.dom.style.left = 'auto';
-		this.stats.dom.style.right = '0';
-		this.stats.dom.style.top = 'auto';
-		this.stats.dom.style.bottom = '0';
-		document.body.appendChild(this.stats.dom);
+		if (this.renderer) {
+			this.stats = new Stats();
+			this.stats.dom.style.left = 'auto';
+			this.stats.dom.style.right = '0';
+			this.stats.dom.style.top = 'auto';
+			this.stats.dom.style.bottom = '0';
+			document.body.appendChild(this.stats.dom);
+		}
 
 		// Mouse
 		this.mouse = new THREE.Vector2();
 
 		// Controls
-		this.controls = new OrbitControls(this.camera, canvasElement);
-		this.controls.enableDamping = true;
-		// Disable controls
-		this.controls.enabled = this.debugObject.orbitControls;
+		if (this.renderer) {
+			this.controls = new OrbitControls(this.camera, canvasElement);
+			this.controls.enableDamping = true;
+			// Disable controls
+			this.controls.enabled = this.debugObject.orbitControls;
+		}
 
 		// Add objects
 		this.addObjects();
 
 		// debug
-		this.addDebug();
+		if (this.renderer) this.addDebug();
 
 		// initial render
 		this.animate();
@@ -206,7 +217,7 @@ class WobblyScene {
 
 		this.gui.open();
 		this.gui.addColor(this.debugObject, 'clearColor').onChange(() => {
-			this.renderer.setClearColor(this.debugObject.clearColor);
+			if (this.renderer) this.renderer.setClearColor(this.debugObject.clearColor);
 		});
 		this.gui.add(this.debugObject, 'orbitControls').onChange((value: boolean) => {
 			this.controls.enabled = value;
@@ -468,8 +479,10 @@ class WobblyScene {
 		this.camera.updateProjectionMatrix();
 
 		// Update renderer
-		this.renderer.setSize(this.width, this.height);
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		if (this.renderer) {
+			this.renderer.setSize(this.width, this.height);
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		}
 
 		// Update resolution uniform
 		if (this.material) {
@@ -482,7 +495,9 @@ class WobblyScene {
 
 	onMouseMove(event: MouseEvent): void {
 		// Get the bounding rectangle of the renderer
-		const rect = this.renderer.domElement.getBoundingClientRect();
+		const rect = this.renderer
+			? this.renderer.domElement.getBoundingClientRect()
+			: document.body.getBoundingClientRect();
 
 		// Calculate the mouse's position within the renderer (0, 0 is the top left corner)
 		const x = event.clientX - rect.left;
@@ -519,7 +534,7 @@ class WobblyScene {
 		}
 
 		// Render normal scene
-		this.renderer.render(this.scene, this.camera);
+		if (this.renderer) this.renderer.render(this.scene, this.camera);
 
 		this.rafId = requestAnimationFrame(() => this.animate());
 
@@ -533,9 +548,10 @@ class WobblyScene {
 	destroy(): void {
 		window.removeEventListener('mousemove', this.onMouseMove.bind(this));
 
-		this.renderer.dispose();
-		this.renderer.forceContextLoss();
-
+		if (this.renderer) {
+			this.renderer.dispose();
+			this.renderer.forceContextLoss();
+		}
 		if (this.gui) this.gui.destroy();
 
 		this.scene.traverse((child) => {
