@@ -25,6 +25,7 @@ import GalaxyScene from './galaxy/scene';
 import EyeScene from './eye/scene';
 import FresnelScene from './fresnel/scene';
 import WobblyScene from './wobbly/scene';
+import GPGPUScene from './gpgpu/scene';
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 };
@@ -88,6 +89,7 @@ type IntegratedScene = {
 	destroy: () => void;
 	rafId?: number | null;
 	animate: () => void;
+	renderer?: THREE.WebGLRenderer;
 };
 
 class TravelGalleryScene {
@@ -151,6 +153,8 @@ class TravelGalleryScene {
 			powerPreference: 'high-performance',
 			precision: 'highp'
 		});
+		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		this.renderer.toneMappingExposure = 1;
 
 		this.screens = defineScreen();
 		this.geometry = createGeometry(this.isMobile, this.screens);
@@ -454,6 +458,9 @@ class TravelGalleryScene {
 			}),
 			new WobblyScene(null, {
 				renderToTarget: true
+			}),
+			new GPGPUScene(null, {
+				renderToTarget: true
 			})
 		];
 		this.integratedScenes.reverse();
@@ -514,6 +521,9 @@ class TravelGalleryScene {
 				})?.texture,
 				'/wobbly': this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof WobblyScene) return i;
+				})?.texture,
+				'/gpgpu': this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof GPGPUScene) return i;
 				})?.texture
 			};
 			return slugSetTexture;
@@ -570,8 +580,15 @@ class TravelGalleryScene {
 			}),
 			'/wobbly': this.integratedScenes.find((i) => {
 				if (i instanceof WobblyScene) return i;
+			}),
+			'/gpgpu': this.integratedScenes.find((i) => {
+				if (i instanceof GPGPUScene) return i;
 			})
 		} as Record<string, IntegratedScene>;
+
+		if (this.integratedScenesDict['/gpgpu']) {
+			this.integratedScenesDict['/gpgpu'].renderer = this.renderer;
+		}
 
 		for (let i = 0; i < posts.length; i++) {
 			const post = posts[i];
@@ -618,7 +635,7 @@ class TravelGalleryScene {
 				} else {
 					material.uniforms.uTexture.value = texture;
 				}
-				material.uniforms.uTexture.value.needsUpdate = true;
+				if (material.uniforms.uTexture.value) material.uniforms.uTexture.value.needsUpdate = true;
 				material.uniforms.id = { value: i };
 				material.uniforms.uResolution.value = new THREE.Vector3(
 					window.innerWidth,
@@ -861,6 +878,10 @@ class TravelGalleryScene {
 							iScene.fbo1 = temp;
 							this.renderer.setRenderTarget(iScene.fbo);
 							this.renderer.render(iScene.fboScene, iScene.fboCamera);
+						}
+
+						if (iScene instanceof GPGPUScene) {
+							continue;
 						}
 
 						const renderTarget = this.renderTargets[i];

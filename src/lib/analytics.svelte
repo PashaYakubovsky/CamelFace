@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	// get is production or development
 	import { onMount } from 'svelte';
 
 	$: {
-		if (typeof gtag !== 'undefined') {
+		const mode = import.meta.env.MODE;
+		if (typeof gtag !== 'undefined' && mode !== 'development') {
 			console.log('gtag is defined');
 			gtag('config', 'G-WNGXJE3D6K', {
 				page_title: document.title,

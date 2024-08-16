@@ -13,11 +13,11 @@ import {
 } from 'three/examples/jsm/misc/GPUComputationRenderer';
 
 class GPGPUScene {
-	private renderer: THREE.WebGLRenderer;
-	private mouse: THREE.Vector2;
-	private width = window.innerWidth;
-	private height = window.innerHeight;
-	private pixelRatio = Math.min(window.devicePixelRatio, 2);
+	renderer: THREE.WebGLRenderer | undefined;
+	mouse: THREE.Vector2;
+	width = window.innerWidth;
+	height = window.innerHeight;
+	pixelRatio = Math.min(window.devicePixelRatio, 2);
 	group: THREE.Group | undefined;
 	stats?: Stats;
 	time = 0;
@@ -59,16 +59,26 @@ class GPGPUScene {
 	};
 	raycaster: THREE.Raycaster;
 	raycastBox!: THREE.Mesh;
+	isPreview = false;
 
-	constructor(canvasElement: HTMLCanvasElement) {
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			alpha: true,
-			canvas: canvasElement
-		});
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setClearColor(new THREE.Color('#160920'), 0);
+	constructor(
+		canvasElement: HTMLCanvasElement | null,
+		opt?: {
+			renderToTarget?: boolean;
+		}
+	) {
+		if (!opt?.renderToTarget && canvasElement) {
+			this.renderer = new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true,
+				canvas: canvasElement
+			});
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			this.renderer.setClearColor(new THREE.Color('#160920'), 0);
+		} else {
+			this.isPreview = true;
+		}
 
 		this.scene = new THREE.Scene();
 
@@ -85,21 +95,24 @@ class GPGPUScene {
 		this.dracoLoader.setDecoderPath('./draco/');
 		this.gltfLoader = new GLTFLoader();
 		this.gltfLoader.setDRACOLoader(this.dracoLoader);
-
-		this.stats = new Stats();
-		this.stats.dom.style.left = 'auto';
-		this.stats.dom.style.right = '0';
-		this.stats.dom.style.top = 'auto';
-		this.stats.dom.style.bottom = '0';
-		document.body.appendChild(this.stats.dom);
+		if (this.renderer) {
+			this.stats = new Stats();
+			this.stats.dom.style.left = 'auto';
+			this.stats.dom.style.right = '0';
+			this.stats.dom.style.top = 'auto';
+			this.stats.dom.style.bottom = '0';
+			document.body.appendChild(this.stats.dom);
+		}
 
 		// Raycaster
 		this.raycaster = new THREE.Raycaster();
 		this.mouse = new THREE.Vector2();
 
 		// Controls
-		this.controls = new OrbitControls(this.camera, canvasElement);
-		this.controls.enableDamping = true;
+		if (!opt?.renderToTarget) {
+			this.controls = new OrbitControls(this.camera, canvasElement);
+			this.controls.enableDamping = true;
+		}
 		// Disable controls
 		// this.controls.enabled = false;
 
@@ -107,15 +120,17 @@ class GPGPUScene {
 		this.addObjects();
 
 		// Debug
-		this.addDebug();
-
-		// initial render
-		this.animate();
-
+		if (!opt?.renderToTarget) {
+			this.addDebug();
+		}
 		// Events
 		window.addEventListener('resize', this.onWindowResize.bind(this), false);
 		window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 		window.addEventListener('click', this.onClick.bind(this), false);
+
+		// initial render
+		this.animate();
+
 		// window.addEventListener('wheel', this.onWheel.bind(this), false);
 	}
 
@@ -140,7 +155,7 @@ class GPGPUScene {
 		 * GPU Compute
 		 */
 		// Setup
-		if (this.baseGeometry.count && this.renderer && this.baseGeometry.instance) {
+		if (this.baseGeometry.count && this.baseGeometry.instance) {
 			this.gpgpu.size = Math.ceil(Math.sqrt(this.baseGeometry.count));
 			this.gpgpu.computation = new GPUComputationRenderer(
 				this.gpgpu.size,
@@ -306,7 +321,7 @@ class GPGPUScene {
 			.addColor(this.debugObject, 'clearColor')
 			.name('Canvas color')
 			.onChange(() => {
-				this.renderer.setClearColor(this.debugObject.clearColor);
+				if (this.renderer) this.renderer.setClearColor(this.debugObject.clearColor);
 			});
 		this.gui
 			.add(this.debugObject, 'size')
@@ -407,9 +422,10 @@ class GPGPUScene {
 		this.camera.updateProjectionMatrix();
 
 		// Update renderer
-		this.renderer.setSize(this.width, this.height);
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
+		if (this.renderer) {
+			this.renderer.setSize(this.width, this.height);
+			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		}
 		// Update resolution uniform
 		if (this.particles.material) {
 			this.particles.material.uniforms.uResolution.value = new THREE.Vector2(
@@ -421,7 +437,9 @@ class GPGPUScene {
 
 	onMouseMove(event: MouseEvent): void {
 		// Get the bounding rectangle of the renderer
-		const rect = this.renderer.domElement.getBoundingClientRect();
+		const rect = this.renderer
+			? this.renderer.domElement.getBoundingClientRect()
+			: document.body.getBoundingClientRect();
 
 		// Calculate the mouse's position within the renderer (0, 0 is the top left corner)
 		const x = event.clientX - rect.left;
@@ -440,7 +458,7 @@ class GPGPUScene {
 			// calculate objects intersecting the picking ray
 			const intersects = this.raycaster.intersectObject(this.raycastBox);
 
-			if (intersects[0].point && this.gpgpu && this.gpgpu.particlesVariable) {
+			if (intersects[0]?.point && this.gpgpu && this.gpgpu.particlesVariable) {
 				this.gpgpu.particlesVariable.material.uniforms.uIntersect.value = intersects[0].point;
 				console.log('[gpgpu:intersects]', intersects[0].point);
 			}
@@ -482,7 +500,35 @@ class GPGPUScene {
 		}
 
 		// Render normal scene
-		this.renderer.render(this.scene, this.camera);
+		if (this.renderer) this.renderer.render(this.scene, this.camera);
+
+		if (this.isPreview) {
+			const elapsedTime = performance.now() * 0.001; // Convert to seconds
+
+			// Radius of the circular path
+			const radius = 15;
+
+			// Calculate camera position
+			const cameraX = Math.sin(elapsedTime * 0.5) * radius;
+			const cameraZ = Math.cos(elapsedTime * 0.5) * radius;
+			const cameraY = Math.sin(elapsedTime * 0.3) * 5 + 7; // Vertical oscillation
+
+			// Smooth camera movement using lerp
+			this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, cameraX, 0.02);
+			this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, cameraY, 0.02);
+			this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, cameraZ, 0.02);
+
+			// Calculate a point for the camera to look at
+			const lookAtX = Math.sin(elapsedTime * 0.2) * 3;
+			const lookAtY = Math.cos(elapsedTime * 0.2) * 2;
+			const lookAtZ = Math.sin(elapsedTime * 0.3) * 3;
+
+			// Create a vector for the camera to look at
+			const lookAtPoint = new THREE.Vector3(lookAtX, lookAtY, lookAtZ);
+
+			// Smoothly interpolate the camera's look-at point
+			this.camera.lookAt(lookAtPoint);
+		}
 
 		this.rafId = requestAnimationFrame(() => this.animate());
 
@@ -496,9 +542,10 @@ class GPGPUScene {
 
 		if (this.gui) this.gui.destroy();
 
-		this.renderer.dispose();
-		this.renderer.forceContextLoss();
-
+		if (this.renderer) {
+			this.renderer.dispose();
+			this.renderer.forceContextLoss();
+		}
 		this.scene.traverse((child) => {
 			if (child instanceof THREE.Mesh) {
 				child.geometry.dispose();

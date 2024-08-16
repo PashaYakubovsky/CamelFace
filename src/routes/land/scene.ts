@@ -158,6 +158,7 @@ class LandScene {
 				uDivade: { value: this.uDivade }
 			},
 			// wireframe: true,
+			silent: true,
 			// matcap: matcapTexture,
 			map: matcapTexture,
 			vertexShader,

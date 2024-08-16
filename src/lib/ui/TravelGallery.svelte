@@ -8,7 +8,6 @@
 	import { onlineUsers } from '$lib/onlineUsers';
 	import { goto } from '$app/navigation';
 	import { posts } from '$lib/posts';
-	import Page from '../../routes/+page.svelte';
 
 	let canvasElement: HTMLCanvasElement;
 	let contentElements: HTMLElement[] = [];
@@ -83,8 +82,7 @@
 			} else if (idx === currentIndex && content.classList.contains('hidden') && scene.loaded) {
 				content.classList.remove('hidden');
 				const integratedScene = scene.integratedScenesDict[$posts[idx].slug];
-				console.log(integratedScene, 'SHOW');
-				// get instance of inner scene by post slug
+				// console.log(integratedScene, 'SHOW');
 
 				// animate html content
 				gsap.fromTo(
@@ -443,7 +441,9 @@
 					style={`color:${scene?.textColors?.[index]}`}
 					class="text-[5.2vw] leading-normal font-bold"
 					on:click={() => {
-						goto(post.slug);
+						if (scene.isMobile) {
+							goto(post.slug);
+						}
 					}}
 				>
 					{post.title}

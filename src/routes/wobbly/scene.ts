@@ -28,15 +28,15 @@ class WobblyScene {
 	depthMaterial!: CustomShaderMaterial;
 	controls: OrbitControls;
 	debugObject = {
-		clearColor: '#323442',
-		color: '#50c8fc',
-		color2: '#527ca7',
-		color3: '#023cb1',
+		clearColor: '#000',
+		color: '#ddded2',
+		color2: '#fff',
+		color3: '#050505',
 		orbitControls: true,
 		metalness: 0,
-		roughness: 0.5,
+		roughness: 1,
 		transmission: 0,
-		ior: 1.5,
+		ior: 1.0,
 		thickness: 1.5,
 		positionFrequency: 0.5,
 		timeFrequency: 0.4,
@@ -78,11 +78,12 @@ class WobblyScene {
 		if (!opt?.renderToTarget && canvasElement) {
 			this.renderer = new THREE.WebGLRenderer({
 				canvas: canvasElement,
-				antialias: true
+				antialias: true,
+				alpha: true
 			});
 			this.renderer.shadowMap.enabled = true;
 			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			// this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			this.renderer.toneMappingExposure = 1;
 			this.renderer.setSize(this.width, this.height);
 			this.renderer.setPixelRatio(this.pixelRatio);
@@ -112,7 +113,6 @@ class WobblyScene {
 		 * Camera
 		 */
 		this.camera = new THREE.PerspectiveCamera(35, this.width / this.height, 0.0001, 10000);
-		this.camera.position.set(13, -3, -20);
 
 		this.scene.add(this.camera);
 
@@ -133,8 +133,11 @@ class WobblyScene {
 		if (this.renderer) {
 			this.controls = new OrbitControls(this.camera, canvasElement);
 			this.controls.enableDamping = true;
-			// Disable controls
 			this.controls.enabled = this.debugObject.orbitControls;
+			this.camera.position.set(13, -3, -20);
+		} else {
+			this.camera.position.set(0, 5, 15);
+			this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 		}
 
 		// Add objects
@@ -535,6 +538,13 @@ class WobblyScene {
 
 		// Render normal scene
 		if (this.renderer) this.renderer.render(this.scene, this.camera);
+
+		// animate camera if this preview scene
+		if (!this.renderer) {
+			this.camera.position.x = Math.sin(this.time * 0.1) * 10;
+			this.camera.position.z = Math.cos(this.time * 0.1) * 10;
+			this.camera.lookAt(this.wobble.position);
+		}
 
 		this.rafId = requestAnimationFrame(() => this.animate());
 
