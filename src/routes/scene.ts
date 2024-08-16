@@ -3,7 +3,7 @@ import vertexShader from './shaders/vertexShader.glsl';
 import fragmentShader from './shaders/fragmentShader.glsl';
 import bgVertexShader from './shaders/bgVertexShader.glsl';
 import bgFragmentShader from './shaders/bgFragmentShader.glsl';
-import type { Media, Post } from '../types';
+import type { Post } from '../types';
 import { defineScreen, type Screens } from '$lib/mediaQuery';
 import { threejsLoading } from '$lib/loading';
 import gsap from 'gsap';
@@ -89,7 +89,7 @@ type IntegratedScene = {
 	destroy: () => void;
 	rafId?: number | null;
 	animate: () => void;
-	renderer?: THREE.WebGLRenderer;
+	renderer?: THREE.WebGLRenderer | null;
 };
 
 class TravelGalleryScene {
@@ -359,14 +359,6 @@ class TravelGalleryScene {
 			transparent: true,
 			depthTest: false
 		});
-		const aspectRatio = window.innerWidth / window.innerHeight;
-		// this.bgGeometry = new THREE.PlaneGeometry(aspectRatio * 2, 2, 64, 64);
-		// const mesh = new THREE.Mesh(this.bgGeometry, this.bgMaterial);
-		// mesh.name = 'bgPlane';
-		// mesh.scale.set(5, 5, 5);
-		// mesh.position.set(0, 0, -2);
-		// this.bgPlane = mesh;
-		// if (!this.isMobile) this.scene.add(this.bgPlane);
 	}
 
 	addColorToBGShader(color: string) {
@@ -389,21 +381,6 @@ class TravelGalleryScene {
 	}
 
 	async addGallery({ posts }: { posts: Post[] }) {
-		const textures: THREE.Texture[] = [];
-		// // Create video node and texture
-		// this.videoNode = document.createElement('video');
-		// this.videoNode.loop = true;
-		// this.videoNode.muted = true;
-
-		// // Create video texture
-		// this.videTexture = new THREE.VideoTexture(this.videoNode);
-		// this.videTexture.minFilter = THREE.LinearFilter;
-		// this.videTexture.magFilter = THREE.LinearFilter;
-		// this.videTexture.format = THREE.RGBAFormat;
-
-		// this.posts = posts.sort(
-		// 	(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-		// );
 		this.total = posts.length;
 
 		this.integratedScenes = [
@@ -587,36 +564,14 @@ class TravelGalleryScene {
 		} as Record<string, IntegratedScene>;
 
 		if (this.integratedScenesDict['/gpgpu']) {
-			this.integratedScenesDict['/gpgpu'].renderer = this.renderer;
+			this.integratedScenesDict['/gpgpu'].renderer = this.renderer!;
+			const rafId = this.integratedScenesDict['/gpgpu'].rafId;
+			if (rafId) cancelAnimationFrame(rafId);
 		}
 
 		for (let i = 0; i < posts.length; i++) {
 			const post = posts[i];
 			let texture: THREE.Texture | undefined;
-			// if (!(post.slug in this.integratedScenesDict)) {
-			// if (i % 3 === 0) {
-			// 	const media = post.backgroundImage as Media;
-			// 	const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
-			// 	const file = await fetch(src);
-			// 	const blob = await file.blob();
-			// 	const url = URL.createObjectURL(blob);
-			// 	texture = await this.textureLoader.loadAsync(url);
-			// 	texture.minFilter = THREE.LinearFilter;
-			// 	texture.magFilter = THREE.LinearFilter;
-			// 	texture.colorSpace = THREE.SRGBColorSpace;
-			// 	// take the average color of the image
-			// 	const canvas = document.createElement('canvas');
-			// 	const context = canvas.getContext('2d');
-			// 	if (!context) continue;
-			// 	context.drawImage(texture.image, 0, 0);
-			// 	const data = context.getImageData(0, 0, 1, 1).data;
-			// 	const color = new THREE.Color(`rgb(${data[0]}, ${data[1]}, ${data[2]})`);
-			// 	this.backgroundColors.push(color.getStyle());
-			// 	canvas.remove();
-			// 	textures.push(texture);
-			// } else {
-			// 	this.backgroundColors.push('#000');
-			// }
 
 			this.backgroundColors.push(post.backgroundColor);
 
@@ -695,45 +650,6 @@ class TravelGalleryScene {
 		// this.changeVideo(0);
 
 		this.posts = posts;
-	}
-
-	// Change the index of the video to be played
-	async changeVideo(index: number) {
-		// try {
-		// 	if (this.prevMaterialIndex === index) return;
-		// 	if (this.materials.length === 0) return;
-		// 	const post = this.posts[index];
-		// 	if (!post.video) return;
-		// 	this.materials.forEach((material) => {
-		// 		// clean video texture
-		// 		if (material.uniforms.videoTexture) material.uniforms.videoTexture.value = null;
-		// 	});
-		// 	if (post.video) {
-		// 		const media = post.video as Media;
-		// 		const src = `https://storage.googleapis.com/travel-blog/media/${media.filename}`;
-		// 		const file = fetch(src);
-		// 		const blob = await (await file).blob();
-		// 		const url = URL.createObjectURL(blob);
-		// 		console.log(url, 'GALLERY:INDEX: ', index);
-		// 		if (!this.videoNode) return;
-		// 		this.videoNode.loop = true;
-		// 		this.videoNode.muted = true;
-		// 		this.videoNode.src = url;
-		// 		this.videoNode.play();
-		// 		this.videTexture = new THREE.VideoTexture(this.videoNode);
-		// 		this.videTexture.minFilter = THREE.LinearFilter;
-		// 		this.videTexture.magFilter = THREE.LinearFilter;
-		// 		this.videTexture.format = THREE.RGBAFormat;
-		// 		// Update video texture
-		// 		if (this.videTexture) this.videTexture.needsUpdate = true;
-		// 	}
-		// 	// Apply video texture to the material
-		// 	this.materials[index].uniforms.videoTexture.value = this.videTexture;
-		// 	this.materials[index].needsUpdate = true;
-		// 	this.prevMaterialIndex = index;
-		// } catch (err) {
-		// 	console.error(err);
-		// }
 	}
 
 	setBackground(texture: THREE.Texture) {
@@ -910,30 +826,6 @@ class TravelGalleryScene {
 			// Render the main scene
 			this.renderer.render(this.scene, this.camera);
 		}
-	}
-
-	initGalleryAnimation() {
-		const tl = gsap.timeline();
-		// const positions = this.groups.map((group) => group.position);
-		// tl.fromTo(
-		// 	positions,
-		// 	{
-		// 		z: -1,
-		// 		y: 4,
-		// 		x: 4,
-		// 		duration: 0
-		// 	},
-		// 	{
-		// 		z: 0,
-		// 		y: 0,
-		// 		x: 0,
-		// 		duration: 0.5,
-		// 		stagger: 0.1,
-		// 		ease: 'power'
-		// 	}
-		// );
-
-		return tl;
 	}
 }
 

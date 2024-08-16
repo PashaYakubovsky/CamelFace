@@ -1,6 +1,6 @@
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
-import Stats from 'three/examples/jsm/libs/stats.module';
+import Stats from 'stats.js';
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';

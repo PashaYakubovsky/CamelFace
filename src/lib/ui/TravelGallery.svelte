@@ -44,20 +44,16 @@
 	$: if (allTextureLoaded && !initHappen) {
 		initHappen = true;
 		showInfoBlocks = true;
-
-		if (scene) {
-			const tl = scene.initGalleryAnimation();
-		}
 	}
 
 	threejsLoading.subscribe((value) => {
 		allTextureLoaded = value.loaded;
 		if (value.loaded) {
-			attractTo = $posts.length - 1;
+			attractTo = localStorage.getItem('attractTo')
+				? parseInt(localStorage.getItem('attractTo') || '')
+				: $posts.length - 1;
 			attractMode = true;
-			currentIndex = $posts.length - 1;
 			setTimeout(() => {
-				attractTo = 0;
 				attractMode = false;
 			}, 1000);
 		}
@@ -203,6 +199,8 @@
 
 				// get current index of anchor
 				currentIndex = nextIndex;
+
+				localStorage.setItem('attractTo', String(currentIndex));
 
 				if (pageWrapperElement) {
 					// set color animated for canvas
