@@ -435,10 +435,10 @@ class TravelGalleryScene {
 			}),
 			new WobblyScene(null, {
 				renderToTarget: true
-			}),
-			new GPGPUScene(null, {
-				renderToTarget: true
 			})
+			// new GPGPUScene(null, {
+			// 	renderToTarget: true
+			// })
 		];
 		this.integratedScenes.reverse();
 
@@ -498,10 +498,10 @@ class TravelGalleryScene {
 				})?.texture,
 				'/wobbly': this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof WobblyScene) return i;
-				})?.texture,
-				'/gpgpu': this.renderTargets.find((i, idx) => {
-					if (this.integratedScenes[idx] instanceof GPGPUScene) return i;
 				})?.texture
+				// '/gpgpu': this.renderTargets.find((i, idx) => {
+				// 	if (this.integratedScenes[idx] instanceof GPGPUScene) return i;
+				// })?.texture
 			};
 			return slugSetTexture;
 		};
@@ -557,17 +557,17 @@ class TravelGalleryScene {
 			}),
 			'/wobbly': this.integratedScenes.find((i) => {
 				if (i instanceof WobblyScene) return i;
-			}),
-			'/gpgpu': this.integratedScenes.find((i) => {
-				if (i instanceof GPGPUScene) return i;
 			})
+			// '/gpgpu': this.integratedScenes.find((i) => {
+			// 	if (i instanceof GPGPUScene) return i;
+			// })
 		} as Record<string, IntegratedScene>;
 
-		if (this.integratedScenesDict['/gpgpu']) {
-			this.integratedScenesDict['/gpgpu'].renderer = this.renderer!;
-			const rafId = this.integratedScenesDict['/gpgpu'].rafId;
-			if (rafId) cancelAnimationFrame(rafId);
-		}
+		// if (this.integratedScenesDict['/gpgpu']) {
+		// 	this.integratedScenesDict['/gpgpu'].renderer = this.renderer!;
+		// 	const rafId = this.integratedScenesDict['/gpgpu'].rafId;
+		// 	if (rafId) cancelAnimationFrame(rafId);
+		// }
 
 		for (let i = 0; i < posts.length; i++) {
 			const post = posts[i];
@@ -796,9 +796,9 @@ class TravelGalleryScene {
 							this.renderer.render(iScene.fboScene, iScene.fboCamera);
 						}
 
-						if (iScene instanceof GPGPUScene) {
-							continue;
-						}
+						// if (iScene instanceof GPGPUScene) {
+						// 	continue;
+						// }
 
 						const renderTarget = this.renderTargets[i];
 
