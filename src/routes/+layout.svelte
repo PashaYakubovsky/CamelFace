@@ -6,6 +6,9 @@
 	import { io } from 'socket.io-client';
 	import { onMount } from 'svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
+	import { goto } from '$app/navigation';
+
+	let userWindowId: string = Math.random().toString(16).slice(2);
 
 	const generateHexFromId = (id: string) => {
 		const hash = id.split('').reduce((acc, char) => {
@@ -24,6 +27,29 @@
 
 	onMount(() => {
 		const socket = io(PUBLIC_API_URL);
+
+		function logTabsForWindows(windowInfoArray) {
+			for (const windowInfo of windowInfoArray) {
+				console.log(`Window: ${windowInfo.id}`);
+				console.log(windowInfo.tabs.map((tab) => tab.url));
+			}
+		}
+
+		function onError(error) {
+			console.error(`Error: ${error}`);
+		}
+
+		if (chrome && chrome.windows) {
+			chrome.windows.getAll({ populate: true }, logTabsForWindows);
+		} else {
+			console.log('chrome.windows is not available');
+		}
+
+		window.addEventListener('beforeunload', () => {
+			const openedWindows = JSON.parse(localStorage.getItem('openedWindows') || '{}');
+			delete openedWindows[userWindowId];
+			localStorage.setItem('openedWindows', JSON.stringify(openedWindows));
+		});
 
 		socket.on('connect', () => {
 			console.log('connected');

@@ -98,7 +98,7 @@
 				// start animation loop in inner scene
 
 				if (integratedScene) {
-					console.log(integratedScene, 'SHOW');
+					// console.log(integratedScene, 'SHOW');
 					if (integratedScene.rafId) {
 						cancelAnimationFrame(integratedScene.rafId);
 						integratedScene.rafId = null;
@@ -109,7 +109,7 @@
 
 				if (!canvasElement.classList.contains('canvas-ready')) {
 					canvasElement.classList.add('canvas-ready');
-				} else {
+				} else if (canvasElement) {
 					canvasElement.classList.remove('canvas-ready');
 					setTimeout(() => {
 						canvasElement.classList.add('canvas-ready');
@@ -124,6 +124,12 @@
 	let rounded = 0;
 
 	onMount(() => {
+		currentIndex = localStorage.getItem('attractTo')
+			? parseInt(localStorage.getItem('attractTo') || '')
+			: 0;
+		attractTo = currentIndex;
+		position = currentIndex;
+
 		const handleKeydown = (e: KeyboardEvent) => {
 			if (attractMode || initAnimation) return;
 
@@ -180,7 +186,9 @@
 			positions = scene.groups.map((g) => g.position);
 			rots = scene.groups.map((g) => g.rotation);
 			scales = scene.groups.map((g) => g.scale);
-			materials = scene.groups.map((g) => g.children[0].material);
+			materials = scene.groups.flatMap((g) =>
+				'material' in g.children[0] ? [g.children[0].material as THREE.ShaderMaterial] : []
+			);
 
 			const objs = Array($posts.length)
 				.fill(null)
@@ -199,8 +207,7 @@
 
 				// get current index of anchor
 				currentIndex = nextIndex;
-
-				localStorage.setItem('attractTo', String(currentIndex));
+				localStorage.setItem('attractTo', currentIndex.toString());
 
 				if (pageWrapperElement) {
 					// set color animated for canvas
@@ -433,19 +440,23 @@
 			<div
 				class="post-info__content h-[fit-content] flex flex-col gap-[1rem] py-8 px-4 max-md:py-0 max-md:px-4"
 			>
-				<h2
-					id="postTitle"
-					data-content={post.title}
-					style={`color:${scene?.textColors?.[index]}`}
-					class="text-[5.2vw] leading-normal font-bold"
+				<button
+					class="p-0 m-0 w-fit"
 					on:click={() => {
 						if (scene.isMobile) {
 							goto(post.slug);
 						}
 					}}
 				>
-					{post.title}
-				</h2>
+					<h2
+						id="postTitle"
+						data-content={post.title}
+						style={`color:${scene?.textColors?.[index]}`}
+						class="text-[5.2vw] leading-normal font-bold"
+					>
+						{post.title}
+					</h2>
+				</button>
 
 				<p
 					style={`color:${scene?.textColors?.[index]}`}

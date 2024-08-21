@@ -109,7 +109,7 @@ class TravelGalleryScene {
 	material: THREE.ShaderMaterial | null = null;
 	loaderManager = new THREE.LoadingManager();
 	textureLoader = new THREE.TextureLoader(this.loaderManager);
-	groups: THREE.Group[] = [];
+	groups: THREE.Group<THREE.Object3DEventMap>[] = [];
 	meshes: THREE.Mesh[] = [];
 	mouse = new THREE.Vector2();
 	width = window.innerWidth;
