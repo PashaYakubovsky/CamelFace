@@ -150,11 +150,14 @@ class VoronoiScene {
 	async getSamples() {
 		const srcs = ['/garold.jpg', '/inyan.png', '/sigma.png'];
 
+		const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 		for (const src of srcs) {
 			const img = new Image();
 			img.src = src;
 			img.crossOrigin = 'anonymous';
-			const blob = await fetch(src).then((res) => res.blob());
+
+			await wait(1000);
 
 			const canvas = document.createElement('canvas');
 			const aspectRatio = img.width / img.height;
