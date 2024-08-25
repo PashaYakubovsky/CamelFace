@@ -28,7 +28,10 @@
 	})
 </script>
 
-<title>Fresnel</title>
+<svelte:head>
+	<title>Fresnel</title>
+	<meta name="description" content="Fresnel webgl" />
+</svelte:head>
 
 <div bind:this={parentElem} class="parent">
 	<canvas bind:this={canvasElem} />

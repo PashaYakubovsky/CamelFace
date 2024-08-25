@@ -1,6 +1,10 @@
 <script lang="ts"></script>
 
-<title>Dewarping fisheye cameras</title>
+<svelte:head>
+	<title>Dewarping fisheye cameras</title>
+	<meta name="description" content="How to dewarp fisheye cameras" />
+</svelte:head>
+
 <meta name="description" content="Dewarping fisheye cameras" />
 
 <main>
@@ -25,7 +29,7 @@
 		image and make it appear as if it was taken with a rectilinear lens.
 	</p>
 
-	<p>Here perfect article fron NVIDIA</p>
+	<p>Here perfect article from NVIDIA</p>
 
 	<iframe
 		title="NVIDIA VPI Lens Distortion Correction"

@@ -1,26 +1,29 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import LandScene from './scene';
-	import { loading } from '$lib/loading';
+	import { onMount } from "svelte"
+	import LandScene from "./scene"
+	import { loading } from "$lib/loading"
 
-	let canvasElement: HTMLCanvasElement;
-	let cursorElement: HTMLDivElement;
+	let canvasElement: HTMLCanvasElement
+	let cursorElement: HTMLDivElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new LandScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new LandScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>0b001</title>
+<svelte:head>
+	<title>0b01</title>
+	<meta name="description" content="webgl experiments" />
+</svelte:head>
 
 <canvas
 	on:mousemove={(event) => {
-		cursorElement.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
+		cursorElement.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`
 	}}
 	bind:this={canvasElement}
 />

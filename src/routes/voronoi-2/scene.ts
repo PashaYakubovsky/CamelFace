@@ -12,7 +12,7 @@ import fragmentShader from "./fragment.glsl"
 import Stats from "stats.js"
 import { GUI } from "lil-gui"
 
-const COUNT = 128
+const COUNT = 64
 const TEXTURE_WIDTH = COUNT ** 2
 
 const debug = {
@@ -127,29 +127,34 @@ class VoronoiScene {
 		await this.getSamples()
 
 		// add initial points
-		this.initialGeo = new THREE.BufferGeometry()
-		this.initialGeo.setDrawRange(0, TEXTURE_WIDTH)
-		const sample = this.samples[this.index]
-		this.initialGeo.setAttribute(
-			"position",
-			new THREE.Float32BufferAttribute(sample.points, 3)
-		)
-		this.initialGeo.setAttribute(
-			"reference",
-			new THREE.Float32BufferAttribute(sample.references, 2)
-		)
+		// this.initialGeo = new THREE.BufferGeometry()
+		// this.initialGeo.setDrawRange(0, TEXTURE_WIDTH)
+		// const sample = this.samples[this.index]
+		// this.initialGeo.setAttribute(
+		// 	"position",
+		// 	new THREE.Float32BufferAttribute(sample.points, 3)
+		// )
+		// this.initialGeo.setAttribute(
+		// 	"reference",
+		// 	new THREE.Float32BufferAttribute(sample.references, 2)
+		// )
 
-		this.initialPoint = new THREE.Points(this.initialGeo, this.material)
-		this.initialPoint.rotateX(Math.PI)
-		this.scene.add(this.initialPoint)
+		// this.initialPoint = new THREE.LineSegments(
+		// 	new THREE.WireframeGeometry(this.initialGeo),
+		// 	this.material
+		// )
 
-		this.material.uniforms.uSample.value =
-			this.textureLoader.load("/garold.jpg")
+		// this.initialPoint.rotateX(Math.PI)
+		// this.scene.add(this.initialPoint)
 
-		setTimeout(() => {
-			this.initComputeRenderer()
-			this.addDebug()
-		}, 1000)
+		// this.material.uniforms.uSample.value =
+		// 	this.textureLoader.load("/garold.jpg")
+
+		// setTimeout(() => {
+		// }, 1000)
+		// 	this.addDebug()
+		this.initComputeRenderer()
+		this.generateVoronois()
 	}
 
 	async getSamples() {
@@ -298,7 +303,7 @@ class VoronoiScene {
 		const baseParticlesTexture = texture
 		const imageData = sample.imageData
 
-		for (let i = 0; i < TEXTURE_WIDTH; i++) {
+		for (let i = 0; i < imageData.data.length; i += 4) {
 			const i3 = i * 3
 			const i4 = i * 4
 
@@ -443,10 +448,18 @@ class VoronoiScene {
 				this.lineMaterial.uniforms.uPositions.value =
 					this.gpuCompute.getCurrentRenderTarget(this.positionVariable).texture
 			}
+			if (this.vpMat && this.positionVariable) {
+				this.vpMat.uniforms.uPositions.value =
+					this.gpuCompute.getCurrentRenderTarget(this.positionVariable).texture
+			}
 		}
 
 		if (this.material) {
 			this.material.uniforms.uTime.value += 0.05
+		}
+
+		if (this.vpMat) {
+			this.vpMat.uniforms.uTime.value = elapsedTime
 		}
 
 		this.prevTime = elapsedTime
@@ -473,21 +486,16 @@ class VoronoiScene {
 		const target = this.targets[this.index]
 		const targetSample = this.samples[this.index]
 		const targetPoints = target.image.data
-		const float32Arr = new Float32Array(targetPoints)
-		const weight = 0.01
-		const float32ArrMin = new Float32Array(targetPoints.length * weight)
 
-		for (let i = 0; i < float32Arr.length; i += 3) {
-			float32ArrMin[i * weight] = float32Arr[i]
-			float32ArrMin[i * weight + 1] = float32Arr[i + 1]
-			float32ArrMin[i * weight + 2] = 0
+		const points = new Float32Array(targetPoints.length)
+		for (let i = 0; i < targetPoints.length; i += 4) {
+			points[i] = targetPoints[i]
+			points[i + 1] = targetPoints[i + 1]
+			points[i + 2] = 0
 		}
 
-		const { delaunay, voronoi } = this.generateDelaunayPoints(float32ArrMin)
-		const polygons = voronoi.cellPolygons()
-		const cells = Array.from(polygons)
+		const { delaunay, voronoi } = this.generateDelaunayPoints(points)
 
-		this.voronoiCells = new THREE.Group()
 		this.lineMaterial = new THREE.ShaderMaterial({
 			uniforms: {
 				uColor: { value: new THREE.Color(0xffffff) },
@@ -498,51 +506,235 @@ class VoronoiScene {
 				varying vec3 vPosition;
 				uniform float uTime;
 				uniform sampler2D uPositions;
+				varying vec3 vColor;
+
 				void main() {
-					vec3 tPos = position;
-					gl_Position = projectionMatrix * modelViewMatrix * vec4(tPos, 1.0);
+					vec3 mvPosition = position;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4(mvPosition, 1.0);
+					gl_PointSize = 15.0;
+
 					vPosition = position;
+					vColor = vec3(color);
 				}
 				`,
 			fragmentShader: `
 				varying vec3 vPosition;
 				uniform vec3 uColor;
+				varying vec3 vColor;
 				void main() {
-					gl_FragColor = vec4(uColor, 1.0);
+					gl_FragColor = vec4(vColor, 1.0);
 				}
 				`,
 			transparent: true,
 			depthWrite: false,
 			depthTest: false,
+			vertexColors: true,
 		})
-		for (const cell of cells) {
-			// check px rgb value
-			const x = cell[0][0]
-			const y = cell[0][1]
-			const index = (y * targetSample.imageData.width + x) * 4
-			const r = targetSample.imageData.data[index]
-			const g = targetSample.imageData.data[index + 1]
-			const b = targetSample.imageData.data[index + 2]
 
-			const value = (r + g + b) / 3
+		const geo = new THREE.BufferGeometry()
 
-			if (value < 200) {
-				continue
-			}
+		const polygons = voronoi.cellPolygons()
+		const cells = Array.from(polygons)
+		const centeroids = cells
+			.map((cell) => {
+				const x = cell.reduce((acc, curr) => acc + curr[0], 0) / cell.length
+				const y = cell.reduce((acc, curr) => acc + curr[1], 0) / cell.length
+				return [x, y]
+			})
+			.filter((c) => {
+				if (c[0] && c[1]) return true
+				return false
+			})
 
-			const points = []
-			for (let i = 0; i < cell.length; i++) {
-				points.push(new THREE.Vector3(cell[i][0], cell[i][1], 0))
-			}
+		const textureWidth = centeroids.length * 3
 
-			// Close the loop for the polygon
-			points.push(points[0])
+		const positions = new Float32Array(textureWidth)
+		const colors = new Float32Array(textureWidth)
 
-			const geometry = new THREE.BufferGeometry().setFromPoints(points)
-			const line = new THREE.LineLoop(geometry, this.lineMaterial)
-			this.voronoiCells.add(line)
+		for (let i = 0; i < centeroids.length; i++) {
+			const i3 = i * 3
+
+			positions[i3] = centeroids[i][0]
+			positions[i3 + 1] = centeroids[i][1]
+			positions[i3 + 2] = 0
+
+			colors[i3] = centeroids[i][0]
+			colors[i3 + 1] = Math.random()
+			colors[i3 + 2] = Math.random()
 		}
-		this.scene.add(this.voronoiCells)
+
+		geo.setAttribute("position", new THREE.BufferAttribute(positions, 3))
+		geo.setAttribute("color", new THREE.BufferAttribute(colors, 3))
+
+		const pointsMesh = new THREE.Points(geo, this.lineMaterial)
+
+		// this.scene.add(pointsMesh)
+		const vpMat = new THREE.ShaderMaterial({
+			uniforms: {
+				uColor: { value: new THREE.Color(0xffffff) },
+				uTime: { value: 0 },
+				uPositions: { value: null },
+				iResolution: {
+					value: new THREE.Vector2(window.innerWidth, window.innerHeight),
+				},
+				uVoronoi: { value: null },
+			},
+			vertexShader: `
+				varying vec3 vPosition;
+				uniform float uTime;
+				uniform sampler2D uPositions;
+				varying vec3 vColor;
+
+				void main() {
+					vec3 mvPosition = position;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4(mvPosition, 1.0);
+					gl_PointSize = 15.0;
+
+					vPosition = position;
+					vColor = vec3(color);
+				}
+				`,
+			fragmentShader: `
+				varying vec3 vPosition;
+				uniform vec3 uColor;
+				varying vec3 vColor;
+				uniform sampler2D iChannel0;
+				uniform float uTime;
+				uniform vec2 iResolution;
+				uniform sampler2D uPositions;
+
+				
+				
+				// The MIT License
+				// Copyright © 2013 Inigo Quilez
+				// https://www.youtube.com/c/InigoQuilez
+				// https://iquilezles.org/
+				// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+				// I've not seen anybody out there computing correct cell interior distances for Voronoi
+				// patterns yet. That's why they cannot shade the cell interior correctly, and why you've
+				// never seen cell boundaries rendered correctly. 
+				//
+				// However, here's how you do mathematically correct distances (note the equidistant and non
+				// degenerated grey isolines inside the cells) and hence edges (in yellow):
+				//
+				// https://iquilezles.org/articles/voronoilines
+				//
+				// More Voronoi shaders:
+				//
+				// Exact edges:  https://www.shadertoy.com/view/ldl3W8
+				// Hierarchical: https://www.shadertoy.com/view/Xll3zX
+				// Smooth:       https://www.shadertoy.com/view/ldB3zc
+				// Voronoise:    https://www.shadertoy.com/view/Xd23Dh
+
+				#define ANIMATE
+
+				vec2 hash2( vec2 p )
+				{
+					// texture based white noise
+					// return textureLod( iChannel0, (p+0.5)/256.0, 0.0 ).xy;
+					
+				// procedural white noise	
+					return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
+				}
+
+				vec3 voronoi( in vec2 x )
+				{
+				vec2 ip = floor(x);
+				vec2 fp = fract(x);
+
+				//----------------------------------
+				// first pass: regular voronoi
+				//----------------------------------
+					vec2 mg, mr;
+
+				float md = 8.0;
+				for( int j=-1; j<=1; j++ )
+				for( int i=-1; i<=1; i++ )
+				{
+				vec2 g = vec2(float(i),float(j));
+						vec2 o = hash2( ip + g );
+						#ifdef ANIMATE
+				o = 0.5 + 0.5*sin( uTime + 6.2831*o );
+				#endif	
+				vec2 r = g + o - fp;
+				float d = dot(r,r);
+
+				if( d<md )
+				{
+					md = d;
+					mr = r;
+					mg = g;
+				}
+				}
+
+				//----------------------------------
+				// second pass: distance to borders
+				//----------------------------------
+				md = 8.0;
+				for( int j=-2; j<=2; j++ )
+				for( int i=-2; i<=2; i++ )
+				{
+				vec2 g = mg + vec2(float(i),float(j));
+						vec2 o = hash2( ip + g );
+						#ifdef ANIMATE
+				o = 0.5 + 0.5*sin( uTime + 6.2831*o );
+				#endif	
+				vec2 r = g + o - fp;
+
+				if( dot(mr-r,mr-r)>0.00001 )
+				md = min( md, dot( 0.5*(mr+r), normalize(r-mr) ) );
+				}
+
+				return vec3( md, mr );
+				}
+
+				
+				void main() {
+					vec2 p = gl_FragCoord.xy/iResolution.xy;
+					vec4 fragColor = vec4(1.0);
+					vec4 base = texture2D( uPositions,  p);
+
+					vec3 c = voronoi( vec2(base.xx) );
+
+					// isolines
+					vec3 col = vec3(0.2) * smoothstep( 0.02, 0.03, c.x );
+					// borders	
+					col = mix( vec3(1.0,0.1,0.0), col, smoothstep( 0.04, 0.07, c.x ) );
+					// feature points
+					// float dd = length( c.yz );
+					// col = mix( vec3(1.0,0.6,0.1), col, smoothstep( 0.0, 0.12, dd) );
+					// col += vec3(1.0,0.6,0.1)*(1.0-smoothstep( 0.0, 0.04, dd));
+
+					fragColor = vec4(col,1.0);
+
+					gl_FragColor = fragColor;
+				}
+
+				`,
+			transparent: true,
+			depthWrite: false,
+			depthTest: false,
+			vertexColors: true,
+		})
+
+		const voronoiPlane = new THREE.Mesh(
+			new THREE.PlaneGeometry(this.size.x * 2, this.size.z * 2),
+			vpMat
+		)
+
+		this.vpMat = vpMat
+		const polys = Array.from(voronoi.cellPolygons())
+		vpMat.uniforms.uVoronoi.value = polys.reduce((acc, curr, i) => {
+			const i3 = i * 3
+
+			acc[i3] = curr[0][0]
+			acc[i3 + 1] = curr[0][1]
+			acc[i3 + 2] = 0
+			return acc
+		}, new Float32Array(polys.length * 3))
+
+		this.scene.add(voronoiPlane)
 	}
 
 	addDebug() {

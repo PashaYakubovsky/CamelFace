@@ -69,7 +69,10 @@
 	})
 </script>
 
-<title>Morphing</title>
+<svelte:head>
+	<title>Morphing</title>
+	<meta name="description" content="Morphing three.js" />
+</svelte:head>
 
 <div bind:this={parentElem} class="parent">
 	<canvas bind:this={canvasElem} />

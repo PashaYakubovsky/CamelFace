@@ -1,20 +1,23 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import Scene from './scene';
+	import { onMount, onDestroy } from "svelte"
+	import Scene from "./scene"
 
-	let canvasElem: HTMLCanvasElement;
-	let scene: Scene;
+	let canvasElem: HTMLCanvasElement
+	let scene: Scene
 
 	onMount(() => {
-		scene = new Scene(canvasElem);
-	});
+		scene = new Scene(canvasElem)
+	})
 
 	onDestroy(() => {
-		if (scene) scene.destroy();
-	});
+		if (scene) scene.destroy()
+	})
 </script>
 
-<title>Wobbly</title>
+<svelte:head>
+	<title>Wobbly</title>
+	<meta name="description" content="Wobbly simulation three.js" />
+</svelte:head>
 
 <div class="parent">
 	<canvas bind:this={canvasElem} />

@@ -1,26 +1,29 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import BoidsScene from './boids';
-	import { loading } from '$lib/loading';
-	import { pageTransition } from '$lib/pageTransition';
+	import { onMount } from "svelte"
+	import BoidsScene from "./boids"
+	import { loading } from "$lib/loading"
+	import { pageTransition } from "$lib/pageTransition"
 
-	let canvasElement: HTMLCanvasElement;
+	let canvasElement: HTMLCanvasElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new BoidsScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new BoidsScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>Boids simulation</title>
+<svelte:head>
+	<title>Boids simulation</title>
+	<meta name="description" content="Boids simulation three.js" />
+</svelte:head>
 
 <button
 	on:click={() => {
-		window.location.href = '/birds';
+		window.location.href = "/birds"
 	}}>Birds in the sky</button
 >
 

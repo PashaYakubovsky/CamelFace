@@ -1,21 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import LyapunovScene from './lyapunov';
-	import { loading } from '$lib/loading';
+	import { onMount } from "svelte"
+	import LyapunovScene from "./lyapunov"
+	import { loading } from "$lib/loading"
 
-	let canvasElement: HTMLCanvasElement;
+	let canvasElement: HTMLCanvasElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new LyapunovScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new LyapunovScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>Lyapunov</title>
+<svelte:head>
+	<title>Lyapunov</title>
+	<meta name="description" content="Lyapunov fractal" />
+</svelte:head>
 
 <canvas bind:this={canvasElement} />
 

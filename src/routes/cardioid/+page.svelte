@@ -1,21 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import CardioidScene from './cardioid';
-	import { loading } from '$lib/loading';
+	import { onMount } from "svelte"
+	import CardioidScene from "./cardioid"
+	import { loading } from "$lib/loading"
 
-	let canvasElement: HTMLCanvasElement;
+	let canvasElement: HTMLCanvasElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new CardioidScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new CardioidScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>Cardioid</title>
+<svelte:head>
+	<title>Cardioid</title>
+	<meta name="description" content="Cardioid webgl" />
+</svelte:head>
 
 <canvas bind:this={canvasElement} />
 

@@ -1,21 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import cloudsScene from './clouds';
-	import { loading } from '$lib/loading';
+	import { onMount } from "svelte"
+	import cloudsScene from "./clouds"
+	import { loading } from "$lib/loading"
 
-	let canvasElement: HTMLCanvasElement;
+	let canvasElement: HTMLCanvasElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new cloudsScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new cloudsScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>Fractal browning</title>
+<svelte:head>
+	<title>Fractal browning</title>
+	<meta name="description" content="Fractal browning motion glsl" />
+</svelte:head>
 
 <canvas bind:this={canvasElement} />
 

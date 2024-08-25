@@ -28,7 +28,10 @@
 	})
 </script>
 
-<title>GPGPU</title>
+<svelte:head>
+	<title>GPGPU</title>
+	<meta name="description" content="GPGPU" />
+</svelte:head>
 
 <div bind:this={parentElem} class="parent">
 	<canvas bind:this={canvasElem} />

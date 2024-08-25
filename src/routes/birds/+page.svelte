@@ -1,21 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import BoidsScene from './boids';
-	import { loading } from '$lib/loading';
+	import { onMount } from "svelte"
+	import BoidsScene from "./boids"
+	import { loading } from "$lib/loading"
 
-	let canvasElement: HTMLCanvasElement;
+	let canvasElement: HTMLCanvasElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new BoidsScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new BoidsScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>Birds</title>
+<svelte:head>
+	<title>Birds</title>
+	<meta name="description" content="Boids simulation three.js" />
+</svelte:head>
 
 <canvas bind:this={canvasElement} />
 

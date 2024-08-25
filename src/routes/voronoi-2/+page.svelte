@@ -21,15 +21,15 @@
 		scene.index = index
 		if (scene.material) {
 			const target = scene.targets[index]
-			// scene.velocityUniforms["uTarget"].value = target
-			// scene.positionUniforms["uTarget"].value = target
+			scene.velocityUniforms["uTarget"].value = target
+			scene.positionUniforms["uTarget"].value = target
 		}
 	}
 </script>
 
 <svelte:head>
-	<title>Particles</title>
-	<meta name="description" content="Particles simulation three.js" />
+	<title>Voronoi</title>
+	<meta name="description" content="Voronoi simulation three.js" />
 </svelte:head>
 
 <nav>

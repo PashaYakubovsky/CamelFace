@@ -1,20 +1,23 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import Scene from './scene';
+	import { onMount, onDestroy } from "svelte"
+	import Scene from "./scene"
 
-	let canvasElem: HTMLCanvasElement;
-	let scene: Scene;
+	let canvasElem: HTMLCanvasElement
+	let scene: Scene
 
 	onMount(() => {
-		scene = new Scene(canvasElem);
-	});
+		scene = new Scene(canvasElem)
+	})
 
 	onDestroy(() => {
-		if (scene) scene.destroy();
-	});
+		if (scene) scene.destroy()
+	})
 </script>
 
-<title>Particles</title>
+<svelte:head>
+	<title>Particles</title>
+	<meta name="description" content="Particles simulation three.js" />
+</svelte:head>
 
 <canvas bind:this={canvasElem} />
 

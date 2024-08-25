@@ -1,23 +1,26 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import Scene from './scene';
-	import { goto } from '$app/navigation';
+	import { onMount, onDestroy } from "svelte"
+	import Scene from "./scene"
+	import { goto } from "$app/navigation"
 
-	let canvasElem: HTMLCanvasElement;
-	let scene: Scene;
-	let loadingAnimation = false;
-	let fileElem: HTMLInputElement;
+	let canvasElem: HTMLCanvasElement
+	let scene: Scene
+	let loadingAnimation = false
+	let fileElem: HTMLInputElement
 
 	onMount(() => {
-		scene = new Scene(canvasElem);
-	});
+		scene = new Scene(canvasElem)
+	})
 
 	onDestroy(() => {
-		if (scene) scene.destroy();
-	});
+		if (scene) scene.destroy()
+	})
 </script>
 
-<title>Particles</title>
+<svelte:head>
+	<title>Particles</title>
+	<meta name="description" content="Particles simulation three.js" />
+</svelte:head>
 
 <canvas bind:this={canvasElem} />
 
@@ -25,10 +28,10 @@
 	accept="image/*"
 	bind:this={fileElem}
 	on:change={() => {
-		if (!fileElem.files) return;
-		const file = fileElem.files[0];
+		if (!fileElem.files) return
+		const file = fileElem.files[0]
 		if (file) {
-			scene.uploadNewFile(file);
+			scene.uploadNewFile(file)
 		}
 	}}
 	type="file"
@@ -38,7 +41,7 @@
 
 <button
 	on:click={() => {
-		scene.getUserMedia();
+		scene.getUserMedia()
 	}}
 	>Get texture from camera
 </button>

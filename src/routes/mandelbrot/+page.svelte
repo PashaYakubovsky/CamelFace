@@ -1,27 +1,30 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import MandelbrotScene from './mandelbrot';
-	import { loading } from '$lib/loading';
-	import { pageTransition } from '$lib/pageTransition';
-	import { goto } from '$app/navigation';
+	import { onMount } from "svelte"
+	import MandelbrotScene from "./mandelbrot"
+	import { loading } from "$lib/loading"
+	import { pageTransition } from "$lib/pageTransition"
+	import { goto } from "$app/navigation"
 
-	let canvasElement: HTMLCanvasElement;
+	let canvasElement: HTMLCanvasElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new MandelbrotScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new MandelbrotScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>Mandelbrot</title>
+<svelte:head>
+	<title>Mandelbrot</title>
+	<meta name="description" content="Mandelbrot fractal" />
+</svelte:head>
 
 <button
 	on:click={() => {
-		goto('/mandelbrot/webgpu');
+		goto("/mandelbrot/webgpu")
 	}}>webgpu version</button
 >
 

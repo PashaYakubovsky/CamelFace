@@ -1,26 +1,29 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import cloudsScene from './scene';
-	import { loading } from '$lib/loading';
+	import { onMount } from "svelte"
+	import cloudsScene from "./scene"
+	import { loading } from "$lib/loading"
 
-	let canvasElement: HTMLCanvasElement;
-	let cursorElement: HTMLDivElement;
+	let canvasElement: HTMLCanvasElement
+	let cursorElement: HTMLDivElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new cloudsScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new cloudsScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>Eye</title>
+<svelte:head>
+	<title>Harmonic</title>
+	<meta name="description" content="Visualizing harmonic's" />
+</svelte:head>
 
 <canvas
 	on:mousemove={(event) => {
-		cursorElement.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
+		cursorElement.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`
 	}}
 	bind:this={canvasElement}
 />

@@ -20,7 +20,13 @@
 	})
 </script>
 
-<title>Hologram</title>
+<svelte:head>
+	<title>Hologram</title>
+	<meta
+		name="description"
+		content="Hologram shader applied to the rigged mesh"
+	/>
+</svelte:head>
 
 <div bind:this={parentElem} class="parent">
 	<canvas bind:this={canvasElem} />

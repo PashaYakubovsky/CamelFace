@@ -1,21 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import MutualAttractionScene from './scene';
-	import { loading } from '$lib/loading';
+	import { onMount } from "svelte"
+	import MutualAttractionScene from "./scene"
+	import { loading } from "$lib/loading"
 
-	let canvasElement: HTMLCanvasElement;
+	let canvasElement: HTMLCanvasElement
 
 	onMount(() => {
-		loading.update((state) => ({ ...state, loading: false }));
-		const scene = new MutualAttractionScene(canvasElement);
+		loading.update((state) => ({ ...state, loading: false }))
+		const scene = new MutualAttractionScene(canvasElement)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
-<title>Particles</title>
+<svelte:head>
+	<title>Particles</title>
+	<meta name="description" content="Particles simulation three.js" />
+</svelte:head>
 
 <canvas bind:this={canvasElement} />
 
