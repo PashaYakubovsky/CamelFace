@@ -1,61 +1,61 @@
-import gsap from 'gsap';
+import gsap from "$gsap"
 
 class MandelbrotScene {
-	mousePosition = { x: 0, y: 0 };
-	zoomLevel = 1.0;
-	xOff = 0;
-	yOff = 0;
-	canvasElement: HTMLCanvasElement;
-	context!: GPUCanvasContext | null;
-	adapter!: GPUAdapter | null;
-	device!: GPUDevice | undefined;
-	pipeline?: GPUComputePipeline;
-	module: GPUShaderModule | undefined;
-	paused = false;
+	mousePosition = { x: 0, y: 0 }
+	zoomLevel = 1.0
+	xOff = 0
+	yOff = 0
+	canvasElement: HTMLCanvasElement
+	context!: GPUCanvasContext | null
+	adapter!: GPUAdapter | null
+	device!: GPUDevice | undefined
+	pipeline?: GPUComputePipeline
+	module: GPUShaderModule | undefined
+	paused = false
 
 	constructor(el: HTMLCanvasElement) {
-		this.draw(el);
-		this.canvasElement = el;
+		this.draw(el)
+		this.canvasElement = el
 
-		this.retrieveLocalStorage();
-		this.init();
+		this.retrieveLocalStorage()
+		this.init()
 
-		document.addEventListener('mousemove', this.onMouseMove.bind(this));
-		document.addEventListener('wheel', this.onMouseWheel.bind(this));
-		document.addEventListener('keypress', this.onKeyPress.bind(this));
+		document.addEventListener("mousemove", this.onMouseMove.bind(this))
+		document.addEventListener("wheel", this.onMouseWheel.bind(this))
+		document.addEventListener("keypress", this.onKeyPress.bind(this))
 	}
 
 	async init() {
 		// Initialize GPU access
-		this.adapter = await navigator.gpu.requestAdapter();
-		this.device = await this.adapter?.requestDevice();
+		this.adapter = await navigator.gpu.requestAdapter()
+		this.device = await this.adapter?.requestDevice()
 
 		// Create a WebGPU compatible canvas
-		this.context = this.canvasElement.getContext('webgpu');
+		this.context = this.canvasElement.getContext("webgpu")
 		if (!this.device || !this.context) {
-			throw new Error('WebGPU is not supported');
+			throw new Error("WebGPU is not supported")
 		}
 
 		// Setup canvas so our compute shader can write into it.
 		this.context?.configure({
 			device: this.device,
-			format: 'rgba8unorm',
-			usage: GPUTextureUsage.STORAGE_BINDING
-		});
+			format: "rgba8unorm",
+			usage: GPUTextureUsage.STORAGE_BINDING,
+		})
 
-		await this.draw(this.canvasElement);
+		await this.draw(this.canvasElement)
 	}
 
 	async draw(canvas: HTMLCanvasElement) {
 		if (!this.context) {
-			return;
+			return
 		}
 		if (!this.device) {
-			return;
+			return
 		}
 
-		console.log('Drawing frame');
-		console.log('Zoom level:', this.zoomLevel);
+		console.log("Drawing frame")
+		console.log("Zoom level:", this.zoomLevel)
 
 		this.module = this.device.createShaderModule({
 			code: `
@@ -93,22 +93,22 @@ class MandelbrotScene {
 		
 				textureStore(my_texture, id.xy, vec4f(red, green, blue, 1.0));
 			}
-        `
-		});
+        `,
+		})
 
 		// Draw frame
 		this.pipeline = await this.device.createComputePipelineAsync({
-			layout: 'auto',
+			layout: "auto",
 			compute: {
 				module: this.module,
-				entryPoint: 'kernel'
-			}
-		});
+				entryPoint: "kernel",
+			},
+		})
 
 		// Access the currently being rendered canvas texture
-		const texture = this.context.getCurrentTexture();
+		const texture = this.context.getCurrentTexture()
 		if (!this.pipeline) {
-			throw new Error('Pipeline not created');
+			throw new Error("Pipeline not created")
 		}
 		// Put the texture in a bind group so shader can access it
 		const bindgroup = this.device.createBindGroup({
@@ -116,134 +116,136 @@ class MandelbrotScene {
 			entries: [
 				{
 					binding: 0,
-					resource: texture.createView()
-				}
-			]
-		});
+					resource: texture.createView(),
+				},
+			],
+		})
 
 		// Begin recording commands for the GPU
-		const encoder = this.device.createCommandEncoder();
+		const encoder = this.device.createCommandEncoder()
 
 		// Set "arguments" for the compute shader pass and dispatch it
-		const computePass = encoder.beginComputePass();
-		computePass.setPipeline(this.pipeline);
-		computePass.setBindGroup(0, bindgroup);
+		const computePass = encoder.beginComputePass()
+		computePass.setPipeline(this.pipeline)
+		computePass.setBindGroup(0, bindgroup)
 		computePass.dispatchWorkgroups(
 			Math.ceil(this.canvasElement.width / 8),
 			Math.ceil(this.canvasElement.height / 8)
-		);
-		computePass.end();
+		)
+		computePass.end()
 
 		// Finish recording the command buffer
-		const commandBuffer = encoder.finish();
+		const commandBuffer = encoder.finish()
 
 		// Submit just the one command buffer to the GPU
-		this.device.queue.submit([commandBuffer]);
+		this.device.queue.submit([commandBuffer])
 
-		requestAnimationFrame(() => this.draw(canvas));
+		requestAnimationFrame(() => this.draw(canvas))
 	}
 
 	retrieveLocalStorage() {
 		// Retrieve zoom level from local storage
-		const zoomLevel = localStorage.getItem('zoomLevel');
+		const zoomLevel = localStorage.getItem("zoomLevel")
 		if (zoomLevel && Number(zoomLevel) > 0.5) {
-			this.zoomLevel = parseFloat(zoomLevel);
+			this.zoomLevel = parseFloat(zoomLevel)
 		}
 
 		// Retrieve offset from local storage
-		const offset = localStorage.getItem('offset');
+		const offset = localStorage.getItem("offset")
 		if (offset) {
-			const [xOff, yOff] = offset.split(' ');
-			this.xOff = parseFloat(xOff);
-			this.yOff = parseFloat(yOff);
+			const [xOff, yOff] = offset.split(" ")
+			this.xOff = parseFloat(xOff)
+			this.yOff = parseFloat(yOff)
 		}
 
 		// Retrieve paused state from local storage
-		const paused = localStorage.getItem('paused');
+		const paused = localStorage.getItem("paused")
 		if (paused) {
-			this.paused = paused === 'true';
+			this.paused = paused === "true"
 		}
 	}
 
 	onMouseMove(event: MouseEvent) {
-		if (this.paused) return;
+		if (this.paused) return
 
 		// if mouse not close enough to the center, move to the mouse position
-		const x = event.clientX;
-		const y = event.clientY;
+		const x = event.clientX
+		const y = event.clientY
 
-		this.mousePosition = { x, y };
+		this.mousePosition = { x, y }
 
-		const offsetXToCenter = (x / window.innerWidth) * this.zoomLevel - this.zoomLevel / 2;
-		const offsetYToCenter = (y / window.innerHeight) * this.zoomLevel - this.zoomLevel / 2;
+		const offsetXToCenter =
+			(x / window.innerWidth) * this.zoomLevel - this.zoomLevel / 2
+		const offsetYToCenter =
+			(y / window.innerHeight) * this.zoomLevel - this.zoomLevel / 2
 
 		if (Math.abs(offsetXToCenter) > 0.1) {
-			gsap.to(this, { xOff: this.xOff + offsetXToCenter * 0.01, duration: 0.5 });
+			gsap.to(this, { xOff: this.xOff + offsetXToCenter * 0.01, duration: 0.5 })
 		}
 		if (Math.abs(offsetYToCenter) > 0.1) {
 			gsap.to(this, {
 				yOff: this.yOff + offsetYToCenter * 0.01,
-				duration: 0.5
-			});
+				duration: 0.5,
+			})
 		}
 
 		// save position to local storage
-		localStorage.setItem('offset', this.xOff + ' ' + this.yOff);
+		localStorage.setItem("offset", this.xOff + " " + this.yOff)
 	}
 	onMouseWheel(event: WheelEvent) {
 		// Update the zoom level based on the scroll event
-		this.zoomLevel += +(event.deltaY * 0.01 * this.zoomLevel).toFixed(2);
+		this.zoomLevel += +(event.deltaY * 0.01 * this.zoomLevel).toFixed(2)
 
 		// save to local storage
-		localStorage.setItem('zoomLevel', this.zoomLevel.toString());
+		localStorage.setItem("zoomLevel", this.zoomLevel.toString())
 	}
 	onKeyPress(event: KeyboardEvent) {
 		// if pressed M then stop moving the mandelbrot set
-		if (event.key === 'm') {
-			this.paused = !this.paused;
+		if (event.key === "m") {
+			this.paused = !this.paused
 
 			// save to local storage
-			localStorage.setItem('paused', this.paused.toString());
+			localStorage.setItem("paused", this.paused.toString())
 		}
 
 		// if pressed R reset the zoom level and offset
-		if (event.key === 'r') {
-			this.zoomLevel = 1.0;
-			this.xOff = 0;
-			this.yOff = 0;
+		if (event.key === "r") {
+			this.zoomLevel = 1.0
+			this.xOff = 0
+			this.yOff = 0
 
 			// save to local storage
-			localStorage.setItem('zoomLevel', this.zoomLevel.toString());
-			localStorage.setItem('offset', this.xOff + ' ' + this.yOff);
+			localStorage.setItem("zoomLevel", this.zoomLevel.toString())
+			localStorage.setItem("offset", this.xOff + " " + this.yOff)
 		}
 
 		// calculate the offset if zoom bigger ofsset will be smaller
-		const offset = 0.1 / this.zoomLevel;
+		const offset = 0.1 / this.zoomLevel
 
 		// if arrow keys are pressed, move the mandelbrot set
-		if (event.key === 's') {
-			this.yOff += offset;
+		if (event.key === "s") {
+			this.yOff += offset
 		}
-		if (event.key === 'w') {
-			this.yOff -= offset;
+		if (event.key === "w") {
+			this.yOff -= offset
 		}
-		if (event.key === 'a') {
-			this.xOff -= offset;
+		if (event.key === "a") {
+			this.xOff -= offset
 		}
-		if (event.key === 'd') {
-			this.xOff += offset;
+		if (event.key === "d") {
+			this.xOff += offset
 		}
 	}
 
 	destroy() {
-		document.removeEventListener('mousemove', this.onMouseMove.bind(this));
-		document.removeEventListener('wheel', this.onMouseWheel.bind(this));
-		document.removeEventListener('keypress', this.onKeyPress.bind(this));
+		document.removeEventListener("mousemove", this.onMouseMove.bind(this))
+		document.removeEventListener("wheel", this.onMouseWheel.bind(this))
+		document.removeEventListener("keypress", this.onKeyPress.bind(this))
 
 		if (this.context) {
-			this.context.unconfigure();
+			this.context.unconfigure()
 		}
 	}
 }
 
-export default MandelbrotScene;
+export default MandelbrotScene

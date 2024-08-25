@@ -24,7 +24,7 @@ void main() {
           // Fake haos movement
           vec4 rands = permute( vec4( vec3(uv*5.0, 0.0), 0.0) );
           vec3 noiseVal = curl(vec3(position.xy, rands.x), time, 0.1)*0.001*smoothstep(0.3, 0.8, rands.y);
-          position.xy += noiseVal.xy;
+          position.xyz += noiseVal.xyz;
 
            // Dead
           if (position.a <= -1.0) {
@@ -33,14 +33,9 @@ void main() {
           } else {
                     // Decay
                     position.a -= particle.a * 0.001;
-                    position.y += smoothstep(-1.0, 0.0, position.a) * 0.1 - 0.1;
+                    position.y += smoothstep(-1.0, 0.0, position.a) * 0.01 - 0.1;
           }
 
-          // float distanceToTarget = distance(uMouse, position.xy);
-          // if (distanceToTarget < 0.1) {
-          //           position.xy *= 2.0;
-
-          // }
 
           float distanceToTarget = distance(uMouse, position.xy);
           if (distanceToTarget < 0.5) {

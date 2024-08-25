@@ -8,17 +8,24 @@ declare global {
 		// interface Platform {}
 	}
 
-	declare module '*.glsl' {
-		const value: string;
-		export default value;
+	declare module "*.glsl" {
+		const value: string
+		export default value
 	}
 }
 
-declare module 'three/addons/objects/Sky.js' {
-	import { Object3D } from 'three';
+declare module "three/addons/objects/Sky.js" {
+	import { Object3D } from "three"
 	export class Sky extends Object3D {
-		constructor();
+		constructor()
 	}
 }
 
-export {};
+declare module "chrome" {
+	export function loadTimes(): {
+		firstPaintTime: number
+		firstPaintAfterLoadTime: number
+	}
+}
+
+export {}

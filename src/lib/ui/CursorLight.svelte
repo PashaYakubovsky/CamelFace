@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { gsap } from 'gsap/all';
-	import { onMount } from 'svelte';
+	import { gsap } from "$gsap"
+	import { onMount } from "svelte"
 
 	onMount(() => {
-		const element = document.getElementById('cursorP') as HTMLElement;
+		const element = document.getElementById("cursorP") as HTMLElement
 
-		if (!element) return;
-		window.addEventListener('mousemove', (e) => {
-			if (document.body.style.cursor === 'pointer') {
+		if (!element) return
+		window.addEventListener("mousemove", (e) => {
+			if (document.body.style.cursor === "pointer") {
 				gsap.to(element, {
 					duration: 0.3,
 					x: e.clientX,
 					y: e.clientY,
 					zIndex: 10,
-					ease: 'power2.out'
-				});
+					ease: "power2.out",
+				})
 			} else {
-				element.style.zIndex = '0';
+				element.style.zIndex = "0"
 			}
-		});
-	});
+		})
+	})
 </script>
 
 <!-- <div id="cursorP" class="max-md:hidden">

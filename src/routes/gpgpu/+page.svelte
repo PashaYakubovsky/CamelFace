@@ -1,31 +1,31 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import Scene from './scene';
-	import gsap from 'gsap';
-	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
-	import { ScrollSmoother } from 'gsap/dist/ScrollSmoother';
+	import { onMount, onDestroy } from "svelte"
+	import Scene from "./scene"
+	import gsap from "$gsap"
+	import { ScrollTrigger } from "$scrollTrigger"
+	import { ScrollSmoother } from "$scrollSmoother"
 
-	let canvasElem: HTMLCanvasElement;
-	let parentElem: HTMLElement;
-	let scene: Scene;
+	let canvasElem: HTMLCanvasElement
+	let parentElem: HTMLElement
+	let scene: Scene
 
 	onMount(() => {
-		gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+		gsap.registerPlugin(ScrollTrigger, ScrollSmoother)
 		const smoother = new ScrollSmoother({
 			content: parentElem,
 			smooth: 1.5,
 			effects: true,
 			speed: 0.5,
 			smoothTouch: true,
-			normalizeScroll: true
-		});
+			normalizeScroll: true,
+		})
 
-		scene = new Scene(canvasElem);
-	});
+		scene = new Scene(canvasElem)
+	})
 
 	onDestroy(() => {
-		if (scene) scene.destroy();
-	});
+		if (scene) scene.destroy()
+	})
 </script>
 
 <title>GPGPU</title>

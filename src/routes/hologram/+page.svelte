@@ -1,22 +1,23 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import Scene from './scene';
-	import gsap from 'gsap';
-	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
-	import { ScrollSmoother } from 'gsap/dist/ScrollSmoother';
-	gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+	import { onMount } from "svelte"
+	import Scene from "./scene"
+	import gsap from "$gsap"
+	import { ScrollTrigger } from "$scrollTrigger"
+	import { ScrollSmoother } from "$scrollSmoother"
 
-	let canvasElem: HTMLCanvasElement;
-	let parentElem: HTMLElement;
-	let scene: Scene;
+	gsap.registerPlugin(ScrollTrigger, ScrollSmoother)
+
+	let canvasElem: HTMLCanvasElement
+	let parentElem: HTMLElement
+	let scene: Scene
 
 	onMount(() => {
-		const scene = new Scene(canvasElem);
+		const scene = new Scene(canvasElem)
 
 		return () => {
-			scene.destroy();
-		};
-	});
+			scene.destroy()
+		}
+	})
 </script>
 
 <title>Hologram</title>

@@ -1,79 +1,63 @@
 <script lang="ts">
-	import '../styles/globals.scss';
-	import '../styles/app.css';
-	import Copyright from '$lib/ui/Copyright.svelte';
-	import Analytics from '$lib/analytics.svelte';
-	import { io } from 'socket.io-client';
-	import { onMount } from 'svelte';
-	import { PUBLIC_API_URL } from '$env/static/public';
-	import { goto } from '$app/navigation';
+	import "../styles/globals.scss"
+	import "../styles/app.css"
+	import Copyright from "$lib/ui/Copyright.svelte"
+	import Analytics from "$lib/analytics.svelte"
+	import { io } from "socket.io-client"
+	import { onMount } from "svelte"
+	import { PUBLIC_API_URL } from "$env/static/public"
 
-	let userWindowId: string = Math.random().toString(16).slice(2);
+	let userWindowId: string = Math.random().toString(16).slice(2)
 
 	const generateHexFromId = (id: string) => {
-		const hash = id.split('').reduce((acc, char) => {
-			acc = (acc << 5) - acc + char.charCodeAt(0);
-			return acc & acc;
-		}, 0);
-		return `#${(0x1000000 + hash).toString(16).slice(1, 7)}`;
-	};
-	let userSocketId: string = '';
-	let mouses: { id: string; x: number; y: number; color: string }[] = [];
+		const hash = id.split("").reduce((acc, char) => {
+			acc = (acc << 5) - acc + char.charCodeAt(0)
+			return acc & acc
+		}, 0)
+		return `#${(0x1000000 + hash).toString(16).slice(1, 7)}`
+	}
+	let userSocketId: string = ""
+	let mouses: { id: string; x: number; y: number; color: string }[] = []
 
 	const createMouseHandler = (socket: any) => (e: MouseEvent) => {
-		const { clientX, clientY } = e;
-		socket.emit('mousemove', { x: clientX, y: clientY });
-	};
+		const { clientX, clientY } = e
+		socket.emit("mousemove", { x: clientX, y: clientY })
+	}
 
 	onMount(() => {
-		const socket = io(PUBLIC_API_URL);
+		const socket = io(PUBLIC_API_URL)
 
-		function logTabsForWindows(windowInfoArray) {
-			for (const windowInfo of windowInfoArray) {
-				console.log(`Window: ${windowInfo.id}`);
-				console.log(windowInfo.tabs.map((tab) => tab.url));
-			}
-		}
+		window.addEventListener("beforeunload", () => {
+			const openedWindows = JSON.parse(
+				localStorage.getItem("openedWindows") || "{}"
+			)
+			delete openedWindows[userWindowId]
+			localStorage.setItem("openedWindows", JSON.stringify(openedWindows))
+		})
 
-		function onError(error) {
-			console.error(`Error: ${error}`);
-		}
+		socket.on("connect", () => {
+			console.log("connected")
+			window.addEventListener("mousemove", createMouseHandler(socket))
+		})
 
-		if (chrome && chrome.windows) {
-			chrome.windows.getAll({ populate: true }, logTabsForWindows);
-		} else {
-			console.log('chrome.windows is not available');
-		}
+		socket.on("disconnect", () => {
+			console.log("disconnected")
+			window.removeEventListener("mousemove", createMouseHandler(socket))
+		})
 
-		window.addEventListener('beforeunload', () => {
-			const openedWindows = JSON.parse(localStorage.getItem('openedWindows') || '{}');
-			delete openedWindows[userWindowId];
-			localStorage.setItem('openedWindows', JSON.stringify(openedWindows));
-		});
-
-		socket.on('connect', () => {
-			console.log('connected');
-			window.addEventListener('mousemove', createMouseHandler(socket));
-		});
-
-		socket.on('disconnect', () => {
-			console.log('disconnected');
-			window.removeEventListener('mousemove', createMouseHandler(socket));
-		});
-
-		socket.on('users', (data: any) => {
-			userSocketId = socket.id || '';
-			mouses = Object.values(data) || [];
+		socket.on("users", (data: any) => {
+			userSocketId = socket.id || ""
+			mouses = Object.values(data) || []
 			mouses = mouses.map((mouse) => ({
 				...mouse,
-				color: generateHexFromId(mouse.id)
-			}));
-		});
+				color: generateHexFromId(mouse.id),
+			}))
+		})
 
 		return () => {
-			socket.disconnect();
-		};
-	});
+			socket.disconnect()
+		}
+	})
 </script>
 
 <slot />
@@ -82,10 +66,6 @@
 {#each mouses as mouse}
 	<!-- filter current user -->
 	{#if mouse.id !== userSocketId}
-		<!-- <div
-			id={mouse.id}
-			style="z-index: 10;position: absolute; top: {mouse.y}px; left: {mouse.x}px; width: 10px; height: 10px; background-color: {mouse.color}; border-radius: 50%;"
-		/> -->
 		<svg
 			stroke="currentColor"
 			fill="currentColor"

@@ -1,63 +1,67 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import Scene from '../../routes/scene';
-	import { gsap } from 'gsap';
-	import type * as THREE from 'three';
-	import { handleHoverIn, handleHoverOut, pageTransition } from '$lib/pageTransition';
-	import { loading, threejsLoading } from '$lib/loading';
-	import { onlineUsers } from '$lib/onlineUsers';
-	import { goto } from '$app/navigation';
-	import { posts } from '$lib/posts';
+	import { onMount } from "svelte"
+	import Scene from "../../routes/scene"
+	import { gsap } from "$gsap"
+	import type * as THREE from "three"
+	import {
+		handleHoverIn,
+		handleHoverOut,
+		pageTransition,
+	} from "$lib/pageTransition"
+	import { loading, threejsLoading } from "$lib/loading"
+	import { onlineUsers } from "$lib/onlineUsers"
+	import { goto } from "$app/navigation"
+	import { posts } from "$lib/posts"
 
-	let canvasElement: HTMLCanvasElement;
-	let contentElements: HTMLElement[] = [];
-	let pageWrapperElement: HTMLDivElement | null = null;
-	let attractMode = false;
-	let attractTo = 0;
-	let rots: THREE.Euler[] = [];
-	let positions: THREE.Vector3[] = [];
-	let scales: THREE.Vector3[] = [];
-	let materials: THREE.ShaderMaterial[] = [];
-	let scene: Scene;
-	let navElements: HTMLButtonElement[] = [];
-	let currentIndex = 0;
-	let direction: 1 | -1 = 1;
-	let disableBackground = false;
-	let initAnimation = false;
-	let goBackButtonElement: HTMLButtonElement;
-	let initHappen = false;
-	let showInfoBlocks = false;
-	let allTextureLoaded = false;
-	let rafId: number | null = null;
+	let canvasElement: HTMLCanvasElement
+	let contentElements: HTMLElement[] = []
+	let pageWrapperElement: HTMLDivElement | null = null
+	let attractMode = false
+	let attractTo = 0
+	let rots: THREE.Euler[] = []
+	let positions: THREE.Vector3[] = []
+	let scales: THREE.Vector3[] = []
+	let materials: THREE.ShaderMaterial[] = []
+	let scene: Scene
+	let navElements: HTMLButtonElement[] = []
+	let currentIndex = 0
+	let direction: 1 | -1 = 1
+	let disableBackground = false
+	let initAnimation = false
+	let goBackButtonElement: HTMLButtonElement
+	let initHappen = false
+	let showInfoBlocks = false
+	let allTextureLoaded = false
+	let rafId: number | null = null
 
 	let users = [] as {
-		id: string;
-		name: string;
-		x: number;
-		y: number;
-	}[];
+		id: string
+		name: string
+		x: number
+		y: number
+	}[]
 
 	onlineUsers.subscribe((value) => {
-		users = value.users ?? [];
-	});
+		users = value.users ?? []
+	})
 
 	$: if (allTextureLoaded && !initHappen) {
-		initHappen = true;
-		showInfoBlocks = true;
+		initHappen = true
+		showInfoBlocks = true
 	}
 
 	threejsLoading.subscribe((value) => {
-		allTextureLoaded = value.loaded;
+		allTextureLoaded = value.loaded
 		if (value.loaded) {
-			attractTo = localStorage.getItem('attractTo')
-				? parseInt(localStorage.getItem('attractTo') || '')
-				: $posts.length - 1;
-			attractMode = true;
+			attractTo = localStorage.getItem("attractTo")
+				? parseInt(localStorage.getItem("attractTo") || "")
+				: $posts.length - 1
+			attractMode = true
 			setTimeout(() => {
-				attractMode = false;
-			}, 1000);
+				attractMode = false
+			}, 1000)
 		}
-	});
+	})
 
 	$: if (
 		contentElements.length > 0 &&
@@ -67,147 +71,160 @@
 	) {
 		contentElements.forEach((content, idx) => {
 			if (idx !== currentIndex) {
-				content.classList.add('hidden');
+				content.classList.add("hidden")
 				// stop animation loop in inner scene
-				const integratedScene = scene.integratedScenesDict[$posts[idx].slug];
+				const integratedScene = scene.integratedScenesDict[$posts[idx].slug]
 
-				if (integratedScene && typeof integratedScene.rafId === 'number') {
-					cancelAnimationFrame(integratedScene.rafId);
-					integratedScene.rafId = null;
+				if (integratedScene && typeof integratedScene.rafId === "number") {
+					cancelAnimationFrame(integratedScene.rafId)
+					integratedScene.rafId = null
 				}
-			} else if (idx === currentIndex && content.classList.contains('hidden') && scene.loaded) {
-				content.classList.remove('hidden');
-				const integratedScene = scene.integratedScenesDict[$posts[idx].slug];
+			} else if (
+				idx === currentIndex &&
+				content.classList.contains("hidden") &&
+				scene.loaded
+			) {
+				content.classList.remove("hidden")
+				const integratedScene = scene.integratedScenesDict[$posts[idx].slug]
 				// console.log(integratedScene, 'SHOW');
 
 				// animate html content
 				gsap.fromTo(
-					'.post-info__content',
+					".post-info__content",
 					{
 						opacity: 0,
 						yPercent: 20,
-						ease: 'power0.inOut'
+						ease: "power0.inOut",
 					},
 					{
 						opacity: 1,
 						yPercent: 0,
 						duration: 0.6,
-						ease: 'power0.inOut'
+						ease: "power0.inOut",
 					}
-				);
+				)
 				// start animation loop in inner scene
 
 				if (integratedScene) {
 					// console.log(integratedScene, 'SHOW');
 					if (integratedScene.rafId) {
-						cancelAnimationFrame(integratedScene.rafId);
-						integratedScene.rafId = null;
+						cancelAnimationFrame(integratedScene.rafId)
+						integratedScene.rafId = null
 					}
 
-					integratedScene.animate();
+					integratedScene.animate()
 				}
 
-				if (!canvasElement.classList.contains('canvas-ready')) {
-					canvasElement.classList.add('canvas-ready');
+				if (!canvasElement.classList.contains("canvas-ready")) {
+					canvasElement.classList.add("canvas-ready")
 				} else if (canvasElement) {
-					canvasElement.classList.remove('canvas-ready');
+					canvasElement.classList.remove("canvas-ready")
 					setTimeout(() => {
-						canvasElement.classList.add('canvas-ready');
-					}, 2000);
+						canvasElement.classList.add("canvas-ready")
+					}, 2000)
 				}
 			}
-		});
+		})
 	}
 
-	let speed = 0;
-	let position = 0;
-	let rounded = 0;
+	let speed = 0
+	let position = 0
+	let rounded = 0
 
 	onMount(() => {
-		currentIndex = localStorage.getItem('attractTo')
-			? parseInt(localStorage.getItem('attractTo') || '')
-			: 0;
-		attractTo = currentIndex;
-		position = currentIndex;
+		currentIndex = localStorage.getItem("attractTo")
+			? parseInt(localStorage.getItem("attractTo") || "")
+			: 0
+		attractTo = currentIndex
+		position = currentIndex
 
 		const handleKeydown = (e: KeyboardEvent) => {
-			if (attractMode || initAnimation) return;
+			if (attractMode || initAnimation) return
 
-			attractMode = true;
+			attractMode = true
 
 			setTimeout(() => {
-				attractMode = false;
-			}, 700);
+				attractMode = false
+			}, 700)
 
-			if (e.key === 'ArrowUp' && attractTo <= $posts.length - 1) {
-				attractTo = attractTo + 1 > $posts.length - 1 ? $posts.length - 1 : attractTo + 1;
-			} else if (e.key === 'ArrowDown' && attractTo >= 0) {
-				attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0;
+			if (e.key === "ArrowUp" && attractTo <= $posts.length - 1) {
+				attractTo =
+					attractTo + 1 > $posts.length - 1 ? $posts.length - 1 : attractTo + 1
+			} else if (e.key === "ArrowDown" && attractTo >= 0) {
+				attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0
 			}
-		};
+		}
 
 		const handleWheel = (e: WheelEvent) => {
 			if (!scene.isMobile) {
-				speed += e.deltaY * -0.0003;
-				direction = Math.sign(e.deltaY) as 1 | -1;
+				speed += e.deltaY * -0.0003
+				direction = Math.sign(e.deltaY) as 1 | -1
 
 				if (scene.bgMaterial) {
-					scene.bgMaterial.uniforms.uSpeed.value = speed * 10;
+					scene.bgMaterial.uniforms.uSpeed.value = speed * 10
 				}
 
 				if (direction === 1 && Math.abs(currentIndex) === 0) {
-					speed += e.deltaY * 0.0003;
+					speed += e.deltaY * 0.0003
 				}
 				if (direction === -1 && currentIndex === $posts.length - 1) {
-					speed += e.deltaY * 0.0003;
+					speed += e.deltaY * 0.0003
 				}
 			}
-		};
+		}
 
 		const init = async () => {
 			// main scene setup
-			scene = new Scene(canvasElement);
-			scene.textColors = $posts.map((post) => post.textColor);
-			goBackButtonElement = document.querySelector('#goBackButton') as HTMLButtonElement;
-			navElements = Array.from(document.querySelectorAll('nav > button')) as HTMLButtonElement[];
-			contentElements = Array.from(document.querySelectorAll('.post-info')) as HTMLElement[];
-			await scene.addGallery({ posts: $posts.slice() });
+			scene = new Scene(canvasElement)
+			scene.textColors = $posts.map((post) => post.textColor)
+			goBackButtonElement = document.querySelector(
+				"#goBackButton"
+			) as HTMLButtonElement
+			navElements = Array.from(
+				document.querySelectorAll("nav > button")
+			) as HTMLButtonElement[]
+			contentElements = Array.from(
+				document.querySelectorAll(".post-info")
+			) as HTMLElement[]
+			await scene.addGallery({ posts: $posts.slice() })
 
 			// fake loader
 			scene.groups.forEach((g) => {
-				g.visible = false;
-			});
-			const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-			await wait(3000);
+				g.visible = false
+			})
+			const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+			await wait(3000)
 
 			scene.groups.forEach((g) => {
-				g.visible = true;
-			});
-			positions = scene.groups.map((g) => g.position);
-			rots = scene.groups.map((g) => g.rotation);
-			scales = scene.groups.map((g) => g.scale);
+				g.visible = true
+			})
+			positions = scene.groups.map((g) => g.position)
+			rots = scene.groups.map((g) => g.rotation)
+			scales = scene.groups.map((g) => g.scale)
 			materials = scene.groups.flatMap((g) =>
-				'material' in g.children[0] ? [g.children[0].material as THREE.ShaderMaterial] : []
-			);
+				"material" in g.children[0]
+					? [g.children[0].material as THREE.ShaderMaterial]
+					: []
+			)
 
 			const objs = Array($posts.length)
 				.fill(null)
 				.map(() => {
 					return {
-						dist: 0
-					};
-				});
+						dist: 0,
+					}
+				})
 
 			const raf = () => {
-				position += speed;
-				speed *= 0.7;
-				rounded = Math.round(position);
-				let diff = rounded - position;
-				let nextIndex = +position.toFixed(0);
+				position += speed
+				speed *= 0.7
+				rounded = Math.round(position)
+				let diff = rounded - position
+				let nextIndex = +position.toFixed(0)
 
 				// get current index of anchor
-				currentIndex = nextIndex;
-				localStorage.setItem('attractTo', currentIndex.toString());
+				currentIndex = nextIndex
+				localStorage.setItem("attractTo", currentIndex.toString())
 
 				if (pageWrapperElement) {
 					// set color animated for canvas
@@ -215,194 +232,205 @@
 						gsap.to(pageWrapperElement, {
 							backgroundColor: scene.backgroundColors[+position.toFixed(0)],
 							duration: 0.6,
-							ease: 'power0.inOut'
-						});
+							ease: "power0.inOut",
+						})
 
 						if (goBackButtonElement)
-							goBackButtonElement.style.color = scene.textColors[currentIndex];
-						loading.update((state) => ({ ...state, color: scene.textColors[currentIndex] }));
+							goBackButtonElement.style.color = scene.textColors[currentIndex]
+						loading.update((state) => ({
+							...state,
+							color: scene.textColors[currentIndex],
+						}))
 
-						scene.addColorToBGShader(scene.backgroundColors[currentIndex]);
+						scene.addColorToBGShader(scene.backgroundColors[currentIndex])
 					}
 				}
 
 				if (initAnimation) {
-					rafId = requestAnimationFrame(raf);
-					return;
+					rafId = requestAnimationFrame(raf)
+					return
 				}
 
 				objs.forEach((obj, i) => {
-					obj.dist = Math.min(Math.abs(position - i), 1);
-					obj.dist = 1 - obj.dist ** 2;
+					obj.dist = Math.min(Math.abs(position - i), 1)
+					obj.dist = 1 - obj.dist ** 2
 
-					const mesh = scene.meshes[i];
+					const mesh = scene.meshes[i]
 
 					if (mesh) {
-						(mesh.material as THREE.ShaderMaterial).uniforms.distanceFromCenter.value = obj.dist;
+						;(
+							mesh.material as THREE.ShaderMaterial
+						).uniforms.distanceFromCenter.value = obj.dist
 						const delta =
-							(mesh.geometry as unknown as { parameters: { height: number } }).parameters.height *
-							1.15;
+							(mesh.geometry as unknown as { parameters: { height: number } })
+								.parameters.height * 1.15
 
 						if (scene.isMobile) {
-							mesh.position.x = i * 3.1 + -(position * 3.1);
+							mesh.position.x = i * 3.1 + -(position * 3.1)
 						} else {
-							const scale = 1 + 0.2 * obj.dist;
-							mesh.scale.set(scale, scale, scale);
-							mesh.position.y = i * delta + -(position * delta);
+							const scale = 1 + 0.2 * obj.dist
+							mesh.scale.set(scale, scale, scale)
+							mesh.position.y = i * delta + -(position * delta)
 						}
 					}
-				});
+				})
 
 				if (attractMode) {
-					position += -(position - attractTo) * 0.1;
+					position += -(position - attractTo) * 0.1
 				} else {
-					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015;
+					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015
 				}
 
 				// console.log(scene.integratedScenes[currentIndex], $posts[currentIndex]);
 
-				rafId = requestAnimationFrame(raf);
-			};
+				rafId = requestAnimationFrame(raf)
+			}
 
 			if (scene && !scene.isMobile) {
 				scene.handleHoverIn = () => {
-					handleHoverIn({ color: scene.textColors[currentIndex], start: $pageTransition.start });
-				};
+					handleHoverIn({
+						color: scene.textColors[currentIndex],
+						start: $pageTransition.start,
+					})
+				}
 
 				scene.handleHoverOut = () => {
-					const ctx = handleHoverOut({ start: $pageTransition.start });
-				};
+					const ctx = handleHoverOut({ start: $pageTransition.start })
+				}
 
 				scene.onClickEvent = (meshIndex: number) => {
 					// reverse the index
-					const rI = meshIndex;
+					const rI = meshIndex
 					if (meshIndex === currentIndex) {
-						goto($posts[rI].slug);
+						goto($posts[rI].slug)
 					}
-				};
+				}
 			}
 
-			raf();
+			raf()
 
-			window.addEventListener('wheel', handleWheel);
-			window.addEventListener('keydown', handleKeydown);
-		};
+			window.addEventListener("wheel", handleWheel)
+			window.addEventListener("keydown", handleKeydown)
+		}
 
-		init();
+		init()
 
 		return () => {
-			scene.destroy();
-			window.removeEventListener('wheel', handleWheel);
-			window.removeEventListener('keydown', handleKeydown);
-			if (rafId) cancelAnimationFrame(rafId);
-		};
-	});
+			scene.destroy()
+			window.removeEventListener("wheel", handleWheel)
+			window.removeEventListener("keydown", handleKeydown)
+			if (rafId) cancelAnimationFrame(rafId)
+		}
+	})
 </script>
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
 	<canvas bind:this={canvasElement} />
 
 	<nav
-		class={`gallery-nav ${allTextureLoaded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+		class={`gallery-nav ${
+			allTextureLoaded ? "opacity-100" : "opacity-0 pointer-events-none"
+		}`}
 		on:mouseenter={(e) => {
-			e.stopPropagation();
-			if (initAnimation) return;
-			attractMode = true;
+			e.stopPropagation()
+			if (initAnimation) return
+			attractMode = true
 
 			if (!scene.isMobile) {
-				disableBackground = true;
+				disableBackground = true
 
 				contentElements.forEach((content) => {
-					content.classList.add('hidden');
-				});
+					content.classList.add("hidden")
+				})
 
 				let scale = {
 					x: 2.5,
 					y: 2,
-					z: 2
-				};
+					z: 2,
+				}
 
 				if (scene.screens.isMd) {
 					scale = {
 						x: 2.2,
 						y: 1.7,
-						z: 1.7
-					};
+						z: 1.7,
+					}
 				}
 				if (scene.screens.isXl) {
 					scale = {
 						x: 1.6,
 						y: 1.3,
-						z: 1.2
-					};
+						z: 1.2,
+					}
 				}
 
 				gsap.to(scales, {
 					duration: 0.3,
-					ease: 'power0.inOut',
-					...scale
-				});
-				if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled.value = false;
+					ease: "power0.inOut",
+					...scale,
+				})
+				if (scene && scene.bgMaterial)
+					scene.bgMaterial.uniforms.uEnabled.value = false
 
 				for (let i = 0; i < materials.length; i++) {
-					const mat = materials[i];
-					mat.uniforms.uMouse.value = { x: 0.5, y: 0.5 };
+					const mat = materials[i]
+					mat.uniforms.uMouse.value = { x: 0.5, y: 0.5 }
 				}
 
 				gsap.to(rots, {
 					duration: 0.3,
-					ease: 'power0.inOut',
+					ease: "power0.inOut",
 					x: -0.5,
 					y: 0,
-					z: 0
-				});
+					z: 0,
+				})
 				gsap.to(positions, {
 					duration: 0.3,
-					ease: 'power0.inOut',
-					x: 0
-				});
+					ease: "power0.inOut",
+					x: 0,
+				})
 			}
 
 			gsap.to(pageWrapperElement, {
-				backgroundColor: '#000000',
+				backgroundColor: "#000000",
 				duration: 0.3,
-				ease: 'power0.inOut'
-			});
+				ease: "power0.inOut",
+			})
 		}}
 		on:mouseleave={(e) => {
-			e.stopPropagation();
-			if (initAnimation) return;
-			attractMode = false;
+			e.stopPropagation()
+			if (initAnimation) return
+			attractMode = false
 
 			if (!scene.isMobile) {
-				disableBackground = false;
+				disableBackground = false
 
 				contentElements.forEach((content, idx) => {
 					if (idx === currentIndex) {
-						content.classList.remove('hidden');
+						content.classList.remove("hidden")
 					}
-				});
+				})
 
 				gsap.to(scales, {
 					duration: 0.3,
-					ease: 'power0.inOut',
+					ease: "power0.inOut",
 					x: 1,
 					y: 1,
-					z: 1
-				});
+					z: 1,
+				})
 
 				gsap.to(rots, {
 					duration: 0.3,
-					ease: 'power0.inOut',
+					ease: "power0.inOut",
 					x: scene.eulerValues.x,
 					y: scene.eulerValues.y,
-					z: scene.eulerValues.z
-				});
+					z: scene.eulerValues.z,
+				})
 				gsap.to(positions, {
 					duration: 0.3,
-					ease: 'power0.inOut',
-					x: scene.positionValues.x
-				});
+					ease: "power0.inOut",
+					x: scene.positionValues.x,
+				})
 			}
 		}}
 	>
@@ -410,21 +438,22 @@
 			<button
 				on:click={() => {
 					if (scene.isMobile) {
-						currentIndex = index;
+						currentIndex = index
 					} else {
 						// route to post
-						goto(post.slug);
+						goto(post.slug)
 					}
 				}}
 				on:mouseenter={() => {
-					attractTo = $posts.findIndex((p) => p.id === post.id);
+					attractTo = $posts.findIndex((p) => p.id === post.id)
 					// scene.changeVideo(index);
-					scene.addColorToBGShader(scene.backgroundColors[currentIndex]);
+					scene.addColorToBGShader(scene.backgroundColors[currentIndex])
 				}}
 				on:mouseleave={() => {
-					if (scene && scene.bgMaterial) scene.bgMaterial.uniforms.uEnabled.value = true;
+					if (scene && scene.bgMaterial)
+						scene.bgMaterial.uniforms.uEnabled.value = true
 				}}
-				class={`nav-item ${currentIndex === index ? 'nav-item_active' : ''}`}
+				class={`nav-item ${currentIndex === index ? "nav-item_active" : ""}`}
 			>
 				<span class="nav-item__text">
 					{post.title}
@@ -444,7 +473,7 @@
 					class="p-0 m-0 w-fit"
 					on:click={() => {
 						if (scene.isMobile) {
-							goto(post.slug);
+							goto(post.slug)
 						}
 					}}
 				>
@@ -534,7 +563,7 @@
 		border-radius: 2rem;
 		min-width: 1.5rem;
 		min-height: 1.5rem;
-		font-family: 'Manrope', sans-serif;
+		font-family: "Manrope", sans-serif;
 	}
 	.nav-item_active {
 		background-color: rgb(47, 47, 47);
