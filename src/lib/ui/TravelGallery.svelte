@@ -93,7 +93,6 @@
 			) {
 				content.classList.remove("hidden")
 				const integratedScene = scene.integratedScenesDict[$posts[idx].slug]
-				// console.log(integratedScene, 'SHOW');
 
 				// animate html content
 				gsap.fromTo(
@@ -111,7 +110,6 @@
 					}
 				)
 				// start animation loop in inner scene
-
 				if (integratedScene) {
 					// console.log(integratedScene, 'SHOW');
 					if (integratedScene.rafId) {
@@ -122,12 +120,15 @@
 					integratedScene.animate()
 				}
 
+				// animate color transition
+				scene.addColorToBGShader(scene.backgroundColors[currentIndex])
+
 				if (!canvasElement.classList.contains("canvas-ready")) {
 					canvasElement.classList.add("canvas-ready")
 				} else if (canvasElement) {
 					canvasElement.classList.remove("canvas-ready")
 					setTimeout(() => {
-						canvasElement.classList.add("canvas-ready")
+						if (canvasElement) canvasElement.classList.add("canvas-ready")
 					}, 2000)
 				}
 			}
@@ -163,21 +164,32 @@
 		}
 
 		const handleWheel = (e: WheelEvent) => {
-			if (!scene.isMobile) {
-				speed += e.deltaY * -0.0003
-				direction = Math.sign(e.deltaY) as 1 | -1
+			speed += e.deltaY * -0.0003
+			direction = Math.sign(e.deltaY) as 1 | -1
 
-				if (scene.bgMaterial) {
-					scene.bgMaterial.uniforms.uSpeed.value = speed * 10
-				}
-
-				if (direction === 1 && Math.abs(currentIndex) === 0) {
-					speed += e.deltaY * 0.0003
-				}
-				if (direction === -1 && currentIndex === $posts.length - 1) {
-					speed += e.deltaY * 0.0003
-				}
+			if (scene.bgMaterial) {
+				scene.bgMaterial.uniforms.uSpeed.value = speed * 10
 			}
+
+			if (direction === 1 && Math.abs(currentIndex) === 0) {
+				speed += e.deltaY * 0.0003
+			}
+			if (direction === -1 && currentIndex === $posts.length - 1) {
+				speed += e.deltaY * 0.0003
+			}
+		}
+
+		let prevPos = 0
+		let lastInteraction = 0
+		const handleTouchMove = (e: TouchEvent) => {
+			if (Date.now() - lastInteraction > 100) {
+				prevPos = e.touches[0].clientY
+			}
+			const touch = e.touches[0]
+			const diff = touch.clientY - prevPos
+			speed += diff * 0.003
+			prevPos = touch.clientY
+			lastInteraction = Date.now()
 		}
 
 		const init = async () => {
@@ -315,6 +327,7 @@
 
 			window.addEventListener("wheel", handleWheel)
 			window.addEventListener("keydown", handleKeydown)
+			window.addEventListener("touchmove", handleTouchMove)
 		}
 
 		init()
@@ -323,124 +336,14 @@
 			scene.destroy()
 			window.removeEventListener("wheel", handleWheel)
 			window.removeEventListener("keydown", handleKeydown)
+			window.removeEventListener("touchmove", handleTouchMove)
 			if (rafId) cancelAnimationFrame(rafId)
 		}
 	})
-
-	$: {
-		if (scene && scene.bgMaterial) {
-			scene.addColorToBGShader(scene.backgroundColors[currentIndex])
-		}
-	}
 </script>
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
 	<canvas bind:this={canvasElement} />
-
-	<!-- <nav
-		class={`gallery-nav ${
-			allTextureLoaded ? "opacity-100" : "opacity-0 pointer-events-none"
-		}`}
-		on:mouseenter={(e) => {
-			e.stopPropagation()
-			if (initAnimation) return
-			attractMode = true
-
-			contentElements.forEach((content) => {
-				content.classList.add("hidden")
-			})
-
-			if (scene && scene.bgMaterial)
-				scene.bgMaterial.uniforms.uEnabled.value = false
-
-			for (let i = 0; i < materials.length; i++) {
-				const mat = materials[i]
-				mat.uniforms.uMouse.value = { x: 0.5, y: 0.5 }
-			}
-
-			gsap.to(rots, {
-				duration: 0.3,
-				ease: "power0.inOut",
-				x: -0.5,
-				y: 0,
-				z: 0,
-			})
-			gsap.to(positions, {
-				duration: 0.3,
-				ease: "power0.inOut",
-				x: 0,
-			})
-			// }
-
-			gsap.to(pageWrapperElement, {
-				backgroundColor: "#000000",
-				duration: 0.3,
-				ease: "power0.inOut",
-			})
-		}}
-		on:mouseleave={(e) => {
-			e.stopPropagation()
-			if (initAnimation) return
-			attractMode = false
-
-			// if (!scene.isMobile) {
-
-			contentElements.forEach((content, idx) => {
-				if (idx === currentIndex) {
-					content.classList.remove("hidden")
-				}
-			})
-
-			gsap.to(scales, {
-				duration: 0.3,
-				ease: "power0.inOut",
-				x: 1,
-				y: 1,
-				z: 1,
-			})
-
-			gsap.to(rots, {
-				duration: 0.3,
-				ease: "power0.inOut",
-				x: scene.eulerValues.x,
-				y: scene.eulerValues.y,
-				z: scene.eulerValues.z,
-			})
-			gsap.to(positions, {
-				duration: 0.3,
-				ease: "power0.inOut",
-				x: scene.positionValues.x,
-			})
-			// }
-		}}
-	>
-		{#each $posts as post, index (post.id)}
-			<button
-				on:click={() => {
-					// if (scene.isMobile) {
-					// currentIndex = index
-					// } else {
-					// 	// route to post
-					goto(post.slug)
-					// }
-				}}
-				on:mouseenter={() => {
-					attractTo = $posts.findIndex((p) => p.id === post.id)
-					// scene.changeVideo(index);
-					scene.addColorToBGShader(scene.backgroundColors[currentIndex])
-				}}
-				on:mouseleave={() => {
-					if (scene && scene.bgMaterial)
-						scene.bgMaterial.uniforms.uEnabled.value = true
-				}}
-				class={`nav-item ${currentIndex === index ? "nav-item_active" : ""}`}
-			>
-				<span class="nav-item__text">
-					{post.title}
-				</span>
-			</button>
-		{/each}
-	</nav> -->
 
 	<NavGallery
 		{setAttractTo}
@@ -592,9 +495,6 @@
 		}
 		canvas {
 			height: 100vh !important;
-		}
-		.canvas-ready {
-			height: 35% !important;
 		}
 	}
 </style>

@@ -349,7 +349,7 @@ class TravelGalleryScene {
 			uniforms: {
 				uTime: { value: 0 },
 				uColor: { value: new THREE.Color("rgb(0, 0, 0)") },
-				uPrevColor: { value: new THREE.Color("rgb(0, 0, 0)") },
+				uPrevColor: { value: new THREE.Color("rgb(255, 0, 0)") },
 				uResolution: {
 					value: new THREE.Vector2(window.innerWidth, window.innerHeight),
 				},
@@ -364,13 +364,12 @@ class TravelGalleryScene {
 			},
 			vertexShader: bgVertexShader,
 			fragmentShader: bgFragmentShader,
-			// transparent: true,
+			transparent: false,
 		})
 		const aspectRatio = window.innerWidth / window.innerHeight
 		this.bgGeometry = new THREE.PlaneGeometry(1, 1, 10, 10)
 		this.bgGeometry.scale(aspectRatio, 1, 1)
 		this.bgPlane = new THREE.Mesh(this.bgGeometry, this.bgMaterial)
-		this.bgPlane.name = "bgPlane"
 		this.bgPlane.position.z = 3.2
 		this.scene.add(this.bgPlane)
 	}
@@ -386,10 +385,11 @@ class TravelGalleryScene {
 			const obj = { value: 0 }
 			gsap.to(obj, {
 				value: 1,
-				duration: 1,
-				ease: "power2.inOut",
+				duration: 0.33,
+				ease: "none",
 				onUpdate: () => {
-					this.bgMaterial!.uniforms.uFactor.value = obj.value
+					if (this.bgMaterial)
+						this.bgMaterial.uniforms.uFactor.value = obj.value
 				},
 				onComplete: () => {
 					this.animated = false
