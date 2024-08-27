@@ -375,17 +375,25 @@ class TravelGalleryScene {
 		this.scene.add(this.bgPlane)
 	}
 
+	animated = false
 	addColorToBGShader(color: string) {
-		if (this.bgMaterial) {
+		if (this.bgMaterial && !this.animated) {
+			this.animated = true
 			this.bgMaterial.uniforms.uPrevColor.value =
 				this.bgMaterial.uniforms.uColor.value
 			this.bgMaterial.uniforms.uColor.value = new THREE.Color(color)
 
-			this.bgMaterial.uniforms.uFactor.value = 0
-			gsap.to(this.bgMaterial.uniforms.uFactor, {
-				value: 0,
+			const obj = { value: 0 }
+			gsap.to(obj, {
+				value: 1,
 				duration: 1,
 				ease: "power2.inOut",
+				onUpdate: () => {
+					this.bgMaterial!.uniforms.uFactor.value = obj.value
+				},
+				onComplete: () => {
+					this.animated = false
+				},
 			})
 		}
 	}

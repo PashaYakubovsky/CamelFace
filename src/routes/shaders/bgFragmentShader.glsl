@@ -18,7 +18,7 @@ vec3 lerp(vec3 start, vec3 end, float factor) {
 void main() {
     vec2 fragCoord = gl_FragCoord.xy * 0.1;
     vec2 p = fragCoord/uResolution.xy;
-    vec3 col = lerp( uColor,uPrevColor, uFactor);
+    vec3 col = lerp(uPrevColor, uColor, uFactor);
 
     gl_FragColor = vec4(col, 1.0);
 }
