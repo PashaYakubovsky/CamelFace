@@ -12,6 +12,7 @@
 	import { onlineUsers } from "$lib/onlineUsers"
 	import { goto } from "$app/navigation"
 	import { posts } from "$lib/posts"
+	import NavGallery from "./NavGallary.svelte"
 
 	let canvasElement: HTMLCanvasElement
 	let contentElements: HTMLElement[] = []
@@ -23,10 +24,8 @@
 	let scales: THREE.Vector3[] = []
 	let materials: THREE.ShaderMaterial[] = []
 	let scene: Scene
-	let navElements: HTMLButtonElement[] = []
 	let currentIndex = 0
 	let direction: 1 | -1 = 1
-	let disableBackground = false
 	let initAnimation = false
 	let goBackButtonElement: HTMLButtonElement
 	let initHappen = false
@@ -62,6 +61,14 @@
 			}, 1000)
 		}
 	})
+
+	const setAttractTo = (index: number) => {
+		attractTo = index
+		currentIndex = index
+	}
+	const setAttractMode = (mode: boolean) => {
+		attractMode = mode
+	}
 
 	$: if (
 		contentElements.length > 0 &&
@@ -180,9 +187,7 @@
 			goBackButtonElement = document.querySelector(
 				"#goBackButton"
 			) as HTMLButtonElement
-			navElements = Array.from(
-				document.querySelectorAll("nav > button")
-			) as HTMLButtonElement[]
+
 			contentElements = Array.from(
 				document.querySelectorAll(".post-info")
 			) as HTMLElement[]
@@ -228,22 +233,18 @@
 
 				if (pageWrapperElement) {
 					// set color animated for canvas
-					if (!disableBackground) {
-						gsap.to(pageWrapperElement, {
-							backgroundColor: scene.backgroundColors[+position.toFixed(0)],
-							duration: 0.6,
-							ease: "power0.inOut",
-						})
+					gsap.to(pageWrapperElement, {
+						backgroundColor: scene.backgroundColors[+position.toFixed(0)],
+						duration: 0.6,
+						ease: "power0.inOut",
+					})
 
-						if (goBackButtonElement)
-							goBackButtonElement.style.color = scene.textColors[currentIndex]
-						loading.update((state) => ({
-							...state,
-							color: scene.textColors[currentIndex],
-						}))
-
-						scene.addColorToBGShader(scene.backgroundColors[currentIndex])
-					}
+					if (goBackButtonElement)
+						goBackButtonElement.style.color = scene.textColors[currentIndex]
+					loading.update((state) => ({
+						...state,
+						color: scene.textColors[currentIndex],
+					}))
 				}
 
 				if (initAnimation) {
@@ -265,13 +266,13 @@
 							(mesh.geometry as unknown as { parameters: { height: number } })
 								.parameters.height * 1.15
 
-						if (scene.isMobile) {
-							mesh.position.x = i * 3.1 + -(position * 3.1)
-						} else {
-							const scale = 1 + 0.2 * obj.dist
-							mesh.scale.set(scale, scale, scale)
-							mesh.position.y = i * delta + -(position * delta)
-						}
+						// if (scene.isMobile) {
+						// mesh.position.x = i * 3.1 + -(position * 3.1)
+						// } else {
+						const scale = 1 + 0.2 * obj.dist
+						mesh.scale.set(scale, scale, scale)
+						mesh.position.y = i * delta + -(position * delta)
+						// }
 					}
 				})
 
@@ -286,7 +287,10 @@
 				rafId = requestAnimationFrame(raf)
 			}
 
-			if (scene && !scene.isMobile) {
+			if (
+				scene
+				// && !scene.isMobile
+			) {
 				scene.handleHoverIn = () => {
 					handleHoverIn({
 						color: scene.textColors[currentIndex],
@@ -322,12 +326,18 @@
 			if (rafId) cancelAnimationFrame(rafId)
 		}
 	})
+
+	$: {
+		if (scene && scene.bgMaterial) {
+			scene.addColorToBGShader(scene.backgroundColors[currentIndex])
+		}
+	}
 </script>
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
 	<canvas bind:this={canvasElement} />
 
-	<nav
+	<!-- <nav
 		class={`gallery-nav ${
 			allTextureLoaded ? "opacity-100" : "opacity-0 pointer-events-none"
 		}`}
@@ -336,60 +346,31 @@
 			if (initAnimation) return
 			attractMode = true
 
-			if (!scene.isMobile) {
-				disableBackground = true
+			contentElements.forEach((content) => {
+				content.classList.add("hidden")
+			})
 
-				contentElements.forEach((content) => {
-					content.classList.add("hidden")
-				})
+			if (scene && scene.bgMaterial)
+				scene.bgMaterial.uniforms.uEnabled.value = false
 
-				let scale = {
-					x: 2.5,
-					y: 2,
-					z: 2,
-				}
-
-				if (scene.screens.isMd) {
-					scale = {
-						x: 2.2,
-						y: 1.7,
-						z: 1.7,
-					}
-				}
-				if (scene.screens.isXl) {
-					scale = {
-						x: 1.6,
-						y: 1.3,
-						z: 1.2,
-					}
-				}
-
-				gsap.to(scales, {
-					duration: 0.3,
-					ease: "power0.inOut",
-					...scale,
-				})
-				if (scene && scene.bgMaterial)
-					scene.bgMaterial.uniforms.uEnabled.value = false
-
-				for (let i = 0; i < materials.length; i++) {
-					const mat = materials[i]
-					mat.uniforms.uMouse.value = { x: 0.5, y: 0.5 }
-				}
-
-				gsap.to(rots, {
-					duration: 0.3,
-					ease: "power0.inOut",
-					x: -0.5,
-					y: 0,
-					z: 0,
-				})
-				gsap.to(positions, {
-					duration: 0.3,
-					ease: "power0.inOut",
-					x: 0,
-				})
+			for (let i = 0; i < materials.length; i++) {
+				const mat = materials[i]
+				mat.uniforms.uMouse.value = { x: 0.5, y: 0.5 }
 			}
+
+			gsap.to(rots, {
+				duration: 0.3,
+				ease: "power0.inOut",
+				x: -0.5,
+				y: 0,
+				z: 0,
+			})
+			gsap.to(positions, {
+				duration: 0.3,
+				ease: "power0.inOut",
+				x: 0,
+			})
+			// }
 
 			gsap.to(pageWrapperElement, {
 				backgroundColor: "#000000",
@@ -402,47 +383,46 @@
 			if (initAnimation) return
 			attractMode = false
 
-			if (!scene.isMobile) {
-				disableBackground = false
+			// if (!scene.isMobile) {
 
-				contentElements.forEach((content, idx) => {
-					if (idx === currentIndex) {
-						content.classList.remove("hidden")
-					}
-				})
+			contentElements.forEach((content, idx) => {
+				if (idx === currentIndex) {
+					content.classList.remove("hidden")
+				}
+			})
 
-				gsap.to(scales, {
-					duration: 0.3,
-					ease: "power0.inOut",
-					x: 1,
-					y: 1,
-					z: 1,
-				})
+			gsap.to(scales, {
+				duration: 0.3,
+				ease: "power0.inOut",
+				x: 1,
+				y: 1,
+				z: 1,
+			})
 
-				gsap.to(rots, {
-					duration: 0.3,
-					ease: "power0.inOut",
-					x: scene.eulerValues.x,
-					y: scene.eulerValues.y,
-					z: scene.eulerValues.z,
-				})
-				gsap.to(positions, {
-					duration: 0.3,
-					ease: "power0.inOut",
-					x: scene.positionValues.x,
-				})
-			}
+			gsap.to(rots, {
+				duration: 0.3,
+				ease: "power0.inOut",
+				x: scene.eulerValues.x,
+				y: scene.eulerValues.y,
+				z: scene.eulerValues.z,
+			})
+			gsap.to(positions, {
+				duration: 0.3,
+				ease: "power0.inOut",
+				x: scene.positionValues.x,
+			})
+			// }
 		}}
 	>
 		{#each $posts as post, index (post.id)}
 			<button
 				on:click={() => {
-					if (scene.isMobile) {
-						currentIndex = index
-					} else {
-						// route to post
-						goto(post.slug)
-					}
+					// if (scene.isMobile) {
+					// currentIndex = index
+					// } else {
+					// 	// route to post
+					goto(post.slug)
+					// }
 				}}
 				on:mouseenter={() => {
 					attractTo = $posts.findIndex((p) => p.id === post.id)
@@ -460,7 +440,23 @@
 				</span>
 			</button>
 		{/each}
-	</nav>
+	</nav> -->
+
+	<NavGallery
+		{setAttractTo}
+		{setAttractMode}
+		{scene}
+		{contentElements}
+		{currentIndex}
+		{allTextureLoaded}
+		{materials}
+		{positions}
+		{rots}
+		{pageWrapperElement}
+		{scales}
+		{initAnimation}
+	/>
+
 	<!-- loop over posts -->
 	{#each $posts as post, index (post.id)}
 		<section

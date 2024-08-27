@@ -29,56 +29,58 @@ import WobblyScene from "./wobbly/scene"
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 }
 
-	if (!isMobile) {
-		euler = {
-			x: -0.1,
-			y: -0.7,
-			z: -0.2,
-		}
-		if (screens.isXl) {
-			euler = {
-				x: -0.1,
-				y: -0.7,
-				z: -0.2,
-			}
-		}
+	// if (!isMobile) {
+	euler = {
+		x: -0.1,
+		y: -0.7,
+		z: -0.2,
 	}
+	// if (screens.isXl) {
+	// 	euler = {
+	// 		x: -0.1,
+	// 		y: -0.7,
+	// 		z: -0.2,
+	// 	}
+	// }
+	// }
 
 	return euler
 }
 const calculatePosition = (isMobile: boolean, screens: Screens) => {
 	let position = { y: -0.02, x: 0, z: -1 }
 
-	if (!isMobile) {
-		position = {
-			x: window.innerWidth * 0.0012,
-			y: 0,
-			z: 0,
-		}
-		if (screens.isXl) {
-			position = {
-				x: window.innerWidth * 0.0009,
-				y: 0,
-				z: 0,
-			}
-		}
+	// if (!isMobile) {
+	position = {
+		x: window.innerWidth * 0.0012,
+		y: 0,
+		z: 0,
 	}
+	// if (screens.isXl) {
+	// 	position = {
+	// 		x: window.innerWidth * 0.0009,
+	// 		y: 0,
+	// 		z: 0,
+	// 	}
+	// }
+	// }
 
 	return position
 }
 
 const createGeometry = (isMobile: boolean, screens: Screens) => {
-	let geometry = [0.58, 1.05]
+	const aspectRatio = window.innerWidth / window.innerHeight
+	const base = 1.5
+	const geometry = [base + (aspectRatio - 1), base + (aspectRatio - 1)]
 
-	if (!isMobile) {
-		geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0014]
-		if (screens.isXl) {
-			geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0015]
-		}
-		if (screens.is2Xl) {
-			geometry = [window.innerWidth * 0.0011, window.innerWidth * 0.001]
-		}
-	}
+	// if (!isMobile) {
+	// geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0014]
+	// if (screens.isXl) {
+	// 	geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0015]
+	// }
+	// if (screens.is2Xl) {
+	// 	geometry = [window.innerWidth * 0.0011, window.innerWidth * 0.001]
+	// }
+	// }
 	return new THREE.PlaneGeometry(geometry[0], geometry[1], 10, 10)
 }
 
@@ -148,9 +150,6 @@ class TravelGalleryScene {
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: canvasElement,
 			antialias: true,
-			alpha: true,
-			powerPreference: "high-performance",
-			precision: "highp",
 		})
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping
 		this.renderer.toneMappingExposure = 1
@@ -163,10 +162,16 @@ class TravelGalleryScene {
 		// this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 		this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
-		this.camera.position.set(0, 0, this.isMobile ? 0 : 4)
+		this.camera.position.set(
+			0,
+			0,
+			// this.isMobile ? 0 : 4
+			4
+		)
 		this.renderer.setSize(
 			window.innerWidth,
-			this.isMobile ? window.innerHeight * 0.35 : window.innerHeight
+			// this.isMobile ? window.innerHeight * 0.35 : window.innerHeight
+			window.innerHeight
 		)
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
@@ -337,6 +342,8 @@ class TravelGalleryScene {
 			vertexShader,
 			fragmentShader,
 			transparent: true,
+			depthTest: false,
+			depthWrite: false,
 		})
 		this.bgMaterial = new THREE.ShaderMaterial({
 			uniforms: {
@@ -357,9 +364,15 @@ class TravelGalleryScene {
 			},
 			vertexShader: bgVertexShader,
 			fragmentShader: bgFragmentShader,
-			transparent: true,
-			depthTest: false,
+			// transparent: true,
 		})
+		const aspectRatio = window.innerWidth / window.innerHeight
+		this.bgGeometry = new THREE.PlaneGeometry(1, 1, 10, 10)
+		this.bgGeometry.scale(aspectRatio, 1, 1)
+		this.bgPlane = new THREE.Mesh(this.bgGeometry, this.bgMaterial)
+		this.bgPlane.name = "bgPlane"
+		this.bgPlane.position.z = 3.2
+		this.scene.add(this.bgPlane)
 	}
 
 	addColorToBGShader(color: string) {
@@ -368,17 +381,12 @@ class TravelGalleryScene {
 				this.bgMaterial.uniforms.uColor.value
 			this.bgMaterial.uniforms.uColor.value = new THREE.Color(color)
 
-			gsap.fromTo(
-				this.bgMaterial.uniforms.uFactor,
-				{
-					value: 0,
-				},
-				{
-					value: 1,
-					duration: 1,
-					ease: "none",
-				}
-			)
+			this.bgMaterial.uniforms.uFactor.value = 0
+			gsap.to(this.bgMaterial.uniforms.uFactor, {
+				value: 0,
+				duration: 1,
+				ease: "power2.inOut",
+			})
 		}
 	}
 
@@ -675,20 +683,21 @@ class TravelGalleryScene {
 		if (this.renderer)
 			this.renderer.setSize(
 				window.innerWidth,
-				this.isMobile ? window.innerHeight * 0.35 : window.innerHeight
+				window.innerHeight
+				// this.isMobile ? window.innerHeight * 0.35 : window.innerHeight
 			)
 
 		this.camera.aspect = this.width / this.height
 
-		if (this.isMobile && this.bgPlane) {
-			// if bgPlane in scene, remove it
-			if (this.scene.children.includes(this.bgPlane)) {
-				this.scene.remove(this.bgPlane)
-			}
-		}
+		// if (this.isMobile && this.bgPlane) {
+		// 	// if bgPlane in scene, remove it
+		// 	if (this.scene.children.includes(this.bgPlane)) {
+		// 		this.scene.remove(this.bgPlane)
+		// 	}
+		// }
 
 		if (this.material) {
-			this.material.uniforms.isMobile.value = this.isMobile
+			// this.material.uniforms.isMobile.value = this.isMobile
 			this.material.uniforms.uResolution.value = new THREE.Vector3(
 				window.innerWidth,
 				window.innerHeight,
@@ -701,6 +710,20 @@ class TravelGalleryScene {
 				this.width,
 				this.height
 			)
+		}
+
+		for (const post of this.posts) {
+			const slug = post.slug
+			const scene = this.integratedScenesDict[slug]
+			if (scene) {
+				scene.camera.aspect = this.width / this.height
+				scene.camera.updateProjectionMatrix()
+			}
+		}
+
+		for (const mesh of this.meshes) {
+			mesh.geometry.dispose()
+			mesh.geometry = createGeometry(this.isMobile, this.screens)
 		}
 	}
 
@@ -775,7 +798,7 @@ class TravelGalleryScene {
 		}
 	}
 
-	private animate() {
+	animate() {
 		this.time += 0.05
 
 		this.materials.forEach((material) => {
@@ -783,8 +806,6 @@ class TravelGalleryScene {
 		})
 
 		if (this.bgMaterial) this.bgMaterial.uniforms.uTime.value = this.time
-
-		this.rafId = requestAnimationFrame(() => this.animate())
 
 		if (this.renderer) {
 			// Render the secondary scene to the render target
@@ -840,8 +861,11 @@ class TravelGalleryScene {
 					}
 				}
 			}
+
 			// Render the main scene
 			this.renderer.render(this.scene, this.camera)
+
+			this.rafId = requestAnimationFrame(() => this.animate())
 		}
 	}
 }

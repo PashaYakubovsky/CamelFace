@@ -359,7 +359,7 @@ class MorphingScene {
 		this.mouse.x = (x / rect.width) * 2 - 1
 		this.mouse.y = -(y / rect.height) * 2 + 1
 
-		console.log("[morph:mouse]", this.mouse)
+		// console.log("[morph:mouse]", this.mouse)
 
 		// if (this.particles.material) {
 		// 	this.particles.material.uniforms.uMouse.value = this.mouse;
@@ -374,7 +374,7 @@ class MorphingScene {
 			const x = point.x
 			const y = point.y
 
-			console.log("[morph:raycast]", x, y)
+			// console.log("[morph:raycast]", x, y)
 			if (this.particles.material) {
 				this.particles.material.uniforms.uMouse.value = new THREE.Vector2(x, y)
 			}

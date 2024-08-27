@@ -37,7 +37,7 @@ class AttractionScene {
 	rafId: number | null = null
 
 	constructor(el: HTMLCanvasElement | null, opt?: { renderToTarget: boolean }) {
-		this.camera.position.z = 1
+		this.camera.position.z = 4
 		if (!opt?.renderToTarget && el) {
 			this.renderer = new THREE.WebGLRenderer({
 				canvas: el,
