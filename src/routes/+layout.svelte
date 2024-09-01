@@ -27,14 +27,6 @@
 	onMount(() => {
 		const socket = io(PUBLIC_API_URL)
 
-		window.addEventListener("beforeunload", () => {
-			const openedWindows = JSON.parse(
-				localStorage.getItem("openedWindows") || "{}"
-			)
-			delete openedWindows[userWindowId]
-			localStorage.setItem("openedWindows", JSON.stringify(openedWindows))
-		})
-
 		socket.on("connect", () => {
 			console.log("connected")
 			window.addEventListener("mousemove", createMouseHandler(socket))

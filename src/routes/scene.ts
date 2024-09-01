@@ -51,7 +51,7 @@ const calculatePosition = (isMobile: boolean, screens: Screens) => {
 
 	// if (!isMobile) {
 	position = {
-		x: window.innerWidth * 0.0012,
+		x: 1.5,
 		y: 0,
 		z: 0,
 	}
@@ -68,9 +68,10 @@ const calculatePosition = (isMobile: boolean, screens: Screens) => {
 }
 
 const createGeometry = (isMobile: boolean, screens: Screens) => {
-	const aspectRatio = window.innerWidth / window.innerHeight
-	const base = 1.5
-	const geometry = [base + (aspectRatio - 1), base + (aspectRatio - 1)]
+	// const aspectRatio = window.innerWidth / window.innerHeight
+	// const base = 1.5
+	// const geometry = [base + (aspectRatio - 1), base + (aspectRatio - 1)]
+	const geometry = [2.5, 2.2]
 
 	// if (!isMobile) {
 	// geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0014]
@@ -696,6 +697,7 @@ class TravelGalleryScene {
 			)
 
 		this.camera.aspect = this.width / this.height
+		this.camera.updateProjectionMatrix()
 
 		// if (this.isMobile && this.bgPlane) {
 		// 	// if bgPlane in scene, remove it

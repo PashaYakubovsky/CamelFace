@@ -380,7 +380,7 @@
 						id="postTitle"
 						data-content={post.title}
 						style={`color:${scene?.textColors?.[index]}`}
-						class="text-[5.2vw] leading-normal font-bold"
+						class="text-[5.2vw] leading-normal font-bold whitespace-nowrap"
 					>
 						{post.title}
 					</h2>
