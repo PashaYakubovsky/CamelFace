@@ -849,17 +849,17 @@ class TravelGalleryScene {
 							// iScene.fbo1 = temp
 							// this.renderer.setRenderTarget(iScene.fbo1)
 							// this.renderer.render(iScene.fboScene, iScene.fboCamera)
+						} else {
+							const renderTarget = this.renderTargets[i]
+
+							this.renderer.setRenderTarget(renderTarget)
+							this.renderer.render(iScene.scene, iScene.camera)
+							this.renderer.setRenderTarget(null) // Ensure rendering returns to the default framebuffer
 						}
 
 						// if (iScene instanceof GPGPUScene) {
 						// 	continue;
 						// }
-
-						const renderTarget = this.renderTargets[i]
-
-						this.renderer.setRenderTarget(renderTarget)
-						this.renderer.render(iScene.scene, iScene.camera)
-						this.renderer.setRenderTarget(null) // Ensure rendering returns to the default framebuffer
 
 						if (iScene instanceof LinesScene) {
 							if (!iScene.target) {
