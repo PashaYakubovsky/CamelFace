@@ -14,6 +14,7 @@ import {
 
 class GPGPUScene {
 	renderer: THREE.WebGLRenderer | undefined
+	targetRenderer: THREE.WebGLRenderer | null = null
 	mouse: THREE.Vector2
 	width = window.innerWidth
 	height = window.innerHeight
@@ -122,6 +123,8 @@ class GPGPUScene {
 		// this.controls.enabled = false;
 
 		// Add objects
+		debugger
+
 		this.addObjects()
 
 		// Debug
@@ -166,7 +169,7 @@ class GPGPUScene {
 			this.gpgpu.computation = new GPUComputationRenderer(
 				this.gpgpu.size,
 				this.gpgpu.size,
-				this.renderer
+				this.targetRenderer || this.renderer
 			)
 		}
 		// Base particles

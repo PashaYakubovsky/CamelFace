@@ -26,6 +26,7 @@ import EyeScene from "./eye/scene"
 import FresnelScene from "./fresnel/scene"
 import WobblyScene from "./wobbly/scene"
 import VoronoiScene from "./voronoi/scene"
+import GPGPUScene from "./gpgpu/scene"
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 }
@@ -457,10 +458,9 @@ class TravelGalleryScene {
 			new VoronoiScene(null, {
 				renderToTarget: true,
 			}),
-
-			// new GPGPUScene(null, {
-			// 	renderToTarget: true
-			// })
+			new GPGPUScene(null, {
+				renderToTarget: true,
+			}),
 		]
 		this.integratedScenes.reverse()
 
@@ -523,9 +523,9 @@ class TravelGalleryScene {
 				"/wobbly": this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof WobblyScene) return i
 				})?.texture,
-				// '/gpgpu': this.renderTargets.find((i, idx) => {
-				// 	if (this.integratedScenes[idx] instanceof GPGPUScene) return i;
-				// })?.texture
+				"/gpgpu": this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof GPGPUScene) return i
+				})?.texture,
 				"/voronoi": this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof VoronoiScene) return i
 				})?.texture,
@@ -585,9 +585,9 @@ class TravelGalleryScene {
 			"/wobbly": this.integratedScenes.find((i) => {
 				if (i instanceof WobblyScene) return i
 			}),
-			// '/gpgpu': this.integratedScenes.find((i) => {
-			// 	if (i instanceof GPGPUScene) return i;
-			// })
+			"/gpgpu": this.integratedScenes.find((i) => {
+				if (i instanceof GPGPUScene) return i
+			}),
 			"/voronoi": this.integratedScenes.find((i) => {
 				if (i instanceof VoronoiScene) return i
 			}),
@@ -600,11 +600,23 @@ class TravelGalleryScene {
 		// }
 
 		const vor = this.integratedScenesDict["/voronoi"] as VoronoiScene
-		if (vor && this.renderer) {
+		if (vor) {
 			vor.targetRenderer = this.renderer
 			vor.camera.position.z += 4
 			vor.raycastOffsetX = -500.5
 			vor.raycastOffsetY = 0
+		}
+
+		const gpgpus = this.integratedScenesDict["/gpgpu"] as GPGPUScene
+		if (gpgpus) {
+			gpgpus.targetRenderer = this.renderer
+		}
+
+		const partInter = this.integratedScenesDict[
+			"/particles-interactive"
+		] as ParticlesInteractiveScene
+		if (partInter) {
+			partInter.targetRenderer = this.renderer
 		}
 
 		for (let i = 0; i < posts.length; i++) {
@@ -828,15 +840,15 @@ class TravelGalleryScene {
 
 						if (iScene instanceof ParticlesInteractiveScene) {
 							// render to fbo
-							if (iScene.material)
-								iScene.material.uniforms.uPositions.value = iScene.fbo1.texture
-
-							// swap render targets
-							const temp = iScene.fbo
-							iScene.fbo = iScene.fbo1
-							iScene.fbo1 = temp
-							this.renderer.setRenderTarget(iScene.fbo)
-							this.renderer.render(iScene.fboScene, iScene.fboCamera)
+							// if (iScene.material)
+							// 	iScene.material.uniforms.uPositions.value = iScene.fbo1.texture
+							// this.renderer.setRenderTarget(null)
+							// // swap render targets
+							// const temp = iScene.fbo
+							// iScene.fbo = iScene.fbo1
+							// iScene.fbo1 = temp
+							// this.renderer.setRenderTarget(iScene.fbo1)
+							// this.renderer.render(iScene.fboScene, iScene.fboCamera)
 						}
 
 						// if (iScene instanceof GPGPUScene) {
