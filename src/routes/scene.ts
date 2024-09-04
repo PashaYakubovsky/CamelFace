@@ -377,8 +377,8 @@ class TravelGalleryScene {
 
 	animated = false
 	addColorToBGShader(color: string) {
-		if (this.bgMaterial && !this.animated) {
-			this.animated = true
+		if (this.bgMaterial) {
+			// this.animated = true
 			this.bgMaterial.uniforms.uPrevColor.value =
 				this.bgMaterial.uniforms.uColor.value
 			this.bgMaterial.uniforms.uColor.value = new THREE.Color(color)
@@ -386,14 +386,12 @@ class TravelGalleryScene {
 			const obj = { value: 0 }
 			gsap.to(obj, {
 				value: 1,
-				duration: 0.33,
-				ease: "none",
+				duration: 1,
+				ease: "linear",
 				onUpdate: () => {
-					if (this.bgMaterial)
+					if (this.bgMaterial) {
 						this.bgMaterial.uniforms.uFactor.value = obj.value
-				},
-				onComplete: () => {
-					this.animated = false
+					}
 				},
 			})
 		}
@@ -674,15 +672,6 @@ class TravelGalleryScene {
 		this.posts = posts
 	}
 
-	setBackground(texture: THREE.Texture) {
-		const imgRatio = texture.image.width / texture.image.height
-		const planeRatio = innerWidth / innerHeight
-		const ratio = planeRatio / imgRatio
-
-		texture.repeat.x = ratio
-		texture.offset.x = 0.5 * (1 - ratio)
-	}
-
 	resize() {
 		this.isMobile = window.innerWidth < 768
 		this.width = window.innerWidth
@@ -690,24 +679,12 @@ class TravelGalleryScene {
 		this.screens = defineScreen()
 
 		if (this.renderer)
-			this.renderer.setSize(
-				window.innerWidth,
-				window.innerHeight
-				// this.isMobile ? window.innerHeight * 0.35 : window.innerHeight
-			)
+			this.renderer.setSize(window.innerWidth, window.innerHeight)
 
 		this.camera.aspect = this.width / this.height
 		this.camera.updateProjectionMatrix()
 
-		// if (this.isMobile && this.bgPlane) {
-		// 	// if bgPlane in scene, remove it
-		// 	if (this.scene.children.includes(this.bgPlane)) {
-		// 		this.scene.remove(this.bgPlane)
-		// 	}
-		// }
-
 		if (this.material) {
-			// this.material.uniforms.isMobile.value = this.isMobile
 			this.material.uniforms.uResolution.value = new THREE.Vector3(
 				window.innerWidth,
 				window.innerHeight,
