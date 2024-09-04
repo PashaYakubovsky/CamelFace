@@ -25,6 +25,7 @@ import GalaxyScene from "./galaxy/scene"
 import EyeScene from "./eye/scene"
 import FresnelScene from "./fresnel/scene"
 import WobblyScene from "./wobbly/scene"
+import VoronoiScene from "./voronoi/scene"
 
 const calculateEuler = (isMobile: boolean, screens: Screens) => {
 	let euler = { y: 0, x: 0, z: 0 }
@@ -453,6 +454,10 @@ class TravelGalleryScene {
 			new WobblyScene(null, {
 				renderToTarget: true,
 			}),
+			new VoronoiScene(null, {
+				renderToTarget: true,
+			}),
+
 			// new GPGPUScene(null, {
 			// 	renderToTarget: true
 			// })
@@ -521,6 +526,9 @@ class TravelGalleryScene {
 				// '/gpgpu': this.renderTargets.find((i, idx) => {
 				// 	if (this.integratedScenes[idx] instanceof GPGPUScene) return i;
 				// })?.texture
+				"/voronoi": this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof VoronoiScene) return i
+				})?.texture,
 			}
 			return slugSetTexture
 		}
@@ -580,6 +588,9 @@ class TravelGalleryScene {
 			// '/gpgpu': this.integratedScenes.find((i) => {
 			// 	if (i instanceof GPGPUScene) return i;
 			// })
+			"/voronoi": this.integratedScenes.find((i) => {
+				if (i instanceof VoronoiScene) return i
+			}),
 		} as Record<string, IntegratedScene>
 
 		// if (this.integratedScenesDict['/gpgpu']) {
@@ -587,6 +598,14 @@ class TravelGalleryScene {
 		// 	const rafId = this.integratedScenesDict['/gpgpu'].rafId;
 		// 	if (rafId) cancelAnimationFrame(rafId);
 		// }
+
+		const vor = this.integratedScenesDict["/voronoi"] as VoronoiScene
+		if (vor && this.renderer) {
+			vor.targetRenderer = this.renderer
+			vor.camera.position.z += 4
+			vor.raycastOffsetX = -500.5
+			vor.raycastOffsetY = 0
+		}
 
 		for (let i = 0; i < posts.length; i++) {
 			const post = posts[i]

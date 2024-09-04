@@ -66,7 +66,12 @@ class VoronoiScene {
 
 	onSampleLoaded?: () => void
 
-	constructor(el: HTMLCanvasElement) {
+	constructor(
+		el: HTMLCanvasElement | null,
+		opts?: {
+			renderToTarget?: boolean
+		}
+	) {
 		this.camera = new THREE.PerspectiveCamera(
 			75,
 			window.innerWidth / window.innerHeight,
@@ -78,21 +83,24 @@ class VoronoiScene {
 		this.camera.updateProjectionMatrix()
 
 		this.scene = new THREE.Scene()
-		this.renderer = new THREE.WebGLRenderer({
-			canvas: el,
-			antialias: true,
-			powerPreference: "high-performance",
-		})
-		this.renderer.setPixelRatio(window.devicePixelRatio)
-		this.renderer.setClearColor("#000")
-		this.renderer.setSize(window.innerWidth, window.innerHeight)
 
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement)
-		this.controls.update()
-		this.controls.enableDamping = true
-		this.controls.dampingFactor = 0.25
-		const query = new URLSearchParams(window.location.search)
-		this.controls.enabled = query.get("controls") === "true"
+		if (!opts?.renderToTarget && el) {
+			this.renderer = new THREE.WebGLRenderer({
+				canvas: el,
+				antialias: true,
+				powerPreference: "high-performance",
+			})
+			this.renderer.setPixelRatio(window.devicePixelRatio)
+			this.renderer.setClearColor("#000")
+			this.renderer.setSize(window.innerWidth, window.innerHeight)
+
+			this.controls = new OrbitControls(this.camera, this.renderer.domElement)
+			this.controls.update()
+			this.controls.enableDamping = true
+			this.controls.dampingFactor = 0.25
+			const query = new URLSearchParams(window.location.search)
+			this.controls.enabled = query.get("controls") === "true"
+		}
 
 		this.textureLoader = new THREE.TextureLoader()
 
@@ -103,8 +111,11 @@ class VoronoiScene {
 		window.addEventListener("resize", this.resize.bind(this))
 		window.addEventListener("mousemove", this.handleMouseMove.bind(this))
 
-		this.stats = new Stats()
-		document.body.appendChild(this.stats.dom)
+		if (!opts?.renderToTarget) {
+			this.addDebug()
+			this.stats = new Stats()
+			document.body.appendChild(this.stats.dom)
+		}
 	}
 
 	async init() {
@@ -147,7 +158,6 @@ class VoronoiScene {
 			this.textureLoader.load("/garold.jpg")
 
 		this.initComputeRenderer()
-		this.addDebug()
 	}
 
 	async getSamples() {
@@ -217,13 +227,15 @@ class VoronoiScene {
 		}
 	}
 
+	raycastOffsetX = 0
+	raycastOffsetY = 0
 	handleMouseMove(event: MouseEvent) {
 		// fill mouse pos for raycasting
 		const x = event.clientX
 		const y = event.clientY
 
-		this.mousePos.x = (x / window.innerWidth) * 2 - 1
-		this.mousePos.y = -(y / window.innerHeight) * 2 + 1
+		this.mousePos.x = (x / (window.innerWidth - this.raycastOffsetX)) * 2 - 1
+		this.mousePos.y = -(y / (window.innerHeight - this.raycastOffsetY)) * 2 + 1
 	}
 
 	handleClick(event: MouseEvent) {
@@ -337,10 +349,12 @@ class VoronoiScene {
 		}
 	}
 
+	targetRenderer: THREE.WebGLRenderer | null = null
 	initComputeRenderer() {
-		if (!this.renderer) return
+		const targetRenderer = this.renderer || this.targetRenderer
+		if (!targetRenderer) return
 
-		this.gpuCompute = new GPUComputationRenderer(COUNT, COUNT, this.renderer)
+		this.gpuCompute = new GPUComputationRenderer(COUNT, COUNT, targetRenderer)
 
 		const dtPosition = this.gpuCompute.createTexture()
 		const dtVelocity = this.gpuCompute.createTexture()
@@ -402,7 +416,7 @@ class VoronoiScene {
 
 		this.gpuCompute.init()
 
-		this.renderer.domElement.addEventListener(
+		targetRenderer.domElement.addEventListener(
 			"click",
 			this.handleClick.bind(this)
 		)
