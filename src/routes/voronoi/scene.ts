@@ -19,7 +19,7 @@ const debug = {
 	count: COUNT,
 	sizeX: 4,
 	sizeY: 4,
-	color: "#ffffff",
+	color: "#ca9891",
 	voronoiCells: false,
 }
 
@@ -146,10 +146,8 @@ class VoronoiScene {
 		this.material.uniforms.uSample.value =
 			this.textureLoader.load("/garold.jpg")
 
-		setTimeout(() => {
-			this.initComputeRenderer()
-			this.addDebug()
-		}, 1000)
+		this.initComputeRenderer()
+		this.addDebug()
 	}
 
 	async getSamples() {
@@ -361,12 +359,12 @@ class VoronoiScene {
 
 		this.velocityVariable = this.gpuCompute.addVariable(
 			"texturePosition",
-			fragmentShaderVelocity,
+			fragmentShaderPosition,
 			dtVelocity
 		)
 		this.positionVariable = this.gpuCompute.addVariable(
 			"textureVelocity",
-			fragmentShaderPosition,
+			fragmentShaderVelocity,
 			dtPosition
 		)
 
@@ -412,7 +410,7 @@ class VoronoiScene {
 	clock = new THREE.Clock()
 	prevTime = 0
 	animate() {
-		const elapsedTime = this.clock.getElapsedTime()
+		const elapsedTime = this.clock.getElapsedTime() * 0.01
 		const deltaTime = elapsedTime - this.prevTime
 		if (this.controls) {
 			this.controls.update()

@@ -21,8 +21,8 @@
 		scene.index = index
 		if (scene.material) {
 			const target = scene.targets[index]
-			// scene.velocityUniforms["uTarget"].value = target
-			// scene.positionUniforms["uTarget"].value = target
+			scene.velocityUniforms["uTarget"].value = target
+			scene.positionUniforms["uTarget"].value = target
 		}
 	}
 </script>

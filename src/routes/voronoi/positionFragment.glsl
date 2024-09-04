@@ -20,7 +20,7 @@ void main() {
           vec4 base = texture2D( uSample, uv );
           vec4 target = texture2D( uTexture, uv );
 
-          // velocity.xyz += velocity.xyz * 1.0 / 60.0;
+          velocity.xyz += velocity.xyz * 1.0 / 60.0;
 
           // Fake haos movement
           vec4 rands = permute( vec4( vec3(uv*5.0, time * 0.1), 0.0) );
@@ -39,11 +39,12 @@ void main() {
           }
 
           float distanceToTarget = distance(uMouse, position.xy);
-          if (distanceToTarget < .7) {
-                    position.xyz -= curl(vec3(position.xyz), time, rands.y) * 0.0033;
+          if (distanceToTarget < .73) {
+                    position.xyz += curl(vec3(position.xyz), time, rands.x);
+          } else {
+                    position.xyz += velocity.xyz * 0.015 + noiseVal.xyz;
           }
           
-          position.xyz += velocity.xyz * 0.015 + noiseVal.xyz;
           
           
           gl_FragColor = position; 
