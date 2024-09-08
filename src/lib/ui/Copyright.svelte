@@ -1,9 +1,9 @@
 <script>
-	export let githubLink = 'https://github.com/PashaYakubovsky?tab=repositories';
+	export let githubLink = "https://github.com/PashaYakubovsky?tab=repositories"
 </script>
 
 <footer>
-	<p>&copy; {new Date().getFullYear()}</p>
+	<p>&copy;</p>
 	<a href={githubLink}>Author</a>
 </footer>
 
@@ -15,7 +15,9 @@
 		left: 0.5rem;
 		z-index: 1000;
 		display: flex;
-		gap: 0.5rem;
+		gap: 0.25rem;
+		align-items: center;
+		font-size: 0.55rem;
 	}
 	a {
 		color: var(--secondary);

@@ -268,6 +268,8 @@ class MandelbrotScene {
 				Math.sin(this.material.uniforms.u_time.value) * -1.5
 			this.camera.position.y =
 				Math.cos(this.material.uniforms.u_time.value) * 0.5
+			this.camera.position.z =
+				Math.cos(this.material.uniforms.u_time.value * 0.1) * 0.5
 			this.camera.lookAt(this.scene.position)
 		}
 	}

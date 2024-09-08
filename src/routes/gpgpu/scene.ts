@@ -123,8 +123,6 @@ class GPGPUScene {
 		// this.controls.enabled = false;
 
 		// Add objects
-		debugger
-
 		this.addObjects()
 
 		// Debug
@@ -174,7 +172,6 @@ class GPGPUScene {
 		}
 		// Base particles
 		const baseParticlesTexture = this.gpgpu.computation.createTexture()
-		console.log("[gpgpu:baseParticlesTexture]", baseParticlesTexture)
 
 		if (this.baseGeometry.count && this.baseGeometry.instance) {
 			for (let i = 0; i < this.baseGeometry.count; i++) {
@@ -483,7 +480,6 @@ class GPGPUScene {
 			if (intersects[0]?.point && this.gpgpu && this.gpgpu.particlesVariable) {
 				this.gpgpu.particlesVariable.material.uniforms.uIntersect.value =
 					intersects[0].point
-				console.log("[gpgpu:intersects]", intersects[0].point)
 			}
 		}
 

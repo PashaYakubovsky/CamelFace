@@ -28,62 +28,28 @@ import WobblyScene from "./wobbly/scene"
 import VoronoiScene from "./voronoi/scene"
 import GPGPUScene from "./gpgpu/scene"
 
-const calculateEuler = (isMobile: boolean, screens: Screens) => {
-	let euler = { y: 0, x: 0, z: 0 }
-
-	// if (!isMobile) {
-	euler = {
+const calculateEuler = () => {
+	const euler = {
 		x: -0.1,
 		y: -0.7,
 		z: -0.2,
 	}
-	// if (screens.isXl) {
-	// 	euler = {
-	// 		x: -0.1,
-	// 		y: -0.7,
-	// 		z: -0.2,
-	// 	}
-	// }
-	// }
 
 	return euler
 }
-const calculatePosition = (isMobile: boolean, screens: Screens) => {
-	let position = { y: -0.02, x: 0, z: -1 }
-
-	// if (!isMobile) {
-	position = {
+const calculatePosition = () => {
+	const position = {
 		x: 1.5,
 		y: 0,
 		z: 0,
 	}
-	// if (screens.isXl) {
-	// 	position = {
-	// 		x: window.innerWidth * 0.0009,
-	// 		y: 0,
-	// 		z: 0,
-	// 	}
-	// }
-	// }
 
 	return position
 }
 
-const createGeometry = (isMobile: boolean, screens: Screens) => {
-	// const aspectRatio = window.innerWidth / window.innerHeight
-	// const base = 1.5
-	// const geometry = [base + (aspectRatio - 1), base + (aspectRatio - 1)]
+const createGeometry = () => {
 	const geometry = [2.5, 2.2]
 
-	// if (!isMobile) {
-	// geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0014]
-	// if (screens.isXl) {
-	// 	geometry = [window.innerWidth * 0.0016, window.innerWidth * 0.0015]
-	// }
-	// if (screens.is2Xl) {
-	// 	geometry = [window.innerWidth * 0.0011, window.innerWidth * 0.001]
-	// }
-	// }
 	return new THREE.PlaneGeometry(geometry[0], geometry[1], 10, 10)
 }
 
@@ -158,24 +124,15 @@ class TravelGalleryScene {
 		this.renderer.toneMappingExposure = 1
 
 		this.screens = defineScreen()
-		this.geometry = createGeometry(this.isMobile, this.screens)
-		this.positionValues = calculatePosition(this.isMobile, this.screens)
-		this.eulerValues = calculateEuler(this.isMobile, this.screens)
+		this.geometry = createGeometry()
+		this.positionValues = calculatePosition()
+		this.eulerValues = calculateEuler()
 
-		// this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		this.renderer.toneMapping = THREE.ACESFilmicToneMapping
 		this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
-		this.camera.position.set(
-			0,
-			0,
-			// this.isMobile ? 0 : 4
-			4
-		)
-		this.renderer.setSize(
-			window.innerWidth,
-			// this.isMobile ? window.innerHeight * 0.35 : window.innerHeight
-			window.innerHeight
-		)
+		this.camera.position.set(0, 0, 4)
+		this.renderer.setSize(window.innerWidth, window.innerHeight)
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 		this.addObjects()
@@ -233,12 +190,19 @@ class TravelGalleryScene {
 						}
 					`,
 				transparent: true,
+				// wireframe: true,
+				depthTest: false,
+				depthWrite: false,
 			})
 		)
 		if (loader) {
-			loader.position.set(0, 0, -2)
+			loader.position.set(0, 0, 0)
 			this.scene.add(loader)
 		}
+
+		// init preloader
+		this.total = 0
+		threejsLoading.update((v) => ({ ...v, loading: true, loaded: false }))
 
 		manager.onStart = (url, itemsLoaded, itemsTotal) => {
 			isComplied = false
@@ -308,7 +272,7 @@ class TravelGalleryScene {
 		this.scene.add(this.camera)
 
 		window.addEventListener("mousemove", (e) => this.onMouseMove(e))
-		window.addEventListener("resize", () => this.resize())
+		window.addEventListener("resize", this.resize.bind(this))
 		window.addEventListener("click", (e) => this.onClick(e))
 	}
 
@@ -598,6 +562,11 @@ class TravelGalleryScene {
 		// 	const rafId = this.integratedScenesDict['/gpgpu'].rafId;
 		// 	if (rafId) cancelAnimationFrame(rafId);
 		// }
+
+		if (this.integratedScenesDict["/particles-interactive"]) {
+			const rafId = this.integratedScenesDict["/particles-interactive"].rafId
+			if (rafId) cancelAnimationFrame(rafId)
+		}
 
 		const vor = this.integratedScenesDict["/voronoi"] as VoronoiScene
 		if (vor) {

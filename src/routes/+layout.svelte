@@ -7,8 +7,6 @@
 	import { onMount } from "svelte"
 	import { PUBLIC_API_URL } from "$env/static/public"
 
-	let userWindowId: string = Math.random().toString(16).slice(2)
-
 	const generateHexFromId = (id: string) => {
 		const hash = id.split("").reduce((acc, char) => {
 			acc = (acc << 5) - acc + char.charCodeAt(0)
@@ -79,5 +77,3 @@
 <Analytics />
 
 <Copyright />
-
-<!-- <Nav /> -->
