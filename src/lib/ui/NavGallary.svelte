@@ -21,7 +21,7 @@
 	export let setAttractMode: (a: boolean) => void
 </script>
 
-<nav
+<!-- <nav
 	class={`gallery-nav ${
 		allTextureLoaded ? "opacity-100" : "opacity-0 pointer-events-none"
 	}`}
@@ -229,4 +229,4 @@
 			width: fit-content;
 		}
 	}
-</style>
+</style> -->

@@ -7,6 +7,9 @@ import type { Post } from "../types"
 import { defineScreen, type Screens } from "$lib/mediaQuery"
 import { threejsLoading } from "$lib/loading"
 import { gsap } from "$gsap"
+import CustomShaderMaterial from "three-custom-shader-material/vanilla"
+
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 
 import LinesScene from "./lines/scene"
 import MorphScene from "./morphing/scene"
@@ -114,6 +117,9 @@ class TravelGalleryScene {
 	videTexture: THREE.VideoTexture | null = null
 	postsMaterials: THREE.ShaderMaterial[] = []
 	prevMaterialIndex = -1
+	gltfLoader: GLTFLoader = new GLTFLoader()
+	hamburger: THREE.Group | null = null
+	hamburgerMaterial: CustomShaderMaterial | null = null
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -136,7 +142,7 @@ class TravelGalleryScene {
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 		this.addObjects()
-
+		this.addHamburger()
 		this.animate()
 
 		const manager = this.loaderManager
@@ -672,6 +678,107 @@ class TravelGalleryScene {
 		this.posts = posts
 	}
 
+	async addHamburger() {
+		try {
+			const { scene } = await this.gltfLoader.loadAsync("Hamburger.glb")
+			const hamburgerGroup = scene.getObjectByName("Circle003_Circle004")
+
+			const hamMat = new CustomShaderMaterial({
+				baseMaterial: THREE.MeshPhysicalMaterial,
+				uniforms: {
+					time: { value: 0 },
+				},
+				vertexShader: `
+					varying vec2 vUv;
+					void main() {
+						gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+						vUv = uv;
+					}
+				`,
+				fragmentShader: `
+					varying vec2 vUv;
+					uniform float time;
+
+
+					void main() {
+						// fresnel effect
+						vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
+						float fresnel = 1.0 - dot(vNormal, viewDir);
+						fresnel = pow(fresnel, 2.0);
+
+						// color
+						vec3 color = vec3(1.0, 1.0, 1.0);
+
+						csm_DiffuseColor = vec4(color * fresnel, 1.0);
+					}
+
+				`,
+				depthTest: false,
+				depthWrite: false,
+				ior: 1.2,
+				reflectivity: 1,
+				clearcoat: 1,
+				clearcoatRoughness: 0.1,
+				roughness: 0.01,
+				metalness: 0.9,
+				transparent: true,
+				opacity: 0.4,
+			})
+			this.hamburgerMaterial = hamMat
+
+			if (hamburgerGroup) {
+				for (let i = 0; i < hamburgerGroup.children.length; i++) {
+					const child = hamburgerGroup.children[i] as THREE.Mesh
+					child.material = hamMat
+					child.position.y -= 0.3
+					child.scale.set(0.07, 0.07, 0.07)
+				}
+
+				hamburgerGroup.rotation.x = Math.PI / 10
+				hamburgerGroup.rotation.y += 0.5
+				hamburgerGroup.position.set(
+					(window.outerWidth / 100) * (this.isMobile ? -0.66 : -0.68),
+					5.5,
+					-10
+				)
+				hamburgerGroup.scale.set(0.1, 0.1, 0.1)
+
+				const ambLight = new THREE.AmbientLight(0xffffff, 4)
+				this.scene.add(ambLight)
+
+				const circles: THREE.Mesh[] = []
+
+				for (let i = 0; i < this.posts.length - 1; i++) {
+					const post = this.posts[i]
+					// create romboid geometry
+					const geo = new THREE.TetrahedronGeometry(0.5, 0)
+					const circle = new THREE.Mesh(geo, hamMat)
+					circle.post = post
+
+					// create a responsive list of circles around the hamburger
+					const angle = (i / this.posts.length) * Math.PI * 2.1
+					const gap = 0.35
+					const radius = 3
+
+					const x = Math.cos(angle) * radius * gap
+					const y = Math.sin(angle) * radius * gap
+
+					circle.name = `${post.slug}|hamburger`
+
+					circle.position.set(x, y, 0)
+					circle.scale.set(0.5, 0.5, 0.5)
+					circles.push(circle)
+				}
+
+				this.scene.add(hamburgerGroup)
+				this.hamburger = hamburgerGroup as THREE.Group
+				this.hamburger.add(...circles)
+			}
+		} catch (err) {
+			console.error(err)
+		}
+	}
+
 	resize() {
 		this.isMobile = window.innerWidth < 768
 		this.width = window.innerWidth
@@ -710,10 +817,17 @@ class TravelGalleryScene {
 
 		for (const mesh of this.meshes) {
 			mesh.geometry.dispose()
-			mesh.geometry = createGeometry(this.isMobile, this.screens)
+			mesh.geometry = createGeometry()
 		}
 	}
 
+	handleHoverNavItem(post: Post) {
+		const slug = post.slug
+		console.log("slug", slug)
+	}
+	handleHoverOutNavItem() {
+		// empty
+	}
 	onMouseMove(e: MouseEvent) {
 		// events
 		this.mouse.set(
@@ -737,14 +851,16 @@ class TravelGalleryScene {
 					}
 					this.handleHoverOut()
 				}
-				delete this.hovered[key]
+				if (this.hovered[key].object.name.endsWith("|hamburger")) {
+					this.handleHoverOutNavItem()
+				}
 			}
 		})
 
 		this.intersected.forEach((hit) => {
 			// If a hit has not been flagged as hovered we must call onPointerOver
 			if (!this.hovered[hit.object.uuid]) {
-				this.hovered[hit.object.uuid] = hit
+				this.hovered[hit.object.uuid + hit.object.name] = hit
 
 				if (this.handleHoverIn) {
 					this.handleHoverIn()
@@ -757,6 +873,10 @@ class TravelGalleryScene {
 				document.body.style.cursor = "pointer"
 				if (obj.material.uniforms.uMouse)
 					obj.material.uniforms.uMouse.value = this.mouse
+			}
+
+			if (obj.name.endsWith("|hamburger")) {
+				this.handleHoverNavItem(obj.post)
 			}
 		})
 	}
@@ -784,9 +904,10 @@ class TravelGalleryScene {
 			})
 		}
 	}
-
+	clock = new THREE.Clock()
 	animate() {
-		this.time += 0.05
+		this.time = this.clock.getElapsedTime()
+		const delta = this.clock.getDelta()
 
 		this.materials.forEach((material) => {
 			material.uniforms.time.value = this.time
@@ -845,6 +966,31 @@ class TravelGalleryScene {
 					} catch (err) {
 						// Added detailed error logging
 						console.error(`Error rendering scene ${i}:`, err)
+					}
+				}
+			}
+
+			if (this.hamburgerMaterial) {
+				this.hamburgerMaterial.uniforms.time.value = this.time
+			}
+
+			if (this.hamburger) {
+				// this.hamburger.rotation.y += 0.01
+				this.hamburger.scale.set(
+					Math.sin(this.time) * 0.01 + 1,
+					Math.sin(this.time) * 0.01 + 1,
+					Math.sin(this.time) * 0.01 + 1
+				)
+
+				for (let i = 0; i < this.hamburger.children.length; i++) {
+					const child = this.hamburger.children[i] as THREE.Mesh
+					if (child.name.endsWith("|hamburger")) {
+						// rotate the circles around the hamburger
+						// create staggered rotation
+						child.rotation.y += delta
+						child.rotation.x += delta
+					} else {
+						child.rotation.y += 0.01
 					}
 				}
 			}

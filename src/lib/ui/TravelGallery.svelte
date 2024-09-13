@@ -314,6 +314,26 @@
 					const ctx = handleHoverOut({ start: $pageTransition.start })
 				}
 
+				scene.handleHoverNavItem = (post) => {
+					const index = $posts.findIndex((p) => p.slug === post.slug)
+					if (index !== -1) {
+						attractTo = $posts.findIndex((p) => p.id === post.id)
+
+						setAttractTo?.(attractTo)
+
+						if (!attractMode) {
+							attractMode = true
+							setAttractMode?.(attractMode)
+						}
+						if (scene)
+							scene.addColorToBGShader(scene?.backgroundColors[currentIndex])
+					}
+				}
+
+				scene.handleHoverOutNavItem = () => {
+					setAttractMode?.(false)
+				}
+
 				scene.onClickEvent = (meshIndex: number) => {
 					// reverse the index
 					const rI = meshIndex
