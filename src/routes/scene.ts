@@ -742,14 +742,12 @@ class TravelGalleryScene {
 
 				hamburgerGroup.rotation.x = Math.PI / 10
 				hamburgerGroup.rotation.y += 0.5
-				hamburgerGroup.position.set(
-					(window.outerWidth / 100) * (this.isMobile ? -0.66 : -0.68),
-					5.5,
-					-10
-				)
+				const aspect = window.innerWidth / window.innerHeight
+				hamburgerGroup.position.set(-1 - aspect * 4.5, 5.5, -10)
 				hamburgerGroup.scale.set(0.1, 0.1, 0.1)
 
-				const ambLight = new THREE.AmbientLight(0xffffff, 4)
+				const ambLight = new THREE.DirectionalLight(0xffffff, 40)
+				ambLight.position.set(-5, 4, 2)
 				this.scene.add(ambLight)
 
 				const circles: THREE.Mesh[] = []
@@ -872,6 +870,7 @@ class TravelGalleryScene {
 				if (this.hovered[key].object.name.endsWith("|hamburger")) {
 					this.handleHoverOutNavItem()
 				}
+				delete this.hovered[key]
 			}
 		})
 
@@ -996,11 +995,26 @@ class TravelGalleryScene {
 					Math.sin(this.time) * 0.01 + 1
 				)
 
+				// if (!this.hovered[this.hamburger.uuid + this.hamburger.name]) {
+				const hoveredItems = Object.values(this.hovered)
+				const isSomeHovered = hoveredItems.some((hit) => {
+					const obj = hit.object as THREE.Mesh
+					return obj.name.endsWith("|hamburger")
+				})
+				if (!isSomeHovered) {
+					this.hamburger.rotation.z += 0.01
+				} else {
+					// lerp to default rotation
+					this.hamburger.rotation.z = THREE.MathUtils.lerp(
+						this.hamburger.rotation.z,
+						0,
+						0.1
+					)
+				}
+
 				for (let i = 0; i < this.hamburger.children.length; i++) {
 					const child = this.hamburger.children[i] as THREE.Mesh
 					if (child.name.endsWith("|hamburger")) {
-						// rotate the circles around the hamburger
-						// create staggered rotation
 						child.rotation.y += delta
 						child.rotation.x += delta
 					} else {
