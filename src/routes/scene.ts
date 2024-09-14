@@ -721,14 +721,14 @@ class TravelGalleryScene {
 				`,
 				depthTest: false,
 				depthWrite: false,
-				ior: 1.2,
+				ior: 2.2,
 				reflectivity: 1,
 				clearcoat: 1,
 				clearcoatRoughness: 0.1,
 				roughness: 0.01,
 				metalness: 0.9,
 				transparent: true,
-				opacity: 0.4,
+				opacity: 0.2,
 			})
 			this.hamburgerMaterial = hamMat
 

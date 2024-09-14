@@ -178,6 +178,7 @@
 		let prevPos = 0
 		let lastInteraction = 0
 		const handleTouchMove = (e: TouchEvent) => {
+			e.preventDefault()
 			if (Date.now() - lastInteraction > 100) {
 				prevPos = e.touches[0].clientY
 			}
@@ -407,9 +408,9 @@
 		left: 0;
 		top: 0;
 		z-index: 1;
-		min-height: 100vh;
+		min-height: 100svh;
+		height: 100svh;
 		width: 100%;
-		height: 100%;
 		overflow: hidden;
 	}
 	canvas {
