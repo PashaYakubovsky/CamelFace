@@ -6,7 +6,7 @@ import bgFragmentShader from "./shaders/bgFragmentShader.glsl"
 import type { Post } from "../types"
 import { defineScreen, type Screens } from "$lib/mediaQuery"
 import { threejsLoading } from "$lib/loading"
-import { gsap } from "$gsap"
+import { gsap } from "gsap"
 import CustomShaderMaterial from "three-custom-shader-material/vanilla"
 
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
@@ -372,66 +372,40 @@ class TravelGalleryScene {
 	async addGallery({ posts }: { posts: Post[] }) {
 		this.total = posts.length
 
-		this.integratedScenes = [
-			new LyapunovScene(null, {
-				renderToTarget: true,
-			}),
-			new NoiseInteractiveScene(null, {
-				renderToTarget: true,
-			}),
-			new BoidsScene(null, {
-				renderToTarget: true,
-			}),
-			new AttractionScene(null, {
-				renderToTarget: true,
-			}),
-			new HologramScene(null, {
-				renderToTarget: true,
-			}),
-			new MorphScene(null, {
-				renderToTarget: true,
-			}),
-
-			new LandScene(null, {
-				renderToTarget: true,
-			}),
-			new ParticlesScene(null, {
-				renderToTarget: true,
-			}),
-			new MandelbrotScene(null, {
-				renderToTarget: true,
-			}),
-			new FBMScene(null, {
-				renderToTarget: true,
-			}),
-			new CardioidScene(null, {
-				renderToTarget: true,
-			}),
-			new GalaxyScene(null, {
-				renderToTarget: true,
-			}),
-			new LinesScene(null, {
-				renderToTarget: true,
-			}),
-			new ParticlesInteractiveScene(null, {
-				renderToTarget: true,
-			}),
-			new EyeScene(null, {
-				renderToTarget: true,
-			}),
-			new FresnelScene(null, {
-				renderToTarget: true,
-			}),
-			new WobblyScene(null, {
-				renderToTarget: true,
-			}),
-			new VoronoiScene(null, {
-				renderToTarget: true,
-			}),
-			new GPGPUScene(null, {
-				renderToTarget: true,
-			}),
+		this.integratedScenes = []
+		const scenes = [
+			LyapunovScene,
+			NoiseInteractiveScene,
+			BoidsScene,
+			AttractionScene,
+			HologramScene,
+			MorphScene,
+			LandScene,
+			ParticlesScene,
+			MandelbrotScene,
+			FBMScene,
+			CardioidScene,
+			GalaxyScene,
+			LinesScene,
+			ParticlesInteractiveScene,
+			EyeScene,
+			FresnelScene,
+			WobblyScene,
+			VoronoiScene,
+			// GPGPUScene,
 		]
+
+		for (let i = 0; i < scenes.length; i++) {
+			const Scene = scenes[i]
+			const scene = new Scene(null, {
+				renderToTarget: true,
+			})
+			this.integratedScenes.push(scene)
+			await new Promise((resolve) => setTimeout(resolve, 300))
+			const rafId = scene.rafId
+			if (rafId) cancelAnimationFrame(rafId)
+		}
+
 		this.integratedScenes.reverse()
 
 		this.renderTargets = this.integratedScenes.map(
@@ -493,9 +467,9 @@ class TravelGalleryScene {
 				"/wobbly": this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof WobblyScene) return i
 				})?.texture,
-				"/gpgpu": this.renderTargets.find((i, idx) => {
-					if (this.integratedScenes[idx] instanceof GPGPUScene) return i
-				})?.texture,
+				// "/gpgpu": this.renderTargets.find((i, idx) => {
+				// 	if (this.integratedScenes[idx] instanceof GPGPUScene) return i
+				// })?.texture,
 				"/voronoi": this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof VoronoiScene) return i
 				})?.texture,
@@ -555,24 +529,13 @@ class TravelGalleryScene {
 			"/wobbly": this.integratedScenes.find((i) => {
 				if (i instanceof WobblyScene) return i
 			}),
-			"/gpgpu": this.integratedScenes.find((i) => {
-				if (i instanceof GPGPUScene) return i
-			}),
+			// "/gpgpu": this.integratedScenes.find((i) => {
+			// 	if (i instanceof GPGPUScene) return i
+			// }),
 			"/voronoi": this.integratedScenes.find((i) => {
 				if (i instanceof VoronoiScene) return i
 			}),
 		} as Record<string, IntegratedScene>
-
-		// if (this.integratedScenesDict['/gpgpu']) {
-		// 	this.integratedScenesDict['/gpgpu'].renderer = this.renderer!;
-		// 	const rafId = this.integratedScenesDict['/gpgpu'].rafId;
-		// 	if (rafId) cancelAnimationFrame(rafId);
-		// }
-
-		if (this.integratedScenesDict["/particles-interactive"]) {
-			const rafId = this.integratedScenesDict["/particles-interactive"].rafId
-			if (rafId) cancelAnimationFrame(rafId)
-		}
 
 		const vor = this.integratedScenesDict["/voronoi"] as VoronoiScene
 		if (vor) {
@@ -582,10 +545,10 @@ class TravelGalleryScene {
 			vor.raycastOffsetY = 0
 		}
 
-		const gpgpus = this.integratedScenesDict["/gpgpu"] as GPGPUScene
-		if (gpgpus) {
-			gpgpus.targetRenderer = this.renderer
-		}
+		// const gpgpus = this.integratedScenesDict["/gpgpu"] as GPGPUScene
+		// if (gpgpus) {
+		// 	gpgpus.targetRenderer = this.renderer
+		// }
 
 		const partInter = this.integratedScenesDict[
 			"/particles-interactive"
@@ -593,6 +556,8 @@ class TravelGalleryScene {
 		if (partInter) {
 			partInter.targetRenderer = this.renderer
 		}
+
+		const slugSetTexture = getSlugSet()
 
 		for (let i = 0; i < posts.length; i++) {
 			const post = posts[i]
@@ -605,8 +570,6 @@ class TravelGalleryScene {
 			const material = this.material.clone()
 			try {
 				const group = new THREE.Group()
-
-				const slugSetTexture = getSlugSet()
 
 				const slug = post.slug
 
@@ -672,8 +635,6 @@ class TravelGalleryScene {
 			})
 			this.scene.add(group)
 		})
-
-		// this.changeVideo(0);
 
 		this.posts = posts
 	}
@@ -753,6 +714,8 @@ class TravelGalleryScene {
 					// create romboid geometry
 					const geo = new THREE.TetrahedronGeometry(0.5, 0)
 					const circle = new THREE.Mesh(geo, hamMat)
+					// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+					// @ts-ignore
 					circle.post = post
 
 					// create a responsive list of circles around the hamburger
@@ -804,13 +767,23 @@ class TravelGalleryScene {
 				this.width,
 				this.height
 			)
+			// resize bgPlane
+			const aspectRatio = this.width / this.height
+			this.bgGeometry?.scale(aspectRatio, 1, 1)
 		}
 
 		for (const post of this.posts) {
 			const slug = post.slug
 			const scene = this.integratedScenesDict[slug]
-			if (scene) {
+			if (scene && scene.camera instanceof THREE.PerspectiveCamera) {
 				scene.camera.aspect = this.width / this.height
+				scene.camera.updateProjectionMatrix()
+			}
+			if (scene && scene.camera instanceof THREE.OrthographicCamera) {
+				scene.camera.left = -this.width / 2
+				scene.camera.right = this.width / 2
+				scene.camera.top = this.height / 2
+				scene.camera.bottom = -this.height / 2
 				scene.camera.updateProjectionMatrix()
 			}
 		}
@@ -866,7 +839,7 @@ class TravelGalleryScene {
 					this.handleHoverIn()
 				}
 			}
-			const obj = hit.object as THREE.Mesh
+			const obj = hit.object as THREE.Mesh & { post: Post }
 			// if obj is a bgPlane, dont change cursor
 			if (obj.material instanceof THREE.ShaderMaterial) {
 				if (obj.name === "bgPlane") return
@@ -946,10 +919,6 @@ class TravelGalleryScene {
 							this.renderer.render(iScene.scene, iScene.camera)
 							this.renderer.setRenderTarget(null) // Ensure rendering returns to the default framebuffer
 						}
-
-						// if (iScene instanceof GPGPUScene) {
-						// 	continue;
-						// }
 
 						if (iScene instanceof LinesScene) {
 							if (!iScene.target) {

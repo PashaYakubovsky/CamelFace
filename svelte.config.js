@@ -14,7 +14,6 @@ const config = {
 		adapter: adapter(),
 		alias: {
 			$gsap: "src/lib/gsap-business/esm/index.js",
-			gsap: "src/lib/gsap-business/sra/all.js",
 			$scrollTrigger: "src/lib/gsap-business/esm/ScrollTrigger.js",
 			$scrollSmoother: "src/lib/gsap-business/esm/ScrollSmoother.js",
 		},

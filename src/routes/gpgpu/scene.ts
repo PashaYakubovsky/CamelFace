@@ -1,16 +1,17 @@
 import vertexShader from "./shaders/vertexShader.glsl"
 import fragmentShader from "./shaders/fragmentShader.glsl"
 import gpgpuParticlesFragmentShader from "./shaders/fragmentParticles.glsl"
-import Stats from "three/examples/jsm/libs/stats.module"
+import Stats from "three/addons/libs/stats.module.js"
 import * as THREE from "three"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
+import { OrbitControls } from "three/addons/controls/OrbitControls.js"
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js"
 import { GUI } from "lil-gui"
+
 import {
 	GPUComputationRenderer,
 	type Variable,
-} from "three/examples/jsm/misc/GPUComputationRenderer"
+} from "three/addons/misc/GPUComputationRenderer.js"
 
 class GPGPUScene {
 	renderer: THREE.WebGLRenderer | undefined
@@ -34,7 +35,7 @@ class GPGPUScene {
 		material?: THREE.ShaderMaterial
 		points?: THREE.Points
 	} = {}
-	controls: OrbitControls
+	controls?: OrbitControls
 	debugObject = {
 		clearColor: "#160920",
 		size: 0.07,
@@ -115,7 +116,7 @@ class GPGPUScene {
 		this.mouse = new THREE.Vector2()
 
 		// Controls
-		if (!opt?.renderToTarget) {
+		if (!opt?.renderToTarget && canvasElement) {
 			this.controls = new OrbitControls(this.camera, canvasElement)
 			this.controls.enableDamping = true
 		}
@@ -132,15 +133,10 @@ class GPGPUScene {
 		// Events
 		window.addEventListener("resize", this.onWindowResize.bind(this), false)
 		window.addEventListener("mousemove", this.onMouseMove.bind(this), false)
-		window.addEventListener("click", this.onClick.bind(this), false)
 
 		// initial render
 		this.animate()
-
-		// window.addEventListener('wheel', this.onWheel.bind(this), false);
 	}
-
-	onReady() {}
 
 	async addObjects() {
 		// Load models
@@ -162,12 +158,17 @@ class GPGPUScene {
 		 * GPU Compute
 		 */
 		// Setup
-		if (this.baseGeometry.count && this.baseGeometry.instance) {
+		if (
+			this.baseGeometry.count &&
+			this.baseGeometry.instance &&
+			(this.targetRenderer || this.renderer)
+		) {
 			this.gpgpu.size = Math.ceil(Math.sqrt(this.baseGeometry.count))
 			this.gpgpu.computation = new GPUComputationRenderer(
 				this.gpgpu.size,
 				this.gpgpu.size,
-				this.targetRenderer || this.renderer
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+				this.targetRenderer! || this.renderer!
 			)
 		}
 		// Base particles
@@ -325,9 +326,6 @@ class GPGPUScene {
 			// add to scene
 			this.scene.add(this.raycastBox)
 		})
-
-		// On ready callback
-		this.onReady()
 	}
 
 	addDebug() {
@@ -569,8 +567,6 @@ class GPGPUScene {
 		if (this.stats) this.stats.update()
 	}
 
-	onClick(e: MouseEvent): void {}
-
 	destroy(): void {
 		window.removeEventListener("mousemove", this.onMouseMove.bind(this))
 
@@ -591,8 +587,6 @@ class GPGPUScene {
 
 		if (this.rafId) cancelAnimationFrame(this.rafId)
 	}
-
-	onWheel(event: WheelEvent) {}
 }
 
 export default GPGPUScene

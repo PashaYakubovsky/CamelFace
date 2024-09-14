@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte"
 	import Scene from "../../routes/scene"
-	import { gsap } from "$gsap"
+	import { gsap } from "gsap"
 	import type * as THREE from "three"
 	import {
 		handleHoverIn,
@@ -12,17 +12,13 @@
 	import { onlineUsers } from "$lib/onlineUsers"
 	import { goto } from "$app/navigation"
 	import { posts } from "$lib/posts"
-	import NavGallery from "./NavGallary.svelte"
 
 	let canvasElement: HTMLCanvasElement
 	let contentElements: HTMLElement[] = []
 	let pageWrapperElement: HTMLDivElement | null = null
 	let attractMode = false
 	let attractTo = 0
-	let rots: THREE.Euler[] = []
-	let positions: THREE.Vector3[] = []
-	let scales: THREE.Vector3[] = []
-	let materials: THREE.ShaderMaterial[] = []
+
 	let scene: Scene
 	let currentIndex = 0
 	let direction: 1 | -1 = 1
@@ -53,7 +49,7 @@
 		allTextureLoaded = value.loaded
 		if (value.loaded) {
 			attractTo = localStorage.getItem("attractTo")
-				? parseInt(localStorage.getItem("attractTo") || "")
+				? parseInt(localStorage.getItem("attractTo") || "") || 0
 				: $posts.length - 1
 			attractMode = true
 			setTimeout(() => {
@@ -63,8 +59,8 @@
 	})
 
 	const setAttractTo = (index: number) => {
-		attractTo = index
-		currentIndex = index
+		attractTo = index || 0
+		currentIndex = index || 0
 	}
 	const setAttractMode = (mode: boolean) => {
 		attractMode = mode
@@ -141,7 +137,7 @@
 
 	onMount(() => {
 		currentIndex = localStorage.getItem("attractTo")
-			? parseInt(localStorage.getItem("attractTo") || "")
+			? parseInt(localStorage.getItem("attractTo") || "") || 0
 			: 0
 		attractTo = currentIndex
 		position = currentIndex
@@ -195,6 +191,7 @@
 		const init = async () => {
 			// main scene setup
 			scene = new Scene(canvasElement)
+			scene.posts = $posts
 			scene.textColors = $posts.map((post) => post.textColor)
 			goBackButtonElement = document.querySelector(
 				"#goBackButton"
@@ -215,14 +212,6 @@
 			scene.groups.forEach((g) => {
 				g.visible = true
 			})
-			positions = scene.groups.map((g) => g.position)
-			rots = scene.groups.map((g) => g.rotation)
-			scales = scene.groups.map((g) => g.scale)
-			materials = scene.groups.flatMap((g) =>
-				"material" in g.children[0]
-					? [g.children[0].material as THREE.ShaderMaterial]
-					: []
-			)
 
 			const objs = Array($posts.length)
 				.fill(null)
@@ -241,7 +230,7 @@
 
 				// get current index of anchor
 				currentIndex = nextIndex
-				localStorage.setItem("attractTo", currentIndex.toString())
+				localStorage.setItem("attractTo", String(currentIndex))
 
 				if (pageWrapperElement) {
 					// set color animated for canvas
@@ -364,21 +353,6 @@
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
 	<canvas bind:this={canvasElement} />
-
-	<NavGallery
-		{setAttractTo}
-		{setAttractMode}
-		{scene}
-		{contentElements}
-		{currentIndex}
-		{allTextureLoaded}
-		{materials}
-		{positions}
-		{rots}
-		{pageWrapperElement}
-		{scales}
-		{initAnimation}
-	/>
 
 	<!-- loop over posts -->
 	{#each $posts as post, index (post.id)}

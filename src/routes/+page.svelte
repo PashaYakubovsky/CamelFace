@@ -92,7 +92,7 @@
 
 <Loading />
 
-{#if $posts.length > 0}
+{#if isLoaded}
 	<TravelGallery />
 {/if}
 
