@@ -126,6 +126,7 @@ class TravelGalleryScene {
 			canvas: canvasElement,
 			antialias: true,
 		})
+		this.isMobile = window.innerWidth < 768
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping
 		this.renderer.toneMappingExposure = 1
 
@@ -142,7 +143,9 @@ class TravelGalleryScene {
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 		this.addObjects()
-		this.addHamburger()
+		if (!this.isMobile) {
+			this.addHamburger()
+		}
 		this.animate()
 
 		const manager = this.loaderManager
@@ -201,6 +204,9 @@ class TravelGalleryScene {
 				depthWrite: false,
 			})
 		)
+
+		this.loaderMesh = loader
+
 		if (loader) {
 			loader.position.set(0, 0, 0)
 			this.scene.add(loader)
@@ -220,9 +226,10 @@ class TravelGalleryScene {
 			const progressInPercent = (itemsLoaded / this.total) * 100
 
 			threejsLoading.update((v) => ({ ...v, progress: progressInPercent }))
-			;(loader.material as THREE.ShaderMaterial).uniforms.progress.value =
-				progressInPercent
-			;(loader.material as THREE.ShaderMaterial).needsUpdate = true
+			const mat = loader?.material as THREE.ShaderMaterial
+
+			mat.uniforms.progress.value = progressInPercent
+			mat.needsUpdate = true
 
 			loaderContainerEl.textContent = `Loaded ${itemsLoaded}/${this.total}`
 
@@ -253,27 +260,27 @@ class TravelGalleryScene {
 			console.log("There was an error loading " + url)
 		}
 
-		gsap.fromTo(
-			loader.material.uniforms.progress,
-			{
-				value: 0,
-			},
-			{
-				value: 100,
-				onComplete: () => {
-					this.loaded = true
-					this.scene.remove(loader)
-					loaderContainerEl.remove()
-					threejsLoading.update((v) => ({
-						...v,
-						loaded: true,
-						loading: false,
-					}))
-				},
-				duration: 3,
-				ease: "power2.inOut",
-			}
-		)
+		// gsap.fromTo(
+		// 	loader.material.uniforms.progress,
+		// 	{
+		// 		value: 0,
+		// 	},
+		// 	{
+		// 		value: 100,
+		// 		onComplete: () => {
+		// 			this.loaded = true
+		// 			this.scene.remove(loader)
+		// 			loaderContainerEl.remove()
+		// 			threejsLoading.update((v) => ({
+		// 				...v,
+		// 				loaded: true,
+		// 				loading: false,
+		// 			}))
+		// 		},
+		// 		duration: 3,
+		// 		ease: "power2.inOut",
+		// 	}
+		// )
 
 		this.scene.add(this.camera)
 
@@ -395,6 +402,11 @@ class TravelGalleryScene {
 			// GPGPUScene,
 		]
 
+		const loaderContainerEl = document.createElement("div")
+		loaderContainerEl.classList.add("loader-container")
+		document.body.appendChild(loaderContainerEl)
+		let isComplied = false
+		this.total = posts.length - 1
 		for (let i = 0; i < scenes.length; i++) {
 			const Scene = scenes[i]
 			const scene = new Scene(null, {
@@ -402,6 +414,39 @@ class TravelGalleryScene {
 			})
 			this.integratedScenes.push(scene)
 			await new Promise((resolve) => setTimeout(resolve, 300))
+
+			const itemsLoaded = i + 1
+			const progressInPercent = (itemsLoaded / this.total) * 100
+
+			threejsLoading.update((v) => ({ ...v, progress: progressInPercent }))
+			const loader = this.loaderMesh as THREE.Mesh
+			const mat = loader?.material as THREE.ShaderMaterial
+
+			mat.uniforms.progress.value = progressInPercent
+			mat.needsUpdate = true
+
+			loaderContainerEl.textContent = `Loaded ${itemsLoaded}/${this.total}`
+
+			if (itemsLoaded === this.total && !isComplied) {
+				if (loader) {
+					this.loaded = true
+					this.scene.remove(loader)
+					loaderContainerEl.remove()
+					threejsLoading.update((v) => ({
+						...v,
+						loaded: true,
+						loading: false,
+					}))
+				} else {
+					threejsLoading.update((v) => ({
+						...v,
+						loaded: true,
+						loading: false,
+					}))
+				}
+
+				isComplied = true
+			}
 			const rafId = scene.rafId
 			if (rafId) cancelAnimationFrame(rafId)
 		}
