@@ -1023,7 +1023,7 @@ class TravelGalleryScene {
 
 				if (this.hamburgerCircles) {
 					if (!isSomeHovered) {
-						this.hamburgerCircles.rotation.z += this.time * 0.0001
+						this.hamburgerCircles.rotation.z += 0.001
 					} else {
 						this.hamburgerCircles.rotation.z = THREE.MathUtils.lerp(
 							this.hamburgerCircles.rotation.z,
