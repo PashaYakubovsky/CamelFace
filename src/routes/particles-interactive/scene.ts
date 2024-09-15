@@ -4,7 +4,7 @@ import vertexShader from "./vertexShader.glsl"
 import fragmentShader from "./fragmentShader.glsl"
 import simVertexShader from "./simVertexShader.glsl"
 import simFragmentShader from "./simFragmentShader.glsl"
-import Stats from "three/examples/jsm/libs/stats.module"
+import Stats from "three/addons/libs/stats.module.js"
 
 class ParticlesInteractiveScene {
 	renderer: THREE.WebGLRenderer | null = null

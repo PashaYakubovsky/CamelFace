@@ -120,6 +120,8 @@ class TravelGalleryScene {
 	gltfLoader: GLTFLoader = new GLTFLoader()
 	hamburger: THREE.Group | null = null
 	hamburgerMaterial: CustomShaderMaterial | null = null
+	hamburgerCircles: THREE.Group | null = null
+	loaderMesh: THREE.Mesh | null = null
 
 	constructor(canvasElement: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({
@@ -143,9 +145,7 @@ class TravelGalleryScene {
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 		this.addObjects()
-		if (!this.isMobile) {
-			this.addHamburger()
-		}
+
 		this.animate()
 
 		const manager = this.loaderManager
@@ -399,7 +399,7 @@ class TravelGalleryScene {
 			FresnelScene,
 			WobblyScene,
 			VoronoiScene,
-			// GPGPUScene,
+			GPGPUScene,
 		]
 
 		const loaderContainerEl = document.createElement("div")
@@ -413,7 +413,7 @@ class TravelGalleryScene {
 				renderToTarget: true,
 			})
 			this.integratedScenes.push(scene)
-			await new Promise((resolve) => setTimeout(resolve, 300))
+			await new Promise((resolve) => setTimeout(resolve, 150))
 
 			const itemsLoaded = i + 1
 			const progressInPercent = (itemsLoaded / this.total) * 100
@@ -437,12 +437,9 @@ class TravelGalleryScene {
 						loaded: true,
 						loading: false,
 					}))
-				} else {
-					threejsLoading.update((v) => ({
-						...v,
-						loaded: true,
-						loading: false,
-					}))
+					if (!this.isMobile) {
+						this.addHamburger()
+					}
 				}
 
 				isComplied = true
@@ -512,9 +509,9 @@ class TravelGalleryScene {
 				"/wobbly": this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof WobblyScene) return i
 				})?.texture,
-				// "/gpgpu": this.renderTargets.find((i, idx) => {
-				// 	if (this.integratedScenes[idx] instanceof GPGPUScene) return i
-				// })?.texture,
+				"/gpgpu": this.renderTargets.find((i, idx) => {
+					if (this.integratedScenes[idx] instanceof GPGPUScene) return i
+				})?.texture,
 				"/voronoi": this.renderTargets.find((i, idx) => {
 					if (this.integratedScenes[idx] instanceof VoronoiScene) return i
 				})?.texture,
@@ -574,9 +571,9 @@ class TravelGalleryScene {
 			"/wobbly": this.integratedScenes.find((i) => {
 				if (i instanceof WobblyScene) return i
 			}),
-			// "/gpgpu": this.integratedScenes.find((i) => {
-			// 	if (i instanceof GPGPUScene) return i
-			// }),
+			"/gpgpu": this.integratedScenes.find((i) => {
+				if (i instanceof GPGPUScene) return i
+			}),
 			"/voronoi": this.integratedScenes.find((i) => {
 				if (i instanceof VoronoiScene) return i
 			}),
@@ -590,10 +587,10 @@ class TravelGalleryScene {
 			vor.raycastOffsetY = 0
 		}
 
-		// const gpgpus = this.integratedScenesDict["/gpgpu"] as GPGPUScene
-		// if (gpgpus) {
-		// 	gpgpus.targetRenderer = this.renderer
-		// }
+		const gpgpus = this.integratedScenesDict["/gpgpu"] as GPGPUScene
+		if (gpgpus) {
+			gpgpus.targetRenderer = this.renderer
+		}
 
 		const partInter = this.integratedScenesDict[
 			"/particles-interactive"
@@ -751,10 +748,9 @@ class TravelGalleryScene {
 				this.scene.add(ambLight)
 
 				const circles: THREE.Mesh[] = []
-
+				this.hamburgerCircles = new THREE.Group()
 				for (let i = 0; i < this.posts.length - 1; i++) {
 					const post = this.posts[i]
-					// create romboid geometry
 					const geo = new THREE.TetrahedronGeometry(0.5, 0)
 					const circle = new THREE.Mesh(geo, hamMat)
 					// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -776,9 +772,35 @@ class TravelGalleryScene {
 					circles.push(circle)
 				}
 
+				hamburgerGroup.position.set(-100, 100, -100)
+
 				this.scene.add(hamburgerGroup)
 				this.hamburger = hamburgerGroup as THREE.Group
-				this.hamburger.add(...circles)
+				this.hamburgerCircles.add(...circles)
+				this.hamburger.add(this.hamburgerCircles)
+
+				const raycastPlane = new THREE.Mesh(
+					new THREE.PlaneGeometry(5, 5),
+					new THREE.MeshBasicMaterial({
+						color: 0xff0000,
+						visible: false,
+						depthTest: false,
+						depthWrite: false,
+					})
+				)
+				// center the plane
+				raycastPlane.position.set(0, 0, 0)
+				raycastPlane.name = "hamburgerRaycastPlane"
+				this.hamburger.add(raycastPlane)
+
+				// animate the hamburger
+				gsap.to(hamburgerGroup.position, {
+					x: -1 - aspect * 5.4,
+					y: 5.5,
+					z: -10,
+					duration: 1,
+					ease: "power2.inOut",
+				})
 			}
 		} catch (err) {
 			console.error(err)
@@ -834,6 +856,11 @@ class TravelGalleryScene {
 		for (const mesh of this.meshes) {
 			mesh.geometry.dispose()
 			mesh.geometry = createGeometry()
+		}
+
+		if (this.hamburger) {
+			const aspect = window.innerWidth / window.innerHeight
+			this.hamburger.position.set(-1 - aspect * 4.5, 5.5, -10)
 		}
 	}
 
@@ -924,7 +951,6 @@ class TravelGalleryScene {
 	clock = new THREE.Clock()
 	animate() {
 		this.time = this.clock.getElapsedTime()
-		const delta = this.clock.getDelta()
 
 		this.materials.forEach((material) => {
 			material.uniforms.time.value = this.time
@@ -945,24 +971,17 @@ class TravelGalleryScene {
 
 						if (!iScene.rafId) continue
 
-						if (iScene instanceof ParticlesInteractiveScene) {
-							// render to fbo
-							// if (iScene.material)
-							// 	iScene.material.uniforms.uPositions.value = iScene.fbo1.texture
-							// this.renderer.setRenderTarget(null)
-							// // swap render targets
-							// const temp = iScene.fbo
-							// iScene.fbo = iScene.fbo1
-							// iScene.fbo1 = temp
-							// this.renderer.setRenderTarget(iScene.fbo1)
-							// this.renderer.render(iScene.fboScene, iScene.fboCamera)
-						} else {
-							const renderTarget = this.renderTargets[i]
+						const renderTarget = this.renderTargets[i]
 
-							this.renderer.setRenderTarget(renderTarget)
-							this.renderer.render(iScene.scene, iScene.camera)
-							this.renderer.setRenderTarget(null) // Ensure rendering returns to the default framebuffer
+						if (
+							iScene instanceof GPGPUScene ||
+							iScene instanceof ParticlesInteractiveScene
+						) {
+							continue
 						}
+						this.renderer.setRenderTarget(renderTarget)
+						this.renderer.render(iScene.scene, iScene.camera)
+						this.renderer.setRenderTarget(null) // Ensure rendering returns to the default framebuffer
 
 						if (iScene instanceof LinesScene) {
 							if (!iScene.target) {
@@ -990,35 +1009,27 @@ class TravelGalleryScene {
 			if (this.hamburger) {
 				// this.hamburger.rotation.y += 0.01
 				this.hamburger.scale.set(
-					Math.sin(this.time) * 0.01 + 1,
-					Math.sin(this.time) * 0.01 + 1,
-					Math.sin(this.time) * 0.01 + 1
+					Math.sin(this.time) * 0.1 + 1,
+					Math.sin(this.time) * 0.1 + 1,
+					Math.sin(this.time) * 0.1 + 1
 				)
 
 				// if (!this.hovered[this.hamburger.uuid + this.hamburger.name]) {
 				const hoveredItems = Object.values(this.hovered)
 				const isSomeHovered = hoveredItems.some((hit) => {
 					const obj = hit.object as THREE.Mesh
-					return obj.name.endsWith("|hamburger")
+					return obj.name.endsWith("hamburgerRaycastPlane")
 				})
-				if (!isSomeHovered) {
-					this.hamburger.rotation.z += 0.01
-				} else {
-					// lerp to default rotation
-					this.hamburger.rotation.z = THREE.MathUtils.lerp(
-						this.hamburger.rotation.z,
-						0,
-						0.1
-					)
-				}
 
-				for (let i = 0; i < this.hamburger.children.length; i++) {
-					const child = this.hamburger.children[i] as THREE.Mesh
-					if (child.name.endsWith("|hamburger")) {
-						child.rotation.y += delta
-						child.rotation.x += delta
+				if (this.hamburgerCircles) {
+					if (!isSomeHovered) {
+						this.hamburgerCircles.rotation.z += this.time * 0.0001
 					} else {
-						child.rotation.y += 0.01
+						this.hamburgerCircles.rotation.z = THREE.MathUtils.lerp(
+							this.hamburgerCircles.rotation.z,
+							0,
+							0.01
+						)
 					}
 				}
 			}

@@ -520,7 +520,8 @@ class GPGPUScene {
 		}
 
 		// Render normal scene
-		if (this.renderer) this.renderer.render(this.scene, this.camera)
+		const renderer = this.targetRenderer || this.renderer
+		if (renderer) renderer.render(this.scene, this.camera)
 
 		if (this.isPreview) {
 			const elapsedTime = performance.now() * 0.001 // Convert to seconds
