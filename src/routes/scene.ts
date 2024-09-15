@@ -587,10 +587,10 @@ class TravelGalleryScene {
 			vor.raycastOffsetY = 0
 		}
 
-		const gpgpus = this.integratedScenesDict["/gpgpu"] as GPGPUScene
-		if (gpgpus) {
-			gpgpus.targetRenderer = this.renderer
-		}
+		// const gpgpus = this.integratedScenesDict["/gpgpu"] as GPGPUScene
+		// if (gpgpus) {
+		// 	gpgpus.targetRenderer = this.renderer
+		// }
 
 		const partInter = this.integratedScenesDict[
 			"/particles-interactive"
