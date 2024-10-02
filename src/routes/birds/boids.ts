@@ -56,6 +56,8 @@ class BoidsScene {
 		if (!opt?.renderToTarget && el) {
 			this.renderer = new THREE.WebGLRenderer({
 				canvas: el,
+				powerPreference: "high-performance",
+				antialias: true,
 			})
 
 			this.renderer.toneMapping = THREE.ReinhardToneMapping
@@ -253,6 +255,7 @@ class BoidsScene {
 		if (!this.geometry) return
 
 		const mesh = new THREE.InstancedMesh(this.geometry, this.material, count)
+		mesh.frustumCulled = true
 
 		this.instancedMesh = mesh
 

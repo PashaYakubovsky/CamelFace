@@ -127,6 +127,7 @@ class TravelGalleryScene {
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: canvasElement,
 			antialias: true,
+			powerPreference: "high-performance",
 		})
 		this.isMobile = window.innerWidth < 768
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping

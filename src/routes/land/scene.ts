@@ -64,6 +64,7 @@ class LandScene {
 				canvas: el,
 				antialias: true,
 				alpha: true,
+				powerPreference: "high-performance",
 			})
 			this.renderer.setClearColor("#000000")
 			this.renderer.setSize(window.innerWidth, window.innerHeight)

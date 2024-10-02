@@ -43,6 +43,7 @@ class ParticlesScene {
 				antialias: true,
 				alpha: true,
 				canvas: canvasElement,
+				powerPreference: "high-performance",
 			})
 			this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 			this.renderer.setSize(window.innerWidth, window.innerHeight)

@@ -35,7 +35,7 @@ class BoidsScene {
 		cohesionRadius: 0.61,
 		alignmentRadius: 0.18,
 		perceptionRadius: 3.06,
-		aligmnetOn: true,
+		alignmentOn: true,
 		separationOn: true,
 		cohesionOn: true,
 		speedFactor: 0.01,
@@ -49,6 +49,8 @@ class BoidsScene {
 		if (!opt?.renderToTarget && el) {
 			this.renderer = new THREE.WebGLRenderer({
 				canvas: el,
+				powerPreference: "high-performance",
+				antialias: true,
 			})
 
 			this.renderer.toneMapping = THREE.ReinhardToneMapping
@@ -99,6 +101,7 @@ class BoidsScene {
 		if (!this.material || !this.geometry) return
 		for (let i = 0; i < this.config.particles; i++) {
 			const mesh = new THREE.Mesh(this.geometry.clone(), this.material)
+			mesh.frustumCulled = true
 
 			const pos = {
 				x: noise(
@@ -131,7 +134,7 @@ class BoidsScene {
 				alignmentRadius: this.config.alignmentRadius,
 				perceptionRadius: this.config.perceptionRadius,
 			})
-			boid._modules.aligment = this.config.aligmnetOn
+			boid._modules.alignment = this.config.alignmentOn
 			boid._modules.cohesion = this.config.cohesionOn
 			boid._modules.separation = this.config.separationOn
 			boid.speedFactor = this.config.speedFactor
@@ -368,11 +371,11 @@ class BoidsScene {
 			})
 
 		this.gui
-			.add(this.config, "aligmnetOn")
+			.add(this.config, "alignmentOn")
 			.name("Alignment On/Off")
 			.onFinishChange(() => {
 				this.flock.forEach((boid) => {
-					boid._modules.aligment = this.config.aligmnetOn
+					boid._modules.alignment = this.config.alignmentOn
 				})
 			})
 		this.gui

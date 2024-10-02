@@ -41,6 +41,8 @@ class AttractionScene {
 		if (!opt?.renderToTarget && el) {
 			this.renderer = new THREE.WebGLRenderer({
 				canvas: el,
+				powerPreference: "high-performance",
+				antialias: true,
 			})
 
 			this.renderer.toneMapping = THREE.ReinhardToneMapping
