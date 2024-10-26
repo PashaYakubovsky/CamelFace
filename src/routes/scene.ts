@@ -74,7 +74,7 @@ class TravelGalleryScene {
 		55,
 		window.innerWidth / window.innerHeight,
 		0.1,
-		1000
+		1000,
 	)
 	raycaster = new THREE.Raycaster()
 	renderer: THREE.WebGLRenderer | null = null
@@ -203,7 +203,7 @@ class TravelGalleryScene {
 				// wireframe: true,
 				depthTest: false,
 				depthWrite: false,
-			})
+			}),
 		)
 
 		this.loaderMesh = loader
@@ -413,6 +413,11 @@ class TravelGalleryScene {
 			const scene = new Scene(null, {
 				renderToTarget: true,
 			})
+
+			if (scene instanceof LinesScene) {
+				scene.target
+			}
+
 			this.integratedScenes.push(scene)
 			await new Promise((resolve) => setTimeout(resolve, 150))
 
@@ -452,7 +457,7 @@ class TravelGalleryScene {
 		this.integratedScenes.reverse()
 
 		this.renderTargets = this.integratedScenes.map(
-			() => new THREE.WebGLRenderTarget(this.width, this.height)
+			() => new THREE.WebGLRenderTarget(this.width, this.height),
 		)
 
 		const getSlugSet = () => {
@@ -627,7 +632,7 @@ class TravelGalleryScene {
 				material.uniforms.uResolution.value = new THREE.Vector3(
 					window.innerWidth,
 					window.innerHeight,
-					1
+					1,
 				)
 
 				const mesh = new THREE.Mesh(this.geometry, material)
@@ -655,7 +660,7 @@ class TravelGalleryScene {
 					z: 1,
 					duration: 1,
 					ease: "power2.inOut",
-				}
+				},
 			)
 
 			gsap.fromTo(
@@ -669,7 +674,7 @@ class TravelGalleryScene {
 					...this.positionValues,
 					duration: 1,
 					ease: "power2.inOut",
-				}
+				},
 			)
 			gsap.to(group.rotation, {
 				...this.eulerValues,
@@ -787,7 +792,7 @@ class TravelGalleryScene {
 						visible: false,
 						depthTest: false,
 						depthWrite: false,
-					})
+					}),
 				)
 				// center the plane
 				raycastPlane.position.set(0, 0, 0)
@@ -824,14 +829,14 @@ class TravelGalleryScene {
 			this.material.uniforms.uResolution.value = new THREE.Vector3(
 				window.innerWidth,
 				window.innerHeight,
-				1
+				1,
 			)
 		}
 
 		if (this.bgMaterial) {
 			this.bgMaterial.uniforms.uResolution.value = new THREE.Vector2(
 				this.width,
-				this.height
+				this.height,
 			)
 			// resize bgPlane
 			const aspectRatio = this.width / this.height
@@ -876,12 +881,12 @@ class TravelGalleryScene {
 		// events
 		this.mouse.set(
 			(e.clientX / this.width) * 2 - 1,
-			-(e.clientY / this.height) * 2 + 1
+			-(e.clientY / this.height) * 2 + 1,
 		)
 		this.raycaster.setFromCamera(this.mouse, this.camera)
 		this.intersected = this.raycaster.intersectObjects(
 			this.scene.children,
-			true
+			true,
 		)
 		document.body.style.cursor = ""
 
@@ -988,6 +993,10 @@ class TravelGalleryScene {
 							if (!iScene.target) {
 								continue
 							}
+							let temp = iScene.target
+							iScene.target = iScene.secondTarget
+							iScene.secondTarget = temp
+
 							this.renderer.setRenderTarget(iScene.target)
 							this.renderer.render(iScene.scene, iScene.depthCamera)
 							if (iScene.material) {
@@ -1012,7 +1021,7 @@ class TravelGalleryScene {
 				this.hamburger.scale.set(
 					Math.sin(this.time) * 0.1 + 1,
 					Math.sin(this.time) * 0.1 + 1,
-					Math.sin(this.time) * 0.1 + 1
+					Math.sin(this.time) * 0.1 + 1,
 				)
 
 				// if (!this.hovered[this.hamburger.uuid + this.hamburger.name]) {
@@ -1029,7 +1038,7 @@ class TravelGalleryScene {
 						this.hamburgerCircles.rotation.z = THREE.MathUtils.lerp(
 							this.hamburgerCircles.rotation.z,
 							0,
-							0.01
+							0.01,
 						)
 					}
 				}

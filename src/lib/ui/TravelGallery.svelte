@@ -9,41 +9,31 @@
 		pageTransition,
 	} from "$lib/pageTransition"
 	import { loading, threejsLoading } from "$lib/loading"
-	import { onlineUsers } from "$lib/onlineUsers"
 	import { goto } from "$app/navigation"
 	import { posts } from "$lib/posts"
 
 	let canvasElement: HTMLCanvasElement
-	let contentElements: HTMLElement[] = []
-	let pageWrapperElement: HTMLDivElement | null = null
-	let attractMode = false
-	let attractTo = 0
+	let contentElements: HTMLElement[] = $state([])
+	let pageWrapperElement: HTMLDivElement | null = $state(null)
+	let attractMode = $state(false)
+	let attractTo = $state(0)
 
-	let scene: Scene
-	let currentIndex = 0
-	let direction: 1 | -1 = 1
-	let initAnimation = false
+	let scene: Scene | null = $state(null)
+	let currentIndex = $state(0)
+	let direction: 1 | -1 = $state(1)
+	let initAnimation = $state(false)
 	let goBackButtonElement: HTMLButtonElement
-	let initHappen = false
-	let showInfoBlocks = false
-	let allTextureLoaded = false
-	let rafId: number | null = null
+	let initHappen = $state(false)
+	let showInfoBlocks = $state(false)
+	let allTextureLoaded = $state(false)
+	let rafId: number | null = $state(null)
 
-	let users = [] as {
-		id: string
-		name: string
-		x: number
-		y: number
-	}[]
-
-	onlineUsers.subscribe((value) => {
-		users = value.users ?? []
+	$effect(() => {
+		if (allTextureLoaded && !initHappen) {
+			initHappen = true
+			showInfoBlocks = true
+		}
 	})
-
-	$: if (allTextureLoaded && !initHappen) {
-		initHappen = true
-		showInfoBlocks = true
-	}
 
 	threejsLoading.subscribe((value) => {
 		allTextureLoaded = value.loaded
@@ -66,74 +56,76 @@
 		attractMode = mode
 	}
 
-	$: if (
-		contentElements.length > 0 &&
-		contentElements[currentIndex] &&
-		(!attractMode || scene.isMobile) &&
-		showInfoBlocks
-	) {
-		contentElements.forEach((content, idx) => {
-			if (idx !== currentIndex) {
-				content.classList.add("hidden")
-				// stop animation loop in inner scene
-				const integratedScene = scene.integratedScenesDict[$posts[idx].slug]
+	$effect(() => {
+		if (
+			contentElements.length > 0 &&
+			contentElements[currentIndex] &&
+			(!attractMode || scene?.isMobile) &&
+			showInfoBlocks
+		) {
+			contentElements.forEach((content, idx) => {
+				if (idx !== currentIndex) {
+					content.classList.add("hidden")
+					// stop animation loop in inner scene
+					const integratedScene = scene?.integratedScenesDict[$posts[idx].slug]
 
-				if (integratedScene && typeof integratedScene.rafId === "number") {
-					cancelAnimationFrame(integratedScene.rafId)
-					integratedScene.rafId = null
-				}
-			} else if (
-				idx === currentIndex &&
-				content.classList.contains("hidden") &&
-				scene.loaded
-			) {
-				content.classList.remove("hidden")
-				const integratedScene = scene.integratedScenesDict[$posts[idx].slug]
-
-				// animate html content
-				gsap.fromTo(
-					".post-info__content",
-					{
-						opacity: 0,
-						yPercent: 20,
-						ease: "power0.inOut",
-					},
-					{
-						opacity: 1,
-						yPercent: 0,
-						duration: 0.6,
-						ease: "power0.inOut",
-					}
-				)
-				// start animation loop in inner scene
-				if (integratedScene) {
-					// console.log(integratedScene, 'SHOW');
-					if (integratedScene.rafId) {
+					if (integratedScene && typeof integratedScene.rafId === "number") {
 						cancelAnimationFrame(integratedScene.rafId)
 						integratedScene.rafId = null
 					}
+				} else if (
+					idx === currentIndex &&
+					content.classList.contains("hidden") &&
+					scene?.loaded
+				) {
+					content.classList.remove("hidden")
+					const integratedScene = scene.integratedScenesDict[$posts[idx].slug]
 
-					integratedScene.animate()
+					// animate html content
+					gsap.fromTo(
+						".post-info__content",
+						{
+							opacity: 0,
+							yPercent: 20,
+							ease: "power0.inOut",
+						},
+						{
+							opacity: 1,
+							yPercent: 0,
+							duration: 0.6,
+							ease: "power0.inOut",
+						}
+					)
+					// start animation loop in inner scene
+					if (integratedScene) {
+						// console.log(integratedScene, 'SHOW');
+						if (integratedScene.rafId) {
+							cancelAnimationFrame(integratedScene.rafId)
+							integratedScene.rafId = null
+						}
+
+						integratedScene.animate()
+					}
+
+					// animate color transition
+					scene.addColorToBGShader(scene.backgroundColors[currentIndex])
+
+					if (!canvasElement.classList.contains("canvas-ready")) {
+						canvasElement.classList.add("canvas-ready")
+					} else if (canvasElement) {
+						canvasElement.classList.remove("canvas-ready")
+						setTimeout(() => {
+							if (canvasElement) canvasElement.classList.add("canvas-ready")
+						}, 2000)
+					}
 				}
+			})
+		}
+	})
 
-				// animate color transition
-				scene.addColorToBGShader(scene.backgroundColors[currentIndex])
-
-				if (!canvasElement.classList.contains("canvas-ready")) {
-					canvasElement.classList.add("canvas-ready")
-				} else if (canvasElement) {
-					canvasElement.classList.remove("canvas-ready")
-					setTimeout(() => {
-						if (canvasElement) canvasElement.classList.add("canvas-ready")
-					}, 2000)
-				}
-			}
-		})
-	}
-
-	let speed = 0
-	let position = 0
-	let rounded = 0
+	let speed = $state(0)
+	let position = $state(0)
+	let rounded = $state(0)
 
 	onMount(() => {
 		currentIndex = localStorage.getItem("attractTo")
@@ -163,7 +155,7 @@
 			speed += e.deltaY * -0.0003
 			direction = Math.sign(e.deltaY) as 1 | -1
 
-			if (scene.bgMaterial) {
+			if (scene?.bgMaterial) {
 				scene.bgMaterial.uniforms.uSpeed.value = speed * 10
 			}
 
@@ -236,16 +228,17 @@
 				if (pageWrapperElement) {
 					// set color animated for canvas
 					gsap.to(pageWrapperElement, {
-						backgroundColor: scene.backgroundColors[+position.toFixed(0)],
+						backgroundColor: scene?.backgroundColors[+position.toFixed(0)],
 						duration: 0.6,
 						ease: "power0.inOut",
 					})
 
 					if (goBackButtonElement)
-						goBackButtonElement.style.color = scene.textColors[currentIndex]
+						goBackButtonElement.style.color =
+							scene?.textColors[currentIndex] || ""
 					loading.update((state) => ({
 						...state,
-						color: scene.textColors[currentIndex],
+						color: scene?.textColors[currentIndex] || "",
 					}))
 				}
 
@@ -258,7 +251,7 @@
 					obj.dist = Math.min(Math.abs(position - i), 1)
 					obj.dist = 1 - obj.dist ** 2
 
-					const mesh = scene.meshes[i]
+					const mesh = scene?.meshes[i]
 
 					if (mesh) {
 						;(
@@ -268,13 +261,9 @@
 							(mesh.geometry as unknown as { parameters: { height: number } })
 								.parameters.height * 1.15
 
-						// if (scene.isMobile) {
-						// mesh.position.x = i * 3.1 + -(position * 3.1)
-						// } else {
 						const scale = 1 + 0.2 * obj.dist
 						mesh.scale.set(scale, scale, scale)
 						mesh.position.y = i * delta + -(position * delta)
-						// }
 					}
 				})
 
@@ -284,18 +273,13 @@
 					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015
 				}
 
-				// console.log(scene.integratedScenes[currentIndex], $posts[currentIndex]);
-
 				rafId = requestAnimationFrame(raf)
 			}
 
-			if (
-				scene
-				// && !scene.isMobile
-			) {
+			if (scene) {
 				scene.handleHoverIn = () => {
 					handleHoverIn({
-						color: scene.textColors[currentIndex],
+						color: scene?.textColors[currentIndex] || "",
 						start: $pageTransition.start,
 					})
 				}
@@ -343,7 +327,7 @@
 		init()
 
 		return () => {
-			scene.destroy()
+			scene?.destroy()
 			window.removeEventListener("wheel", handleWheel)
 			window.removeEventListener("keydown", handleKeydown)
 			window.removeEventListener("touchmove", handleTouchMove)
@@ -353,6 +337,7 @@
 </script>
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
+	<!-- svelte-ignore element_invalid_self_closing_tag -->
 	<canvas bind:this={canvasElement} />
 
 	<!-- loop over posts -->
@@ -365,8 +350,8 @@
 			>
 				<button
 					class="p-0 m-0 w-fit"
-					on:click={() => {
-						if (scene.isMobile) {
+					onclick={() => {
+						if (scene?.isMobile) {
 							goto(post.slug)
 						}
 					}}

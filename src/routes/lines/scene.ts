@@ -1,9 +1,9 @@
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
-import { gsap } from "$gsap"
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
+import { gsap } from "gsap"
 import * as THREE from "three"
 import vertexShader from "./vertexShader.glsl"
 import fragmentShader from "./fragmentShader.glsl"
-import Stats from "three/examples/jsm/libs/stats.module"
+import Stats from "three/addons/libs/stats.module.js"
 import { GUI } from "lil-gui"
 
 interface Options {
@@ -31,6 +31,7 @@ class LinesScene {
 	scene!: THREE.Scene
 	camera!: THREE.PerspectiveCamera
 	target!: THREE.WebGLRenderTarget
+	secondTarget!: THREE.WebGLRenderTarget
 	loader = new GLTFLoader()
 	geometry!: THREE.PlaneGeometry
 	skullGeometry!: THREE.BufferGeometry
@@ -67,13 +68,13 @@ class LinesScene {
 			75,
 			this.width / this.height,
 			0.01,
-			20
+			20,
 		)
 		this.camera.position.z = 1.4
 
 		this.directionalLight = new THREE.DirectionalLight(
 			new THREE.Color("#24e06d"),
-			10
+			10,
 		)
 		this.directionalLight.position.set(0, 0, 1)
 		this.scene.add(this.directionalLight)
@@ -82,7 +83,7 @@ class LinesScene {
 			75,
 			this.width / this.height,
 			0.01,
-			1
+			1,
 		)
 		this.depthCamera.position.z = 0.5
 
@@ -122,6 +123,7 @@ class LinesScene {
 
 				this.addObjects()
 				this.target = this.setupRenderTarget()
+				this.secondTarget = this.setupRenderTarget()
 
 				this.animate()
 
@@ -226,8 +228,15 @@ class LinesScene {
 	}
 
 	onWindowResize(): void {
-		if (this.renderer)
+		if (this.renderer) {
 			this.renderer.setSize(window.innerWidth, window.innerHeight)
+		}
+		this.width = window.innerWidth
+		this.height = window.innerHeight
+		this.camera.aspect = this.width / this.height
+		this.camera.updateProjectionMatrix()
+		this.depthCamera.aspect = this.width / this.height
+		this.depthCamera.updateProjectionMatrix()
 	}
 
 	onMouseMove(event: MouseEvent): void {
@@ -273,31 +282,43 @@ class LinesScene {
 			// this.material.uniforms.uCameraFar.value = this.camera.far;
 		}
 
-		// render scene to target
-		if (this.target && this.depthCamera && this.renderer) {
+		// Swap targets
+		const temp = this.target
+		this.target = this.secondTarget
+		this.secondTarget = temp
+
+		// render scene to target (now secondTarget)
+		if (this.depthCamera && this.renderer) {
 			this.renderer.setRenderTarget(this.target)
 			this.renderer.render(this.scene, this.depthCamera)
-			if (this.material)
-				this.material.uniforms.uDepths.value = this.target.depthTexture
+
+			// assign the texture from the updated target
+			if (this.material) {
+				this.material.uniforms.uDepths.value = this.secondTarget.depthTexture
+			}
 		}
 
-		// render to screen
+		// Render to screen using the first target as source for the depth texture
 		if (this.renderer) {
 			this.renderer.setRenderTarget(null)
 			this.renderer.render(this.scene, this.camera)
 		}
+
+		// Use the new depth texture
+		if (this.material)
+			this.material.uniforms.uDepths.value = this.target.depthTexture
 
 		// lerp camera to mouse pos with sin function
 		if (this.camera && this.skull) {
 			this.camera.position.x = THREE.MathUtils.lerp(
 				this.camera.position.x,
 				this.mouse.x * 1.2,
-				0.01
+				0.01,
 			)
 			this.camera.position.y = THREE.MathUtils.lerp(
 				this.camera.position.y,
 				this.mouse.y * 1.5,
-				0.01
+				0.01,
 			)
 			this.camera.lookAt(this.skull.position)
 		}
@@ -318,7 +339,7 @@ class LinesScene {
 					value: 0,
 					duration: 3,
 					ease: "power4.inOut",
-				}
+				},
 			)
 		}
 	}

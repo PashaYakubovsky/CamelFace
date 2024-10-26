@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { gsap } from "$gsap"
+	import { gsap } from "gsap"
 	import { onMount } from "svelte"
 
 	onMount(() => {
@@ -22,9 +22,10 @@
 	})
 </script>
 
-<!-- <div id="cursorP" class="max-md:hidden">
+<div id="cursorP" class="max-md:hidden">
+	<!-- svelte-ignore element_invalid_self_closing_tag -->
 	<div id="cursor" />
-</div> -->
+</div>
 
 <style>
 	#cursorP {

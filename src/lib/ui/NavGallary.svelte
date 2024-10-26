@@ -1,31 +1,50 @@
 <script lang="ts">
 	import { goto } from "$app/navigation"
-	import { gsap } from "$gsap"
+	import { gsap } from "gsap"
 	import { posts } from "$lib/posts"
 	import * as THREE from "three"
-	import TravelGallery from "./TravelGallery.svelte"
+	import type TravelGalleryScene from "../../routes/scene"
 
-	export let allTextureLoaded = false
-	export let attractMode = false
-	export let attractTo = 0
-	export let initAnimation = false
-	export let contentElements: HTMLElement[]
-	export let pageWrapperElement: HTMLElement
-	export let scales: THREE.Vector3[]
-	export let rots: THREE.Euler[]
-	export let positions: THREE.Vector3[]
-	export let materials: THREE.ShaderMaterial[]
-	export let scene: TravelGallery
-	export let currentIndex: number = 0
-	export let setAttractTo: (index: number) => void
-	export let setAttractMode: (a: boolean) => void
+	type Props = {
+		allTextureLoaded: boolean
+		attractMode: boolean
+		attractTo: number
+		initAnimation: boolean
+		contentElements: HTMLElement[]
+		pageWrapperElement: HTMLElement
+		scales: THREE.Vector3[]
+		rots: THREE.Euler[]
+		positions: THREE.Vector3[]
+		materials: THREE.ShaderMaterial[]
+		scene: TravelGalleryScene
+		currentIndex: number
+		setAttractTo: (index: number) => void
+		setAttractMode: (a: boolean) => void
+	}
+
+	let {
+		allTextureLoaded,
+		attractMode,
+		attractTo,
+		initAnimation,
+		contentElements,
+		pageWrapperElement,
+		scales,
+		rots,
+		positions,
+		materials,
+		scene,
+		currentIndex,
+		setAttractTo,
+		setAttractMode,
+	}: Props = $props()
 </script>
 
 <nav
 	class={`gallery-nav ${
 		allTextureLoaded ? "opacity-100" : "opacity-0 pointer-events-none"
 	}`}
-	on:mouseenter={(e) => {
+	onmouseenter={(e) => {
 		e.stopPropagation()
 		// if (initAnimation) return
 		attractMode = true
@@ -62,7 +81,6 @@
 			ease: "power0.inOut",
 			x: 0,
 		})
-		// }
 
 		gsap.to(pageWrapperElement, {
 			backgroundColor: "#000000",
@@ -70,7 +88,7 @@
 			ease: "power0.inOut",
 		})
 	}}
-	on:mouseleave={(e) => {
+	onmouseleave={(e) => {
 		e.stopPropagation()
 		if (initAnimation) return
 		attractMode = false
@@ -116,7 +134,7 @@
 		{@const style = `left: ${x}rem; top: ${y}rem;`}
 
 		<button
-			on:click={() => {
+			onclick={() => {
 				if (scene?.isMobile) {
 					// currentIndex = index
 					attractMode = true
@@ -126,7 +144,7 @@
 					// route to post
 				}
 			}}
-			on:mouseenter={() => {
+			onmouseenter={() => {
 				attractTo = $posts.findIndex((p) => p.id === post.id)
 
 				setAttractTo?.(attractTo)
@@ -138,7 +156,7 @@
 				if (scene)
 					scene.addColorToBGShader(scene?.backgroundColors[currentIndex])
 			}}
-			on:mouseleave={() => {
+			onmouseleave={() => {
 				if (scene && scene?.bgMaterial)
 					scene.bgMaterial.uniforms.uEnabled.value = true
 			}}

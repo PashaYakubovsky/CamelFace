@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { loading } from '$lib/loading';
-	import { Clock } from 'svelte-loading-spinners';
+	import { loading } from "$lib/loading"
+	import { Clock } from "svelte-loading-spinners"
 </script>
 
 {#if $loading.loading}
@@ -23,15 +23,5 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-	}
-	progress {
-		position: fixed;
-		bottom: 2rem;
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 100;
-		width: 50vw;
-		height: 1rem;
-		border-radius: 1rem;
 	}
 </style>
