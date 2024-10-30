@@ -7,7 +7,6 @@
 	import { onMount } from "svelte"
 	import { PUBLIC_API_URL } from "$env/static/public"
 	import LegendaryCursor from "../lib/legendary-cursor/LegendaryCursor"
-	import CursorLight from "$lib/ui/CursorLight.svelte"
 
 	const generateHexFromId = (id: string) => {
 		const hash = id.split("").reduce((acc, char) => {
@@ -25,21 +24,6 @@
 	}
 
 	onMount(() => {
-		const cursorInstance = new LegendaryCursor({
-			lineSize: 0.15,
-			opacityDecrement: 0.55,
-			speedExpFactor: 0.9,
-			lineExpFactor: 0.1,
-			sparklesCount: 100,
-			maxOpacity: 0.99, // should be a number between [0 ... 1]
-			texture1: "/Microscheme_0.png", // texture displayed on mouse hover
-			texture2: "/ambient.jpg",
-			texture3: "/glow.png",
-			// texture2:         "http://path_to_texture",      // texture displayed on mouse click
-			// texture3:         "http://path_to_texture",      // texture displayed on sparkles
-		})
-		// cursorInstance.init()
-
 		const socket = io(PUBLIC_API_URL)
 
 		socket.on("connect", () => {
