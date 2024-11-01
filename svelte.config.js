@@ -9,7 +9,9 @@ const config = {
 
 	kit: {
 		// See https://kit.svelte.dev/docs/adapters for more information about adapters.
-		adapter: adapter(),
+		adapter: adapter({
+			out: "build",
+		}),
 		alias: {
 			$gsap: "src/lib/gsap-business/esm/index.js",
 			$scrollTrigger: "src/lib/gsap-business/esm/ScrollTrigger.js",
