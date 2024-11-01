@@ -1,5 +1,4 @@
 import axios from "axios"
-import { PUBLIC_CMS_API } from "$env/static/public"
 
 export async function GET({ fetch, setHeaders }) {
 	setHeaders({
@@ -7,7 +6,7 @@ export async function GET({ fetch, setHeaders }) {
 	})
 
 	const site = "https://www.camelface.pro"
-	const response = await axios.get(`${PUBLIC_CMS_API}/posts`, {
+	const response = await axios.get(`${process.env.VITE_PUBLIC_API_URL}/posts`, {
 		headers: {
 			"Content-Type": "application/json",
 		},
@@ -38,7 +37,7 @@ export async function GET({ fetch, setHeaders }) {
                               <changefreq>weekly</changefreq>
                               <lastmod>${post.updatedAt.split("T")[0]}</lastmod>
                               </url>
-                              `
+                              `,
 											)
 											.join("")}
           </urlset>`

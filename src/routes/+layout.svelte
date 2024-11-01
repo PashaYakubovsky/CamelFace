@@ -5,8 +5,8 @@
 	import Analytics from "$lib/analytics.svelte"
 	import { io } from "socket.io-client"
 	import { onMount } from "svelte"
-	import { PUBLIC_API_URL } from "$env/static/public"
-	import LegendaryCursor from "../lib/legendary-cursor/LegendaryCursor"
+	// import { PUBLIC_API_URL } from "$env/static/public"
+	// import LegendaryCursor from "../lib/legendary-cursor/LegendaryCursor"
 
 	const generateHexFromId = (id: string) => {
 		const hash = id.split("").reduce((acc, char) => {
@@ -24,7 +24,7 @@
 	}
 
 	onMount(() => {
-		const socket = io(PUBLIC_API_URL)
+		const socket = io(import.meta.env.VITE_PUBLIC_API_URL)
 
 		socket.on("connect", () => {
 			console.log("connected")

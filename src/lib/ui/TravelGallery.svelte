@@ -94,7 +94,7 @@
 							yPercent: 0,
 							duration: 0.6,
 							ease: "power0.inOut",
-						}
+						},
 					)
 					// start animation loop in inner scene
 					if (integratedScene) {
@@ -187,11 +187,11 @@
 			scene.posts = $posts
 			scene.textColors = $posts.map((post) => post.textColor)
 			goBackButtonElement = document.querySelector(
-				"#goBackButton"
+				"#goBackButton",
 			) as HTMLButtonElement
 
 			contentElements = Array.from(
-				document.querySelectorAll(".post-info")
+				document.querySelectorAll(".post-info"),
 			) as HTMLElement[]
 			await scene.addGallery({ posts: $posts.slice() })
 
@@ -334,6 +334,8 @@
 			if (rafId) cancelAnimationFrame(rafId)
 		}
 	})
+
+	debugger
 </script>
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>

@@ -994,19 +994,17 @@ class TravelGalleryScene {
 								continue
 							}
 							let temp = iScene.target
-							iScene.target = iScene.secondTarget
+							temp = iScene.secondTarget
 							iScene.secondTarget = temp
 
-							this.renderer.setRenderTarget(iScene.target)
+							this.renderer.setRenderTarget(temp)
 							this.renderer.render(iScene.scene, iScene.depthCamera)
 							if (iScene.material) {
-								iScene.material.uniforms.uDepths.value =
-									iScene.target.depthTexture
+								iScene.material.uniforms.uDepths.value = temp.depthTexture
 							}
 							this.renderer.setRenderTarget(null)
 						}
 					} catch (err) {
-						// Added detailed error logging
 						console.error(`Error rendering scene ${i}:`, err)
 					}
 				}
