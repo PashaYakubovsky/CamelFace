@@ -334,8 +334,6 @@
 			if (rafId) cancelAnimationFrame(rafId)
 		}
 	})
-
-	debugger
 </script>
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
