@@ -21,7 +21,7 @@
 	<meta name="description" content="Galaxy simulation three.js" />
 </svelte:head>
 
-<canvas bind:this={canvasElem} />
+<canvas bind:this={canvasElem}></canvas>
 
 <button
 	on:click={() => {

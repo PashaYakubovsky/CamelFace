@@ -11,6 +11,7 @@
 	import { loading, threejsLoading } from "$lib/loading"
 	import { goto } from "$app/navigation"
 	import { posts } from "$lib/posts"
+	import { isInitNeeded } from "$lib/galleryStore"
 
 	let canvasElement: HTMLCanvasElement
 	let contentElements: HTMLElement[] = $state([])
@@ -181,9 +182,17 @@
 			lastInteraction = Date.now()
 		}
 
+		const handlePopState = (event: PopStateEvent) => {
+			// Handle back/forward navigation
+			console.log("Navigation occurred", event.state)
+			$isInitNeeded = false
+		}
+		window.addEventListener("popstate", handlePopState)
+
 		const init = async () => {
 			// main scene setup
 			scene = new Scene(canvasElement)
+			scene.initNeeded = $isInitNeeded
 			scene.posts = $posts
 			scene.textColors = $posts.map((post) => post.textColor)
 			goBackButtonElement = document.querySelector(

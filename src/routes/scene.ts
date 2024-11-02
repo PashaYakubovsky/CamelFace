@@ -69,6 +69,7 @@ class TravelGalleryScene {
 	integratedScenes: (IntegratedScene | null)[] = []
 	renderTargets: (THREE.WebGLRenderTarget | null)[] = []
 	isMobile = window.innerWidth < 768
+	initNeeded = true
 	scene: THREE.Scene = new THREE.Scene()
 	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
 		55,
@@ -200,7 +201,6 @@ class TravelGalleryScene {
 						}
 					`,
 				transparent: true,
-				// wireframe: true,
 				depthTest: false,
 				depthWrite: false,
 			}),
@@ -234,7 +234,7 @@ class TravelGalleryScene {
 
 			loaderContainerEl.textContent = `Loaded ${itemsLoaded}/${this.total}`
 
-			if (itemsLoaded === this.total && !isComplied) {
+			if ((itemsLoaded === this.total && !isComplied) || !this.initNeeded) {
 				if (loader) {
 					this.loaded = true
 					this.scene.remove(loader)
@@ -260,28 +260,6 @@ class TravelGalleryScene {
 			threejsLoading.update((v) => ({ ...v, loading: false }))
 			console.log("There was an error loading " + url)
 		}
-
-		// gsap.fromTo(
-		// 	loader.material.uniforms.progress,
-		// 	{
-		// 		value: 0,
-		// 	},
-		// 	{
-		// 		value: 100,
-		// 		onComplete: () => {
-		// 			this.loaded = true
-		// 			this.scene.remove(loader)
-		// 			loaderContainerEl.remove()
-		// 			threejsLoading.update((v) => ({
-		// 				...v,
-		// 				loaded: true,
-		// 				loading: false,
-		// 			}))
-		// 		},
-		// 		duration: 3,
-		// 		ease: "power2.inOut",
-		// 	}
-		// )
 
 		this.scene.add(this.camera)
 
@@ -353,6 +331,12 @@ class TravelGalleryScene {
 		this.bgPlane = new THREE.Mesh(this.bgGeometry, this.bgMaterial)
 		this.bgPlane.position.z = 3.2
 		this.scene.add(this.bgPlane)
+
+		const light = new THREE.SpotLight(0xffffff, 10, 100, 180, 1)
+		light.position.z = 10
+		this.cursorLight = light
+		// const lightHelper = new THREE.PointLightHelper(this.cursorLight, 10)
+		this.scene.add(light)
 	}
 
 	animated = false
@@ -414,12 +398,9 @@ class TravelGalleryScene {
 				renderToTarget: true,
 			})
 
-			if (scene instanceof LinesScene) {
-				scene.target
-			}
-
 			this.integratedScenes.push(scene)
-			await new Promise((resolve) => setTimeout(resolve, 150))
+			if (this.initNeeded)
+				await new Promise((resolve) => setTimeout(resolve, 150))
 
 			const itemsLoaded = i + 1
 			const progressInPercent = (itemsLoaded / this.total) * 100
@@ -1040,6 +1021,11 @@ class TravelGalleryScene {
 						)
 					}
 				}
+			}
+
+			if (this.cursorLight) {
+				this.cursorLight.position.x = this.mouse.x
+				this.cursorLight.position.y = this.mouse.y
 			}
 
 			// Render the main scene
