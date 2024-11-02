@@ -302,7 +302,7 @@ class MandelbrotScene {
 				Math.cos(this.material.uniforms.u_time.value * 0.1) * 0.5
 			this.camera.lookAt(this.scene.position)
 		}
-		if (this.mouse && this.material) {
+		if (this.mouse && this.material && options["Mouse mode"]) {
 			this.material.uniforms.u_mouse.value.y += this.mouse.y
 			this.material.uniforms.u_mouse.value.x += this.mouse.x
 		}
