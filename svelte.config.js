@@ -1,4 +1,5 @@
-import adapter from "@sveltejs/adapter-node"
+// import adapter from "@sveltejs/adapter-node"
+import adapter from "@sveltejs/adapter-vercel"
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte"
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -9,9 +10,7 @@ const config = {
 
 	kit: {
 		// See https://kit.svelte.dev/docs/adapters for more information about adapters.
-		adapter: adapter({
-			out: "build",
-		}),
+		adapter: adapter(),
 		alias: {
 			$gsap: "src/lib/gsap-business/esm/index.js",
 			$scrollTrigger: "src/lib/gsap-business/esm/ScrollTrigger.js",
