@@ -32,8 +32,8 @@ void main() {
   c.y *= u_resolution.y / u_resolution.x;
 
   c /= u_zoom;
-  c.x += u_mouse.x / u_resolution.x;
-  c.y -= u_mouse.y / u_resolution.y;
+  c.x += (u_mouse.x / u_resolution.x) * 2.0 - 1.0;
+  c.y += (u_mouse.y / u_resolution.y) * 2.0 - 1.0;
 
   vec3 color = mandelbrotForN(c, u_m_count);
   gl_FragColor = vec4(color, 1.0);

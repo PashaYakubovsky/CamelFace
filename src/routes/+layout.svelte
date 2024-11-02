@@ -78,3 +78,9 @@
 <Analytics />
 
 <Copyright />
+
+<style>
+	:global(html, body) {
+		overflow: hidden;
+	}
+</style>
