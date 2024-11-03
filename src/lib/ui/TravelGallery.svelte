@@ -1,33 +1,25 @@
 <script lang="ts">
 	import { onMount } from "svelte"
-	import Scene from "../../routes/scene"
-	import { gsap } from "gsap"
-	import type * as THREE from "three"
 	import {
 		handleHoverIn,
 		handleHoverOut,
 		pageTransition,
 	} from "$lib/pageTransition"
-	import { loading, threejsLoading } from "$lib/loading"
 	import { goto } from "$app/navigation"
 	import { posts } from "$lib/posts"
 	import { isInitNeeded } from "$lib/galleryStore"
+	import TravelGalleryScene from "../../routes/Sketch"
 
 	let canvasElement: HTMLCanvasElement
 	let contentElements: HTMLElement[] = $state([])
 	let pageWrapperElement: HTMLDivElement | null = $state(null)
 	let attractMode = $state(false)
-	let attractTo = $state(0)
 
-	let scene: Scene | null = $state(null)
-	let currentIndex = $state(0)
-	let direction: 1 | -1 = $state(1)
-	let initAnimation = $state(false)
+	let scene: TravelGalleryScene = $state(null)
 	let goBackButtonElement: HTMLButtonElement
 	let initHappen = $state(false)
 	let showInfoBlocks = $state(false)
 	let allTextureLoaded = $state(false)
-	let rafId: number | null = $state(null)
 
 	$effect(() => {
 		if (allTextureLoaded && !initHappen) {
@@ -36,151 +28,57 @@
 		}
 	})
 
-	threejsLoading.subscribe((value) => {
-		allTextureLoaded = value.loaded
-		if (value.loaded) {
-			attractTo = localStorage.getItem("attractTo")
-				? parseInt(localStorage.getItem("attractTo") || "") || 0
-				: $posts.length - 1
-			attractMode = true
-			setTimeout(() => {
-				attractMode = false
-			}, 1000)
-		}
-	})
-
-	const setAttractTo = (index: number) => {
-		attractTo = index || 0
-		currentIndex = index || 0
-	}
-	const setAttractMode = (mode: boolean) => {
-		attractMode = mode
-	}
-
-	$effect(() => {
-		if (
-			contentElements.length > 0 &&
-			contentElements[currentIndex] &&
-			(!attractMode || scene?.isMobile) &&
-			showInfoBlocks
-		) {
-			contentElements.forEach((content, idx) => {
-				if (idx !== currentIndex) {
-					content.classList.add("hidden")
-					// stop animation loop in inner scene
-					const integratedScene = scene?.integratedScenesDict[$posts[idx].slug]
-
-					if (integratedScene && typeof integratedScene.rafId === "number") {
-						cancelAnimationFrame(integratedScene.rafId)
-						integratedScene.rafId = null
-					}
-				} else if (
-					idx === currentIndex &&
-					content.classList.contains("hidden") &&
-					scene?.loaded
-				) {
-					content.classList.remove("hidden")
-					const integratedScene = scene.integratedScenesDict[$posts[idx].slug]
-
-					// animate html content
-					gsap.fromTo(
-						".post-info__content",
-						{
-							opacity: 0,
-							yPercent: 20,
-							ease: "power0.inOut",
-						},
-						{
-							opacity: 1,
-							yPercent: 0,
-							duration: 0.6,
-							ease: "power0.inOut",
-						},
-					)
-					// start animation loop in inner scene
-					if (integratedScene) {
-						// console.log(integratedScene, 'SHOW');
-						if (integratedScene.rafId) {
-							cancelAnimationFrame(integratedScene.rafId)
-							integratedScene.rafId = null
-						}
-
-						integratedScene.animate()
-					}
-
-					// animate color transition
-					scene.addColorToBGShader(scene.backgroundColors[currentIndex])
-
-					if (!canvasElement.classList.contains("canvas-ready")) {
-						canvasElement.classList.add("canvas-ready")
-					} else if (canvasElement) {
-						canvasElement.classList.remove("canvas-ready")
-						setTimeout(() => {
-							if (canvasElement) canvasElement.classList.add("canvas-ready")
-						}, 2000)
-					}
-				}
-			})
-		}
-	})
-
-	let speed = $state(0)
-	let position = $state(0)
-	let rounded = $state(0)
-
 	onMount(() => {
-		currentIndex = localStorage.getItem("attractTo")
-			? parseInt(localStorage.getItem("attractTo") || "") || 0
-			: 0
-		attractTo = currentIndex
-		position = currentIndex
+		// currentIndex = localStorage.getItem("attractTo")
+		// 	? parseInt(localStorage.getItem("attractTo") || "") || 0
+		// 	: 0
+		// attractTo = currentIndex
+		// position = currentIndex
 
-		const handleKeydown = (e: KeyboardEvent) => {
-			if (attractMode || initAnimation) return
+		// const handleKeydown = (e: KeyboardEvent) => {
+		// 	if (attractMode || initAnimation) return
 
-			attractMode = true
+		// 	attractMode = true
 
-			setTimeout(() => {
-				attractMode = false
-			}, 700)
+		// 	setTimeout(() => {
+		// 		attractMode = false
+		// 	}, 700)
 
-			if (e.key === "ArrowUp" && attractTo <= $posts.length - 1) {
-				attractTo =
-					attractTo + 1 > $posts.length - 1 ? $posts.length - 1 : attractTo + 1
-			} else if (e.key === "ArrowDown" && attractTo >= 0) {
-				attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0
-			}
-		}
+		// 	if (e.key === "ArrowUp" && attractTo <= $posts.length - 1) {
+		// 		attractTo =
+		// 			attractTo + 1 > $posts.length - 1 ? $posts.length - 1 : attractTo + 1
+		// 	} else if (e.key === "ArrowDown" && attractTo >= 0) {
+		// 		attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0
+		// 	}
+		// }
 
-		const handleWheel = (e: WheelEvent) => {
-			speed += e.deltaY * -0.0003
-			direction = Math.sign(e.deltaY) as 1 | -1
+		// const handleWheel = (e: WheelEvent) => {
+		// 	speed += e.deltaY * -0.0003
+		// 	direction = Math.sign(e.deltaY) as 1 | -1
 
-			if (scene?.bgMaterial) {
-				scene.bgMaterial.uniforms.uSpeed.value = speed * 10
-			}
+		// 	// if (scene?.bgMaterial) {
+		// 	// 	scene.bgMaterial.uniforms.uSpeed.value = speed * 10
+		// 	// }
 
-			if (direction === 1 && Math.abs(currentIndex) === 0) {
-				speed += e.deltaY * 0.0003
-			}
-			if (direction === -1 && currentIndex === $posts.length - 1) {
-				speed += e.deltaY * 0.0003
-			}
-		}
+		// 	if (direction === 1 && Math.abs(currentIndex) === 0) {
+		// 		speed += e.deltaY * 0.0003
+		// 	}
+		// 	if (direction === -1 && currentIndex === $posts.length - 1) {
+		// 		speed += e.deltaY * 0.0003
+		// 	}
+		// }
 
-		let prevPos = 0
-		let lastInteraction = 0
-		const handleTouchMove = (e: TouchEvent) => {
-			e.preventDefault()
-			if (Date.now() - lastInteraction > 100) {
-				prevPos = e.touches[0].clientY
-			}
-			const touch = e.touches[0]
-			const diff = touch.clientY - prevPos
-			speed += diff * 0.003
-			prevPos = touch.clientY
-			lastInteraction = Date.now()
-		}
+		// const handleTouchMove = (e: TouchEvent) => {
+		// 	e.preventDefault()
+		// 	if (Date.now() - lastInteraction > 100) {
+		// 		prevPos = e.touches[0].clientY
+		// 	}
+		// 	const touch = e.touches[0]
+		// 	const diff = touch.clientY - prevPos
+		// 	speed += diff * 0.003
+		// 	prevPos = touch.clientY
+		// 	lastInteraction = Date.now()
+		// }
 
 		const handlePopState = (event: PopStateEvent) => {
 			// Handle back/forward navigation
@@ -191,10 +89,9 @@
 
 		const init = async () => {
 			// main scene setup
-			scene = new Scene(canvasElement)
-			scene.initNeeded = $isInitNeeded
-			scene.posts = $posts
-			scene.textColors = $posts.map((post) => post.textColor)
+			const scene = new TravelGalleryScene(canvasElement, $posts)
+			await scene.addGallery()
+
 			goBackButtonElement = document.querySelector(
 				"#goBackButton",
 			) as HTMLButtonElement
@@ -202,145 +99,44 @@
 			contentElements = Array.from(
 				document.querySelectorAll(".post-info"),
 			) as HTMLElement[]
-			await scene.addGallery({ posts: $posts.slice() })
+			scene.contentElements = contentElements
 
-			// fake loader
-			scene.groups.forEach((g) => {
-				g.visible = false
-			})
-			const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
-			await wait(3000)
-
-			scene.groups.forEach((g) => {
-				g.visible = true
-			})
-
-			const objs = Array($posts.length)
-				.fill(null)
-				.map(() => {
-					return {
-						dist: 0,
-					}
+			scene.handleHoverIn = () => {
+				handleHoverIn({
+					color: scene?.textColors[scene.currentIndex] || "",
+					start: $pageTransition.start,
 				})
-
-			const raf = () => {
-				position += speed
-				speed *= 0.7
-				rounded = Math.round(position)
-				let diff = rounded - position
-				let nextIndex = +position.toFixed(0)
-
-				// get current index of anchor
-				currentIndex = nextIndex
-				localStorage.setItem("attractTo", String(currentIndex))
-
-				if (pageWrapperElement) {
-					// set color animated for canvas
-					gsap.to(pageWrapperElement, {
-						backgroundColor: scene?.backgroundColors[+position.toFixed(0)],
-						duration: 0.6,
-						ease: "power0.inOut",
-					})
-
-					if (goBackButtonElement)
-						goBackButtonElement.style.color =
-							scene?.textColors[currentIndex] || ""
-					loading.update((state) => ({
-						...state,
-						color: scene?.textColors[currentIndex] || "",
-					}))
-				}
-
-				if (initAnimation) {
-					rafId = requestAnimationFrame(raf)
-					return
-				}
-
-				objs.forEach((obj, i) => {
-					obj.dist = Math.min(Math.abs(position - i), 1)
-					obj.dist = 1 - obj.dist ** 2
-
-					const mesh = scene?.meshes[i]
-
-					if (mesh) {
-						;(
-							mesh.material as THREE.ShaderMaterial
-						).uniforms.distanceFromCenter.value = obj.dist
-						const delta =
-							(mesh.geometry as unknown as { parameters: { height: number } })
-								.parameters.height * 1.15
-
-						const scale = 1 + 0.2 * obj.dist
-						mesh.scale.set(scale, scale, scale)
-						mesh.position.y = i * delta + -(position * delta)
-					}
-				})
-
-				if (attractMode) {
-					position += -(position - attractTo) * 0.1
-				} else {
-					position += Math.sign(diff) * Math.pow(Math.abs(diff), 0.7) * 0.015
-				}
-
-				rafId = requestAnimationFrame(raf)
 			}
-
-			if (scene) {
-				scene.handleHoverIn = () => {
-					handleHoverIn({
-						color: scene?.textColors[currentIndex] || "",
-						start: $pageTransition.start,
-					})
-				}
-
-				scene.handleHoverOut = () => {
-					const ctx = handleHoverOut({ start: $pageTransition.start })
-				}
-
-				scene.handleHoverNavItem = (post) => {
-					const index = $posts.findIndex((p) => p.slug === post.slug)
-					if (index !== -1) {
-						attractTo = $posts.findIndex((p) => p.id === post.id)
-
-						setAttractTo?.(attractTo)
-
-						if (!attractMode) {
-							attractMode = true
-							setAttractMode?.(attractMode)
-						}
-						if (scene)
-							scene.addColorToBGShader(scene?.backgroundColors[currentIndex])
+			scene.handleHoverOut = () => {
+				const ctx = handleHoverOut({ start: $pageTransition.start })
+			}
+			scene.handleHoverNavItem = (post) => {
+				const index = scene.posts.findIndex((p) => p.slug === post.slug)
+				if (index !== -1) {
+					scene.attractTo = index
+					if (!attractMode) {
+						scene.attractMode = true
 					}
-				}
-
-				scene.handleHoverOutNavItem = () => {
-					setAttractMode?.(false)
-				}
-
-				scene.onClickEvent = (meshIndex: number) => {
-					// reverse the index
-					const rI = meshIndex
-					if (meshIndex === currentIndex) {
-						goto($posts[rI].slug)
-					}
+					scene.handleChangeSelection()
 				}
 			}
-
-			raf()
-
-			window.addEventListener("wheel", handleWheel)
-			window.addEventListener("keydown", handleKeydown)
-			window.addEventListener("touchmove", handleTouchMove)
+			scene.handleHoverOutNavItem = () => {
+				scene.attractMode = false
+			}
+			scene.onClickEvent = (meshIndex: number) => {
+				// reverse the index
+				debugger
+				const rI = meshIndex
+				if (meshIndex === scene.currentIndex) {
+					goto($posts[rI].slug)
+				}
+			}
 		}
 
 		init()
 
 		return () => {
 			scene?.destroy()
-			window.removeEventListener("wheel", handleWheel)
-			window.removeEventListener("keydown", handleKeydown)
-			window.removeEventListener("touchmove", handleTouchMove)
-			if (rafId) cancelAnimationFrame(rafId)
 		}
 	})
 </script>
@@ -368,16 +164,16 @@
 					<h2
 						id="postTitle"
 						data-content={post.title}
-						style={`color:${scene?.textColors?.[index]}`}
-						class="text-[5.2vw] leading-normal font-bold whitespace-nowrap"
+						class={`text-[5.6vw] leading-normal font-bold whitespace-nowrap`}
+						style={`color: ${post.textColor};`}
 					>
 						{post.title}
 					</h2>
 				</button>
 
 				<p
-					style={`color:${scene?.textColors?.[index]}`}
 					class={`text-[1rem] leading-7 max-md:h-[30vh] overflow-ellipsis overflow-hidden break-words`}
+					style={`color: ${post.textColor};`}
 				>
 					{@html post.content}
 				</p>
@@ -476,6 +272,24 @@
 	}
 	.post-info__content {
 		max-width: 95svw;
+		opacity: 1;
+		transition: 0.3s ease-in-out all;
+	}
+	@keyframes slideIn {
+		from {
+			transform: translateY(100%);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+	.hidden .post-info__content {
+		opacity: 0;
+	}
+	:not(.hidden) .post-info__content {
+		animation: slideIn 0.6s ease-in-out forwards;
 	}
 
 	@media (max-width: 768px) {

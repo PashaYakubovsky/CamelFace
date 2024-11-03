@@ -13,8 +13,10 @@ interface Options {
 class LinesScene {
 	renderer: THREE.WebGLRenderer | null = null
 	mouse: THREE.Vector2
-	width = window.innerWidth
-	height = window.innerHeight
+	// width = window.innerWidth
+	// height = window.innerHeight
+	width = 0
+	height = 0
 	group: THREE.Group | undefined
 	params = {
 		size: 256,

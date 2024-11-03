@@ -25,13 +25,8 @@ float sdfCircle(vec2 st, vec2 center, float radius) {
 void main() {
     vec2 uv = vUv;
     vec4 t = texture2D(uTexture, uv);
-    vec4 vT = texture2D(videoTexture, uv);
-
-    // replace texture with video if it's available
-    if (vT.a > 0.0) {
-        t = mix(vT, t, 1.0 - distanceFromCenter);
-    }
-
+    // vec4 t = vec4(vec3(1., 0., 0.), 1.0);
+  
     vec2 st = gl_FragCoord.xy/uResolution.xy;
 
     st *= 100.0; // Scale the coordinate system by 10
@@ -52,4 +47,7 @@ void main() {
 
     gl_FragColor = mix(another, t, distanceFromCenter);
     gl_FragColor.a = clamp(distanceFromCenter, 0.5, 1.0);
+    
+    // vec4 text = texture2D(uTexture, uv);
+    // gl_FragColor = text;
 }
