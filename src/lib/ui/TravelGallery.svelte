@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte"
+	import { onDestroy, onMount } from "svelte"
 	import {
 		handleHoverIn,
 		handleHoverOut,
@@ -11,11 +11,10 @@
 	import TravelGalleryScene from "../../routes/Sketch"
 
 	let canvasElement: HTMLCanvasElement
-	let contentElements: HTMLElement[] = $state([])
 	let pageWrapperElement: HTMLDivElement | null = $state(null)
 	let attractMode = $state(false)
 
-	let scene: TravelGalleryScene = $state(null)
+	let scene: TravelGalleryScene | null = $state(null)
 	let initHappen = $state(false)
 	let showInfoBlocks = $state(false)
 	let allTextureLoaded = $state(false)
@@ -28,57 +27,6 @@
 	})
 
 	onMount(() => {
-		// currentIndex = localStorage.getItem("attractTo")
-		// 	? parseInt(localStorage.getItem("attractTo") || "") || 0
-		// 	: 0
-		// attractTo = currentIndex
-		// position = currentIndex
-
-		// const handleKeydown = (e: KeyboardEvent) => {
-		// 	if (attractMode || initAnimation) return
-
-		// 	attractMode = true
-
-		// 	setTimeout(() => {
-		// 		attractMode = false
-		// 	}, 700)
-
-		// 	if (e.key === "ArrowUp" && attractTo <= $posts.length - 1) {
-		// 		attractTo =
-		// 			attractTo + 1 > $posts.length - 1 ? $posts.length - 1 : attractTo + 1
-		// 	} else if (e.key === "ArrowDown" && attractTo >= 0) {
-		// 		attractTo = attractTo - 1 > 0 ? attractTo - 1 : 0
-		// 	}
-		// }
-
-		// const handleWheel = (e: WheelEvent) => {
-		// 	speed += e.deltaY * -0.0003
-		// 	direction = Math.sign(e.deltaY) as 1 | -1
-
-		// 	// if (scene?.bgMaterial) {
-		// 	// 	scene.bgMaterial.uniforms.uSpeed.value = speed * 10
-		// 	// }
-
-		// 	if (direction === 1 && Math.abs(currentIndex) === 0) {
-		// 		speed += e.deltaY * 0.0003
-		// 	}
-		// 	if (direction === -1 && currentIndex === $posts.length - 1) {
-		// 		speed += e.deltaY * 0.0003
-		// 	}
-		// }
-
-		// const handleTouchMove = (e: TouchEvent) => {
-		// 	e.preventDefault()
-		// 	if (Date.now() - lastInteraction > 100) {
-		// 		prevPos = e.touches[0].clientY
-		// 	}
-		// 	const touch = e.touches[0]
-		// 	const diff = touch.clientY - prevPos
-		// 	speed += diff * 0.003
-		// 	prevPos = touch.clientY
-		// 	lastInteraction = Date.now()
-		// }
-
 		const handlePopState = (event: PopStateEvent) => {
 			// Handle back/forward navigation
 			console.log("Navigation occurred", event.state)
@@ -88,7 +36,7 @@
 
 		const init = async () => {
 			// main scene setup
-			const scene = new TravelGalleryScene(canvasElement, $posts)
+			scene = new TravelGalleryScene(canvasElement, $posts)
 			await scene.addGallery()
 
 			scene.handleHoverIn = () => {
@@ -115,18 +63,17 @@
 			}
 			scene.onClickEvent = (meshIndex: number) => {
 				// reverse the index
-				debugger
 				const rI = meshIndex
-				if (meshIndex === scene.currentIndex) {
-					goto($posts[rI].slug)
-				}
+				goto($posts[rI].slug)
 			}
 		}
 
 		init()
+	})
 
-		return () => {
-			scene?.destroy()
+	onDestroy(() => {
+		if (scene) {
+			scene.destroy()
 		}
 	})
 </script>

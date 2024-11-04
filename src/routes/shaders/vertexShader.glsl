@@ -5,6 +5,8 @@ uniform bool isMobile;
 
 varying vec2 vUv;
 varying vec3 vPosition;
+varying float vTime;
+
 
 float PI = 3.141592653589793238;
 
@@ -28,6 +30,6 @@ void main() {
     }
 
     vPosition = position;
-
+    vTime = time;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }

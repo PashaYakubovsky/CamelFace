@@ -70,7 +70,6 @@ class VoronoiScene {
 		el: HTMLCanvasElement | null,
 		opts?: {
 			renderToTarget?: boolean
-			targetRenderer?: THREE.WebGLRenderer
 		},
 	) {
 		this.camera = new THREE.PerspectiveCamera(
@@ -82,10 +81,6 @@ class VoronoiScene {
 		this.camera.position.z = 5
 		this.camera.aspect = window.innerWidth / window.innerHeight
 		this.camera.updateProjectionMatrix()
-
-		if (opts?.targetRenderer) {
-			this.targetRenderer = opts.targetRenderer
-		}
 
 		this.scene = new THREE.Scene()
 

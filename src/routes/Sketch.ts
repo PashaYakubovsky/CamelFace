@@ -38,6 +38,7 @@ export class GallerySketch {
 	private worker!: Worker
 	private canvas: HTMLCanvasElement
 	private renderer: THREE.WebGLRenderer
+	private textureLoader: THREE.TextureLoader
 	scene: THREE.Scene
 	camera: THREE.PerspectiveCamera
 	isMobile = window.innerWidth < 768
@@ -96,6 +97,7 @@ export class GallerySketch {
 	private hamburgerMaterial!: CustomShaderMaterial
 	private loaderMesh!: THREE.Mesh
 	private slugSetTexture!: Record<string, THREE.Texture | undefined>
+	private placeholderTexture!: THREE.Texture
 	private time = 0
 
 	contentElements: HTMLElement[] = []
@@ -106,6 +108,8 @@ export class GallerySketch {
 
 		this.width = window.innerWidth
 		this.height = window.innerWidth
+
+		this.textureLoader = new THREE.TextureLoader()
 
 		this.geometry = createGeometry()
 		this.eulerValues = calculateEuler()
@@ -141,6 +145,9 @@ export class GallerySketch {
 
 		// init events
 		window.addEventListener("resize", this.handleResize.bind(this))
+		window.addEventListener("touchmove", this.handleTouchMove.bind(this))
+		window.addEventListener("keypress", this.handleKeyPress.bind(this))
+		window.addEventListener("click", this.onClick.bind(this))
 		window.addEventListener("mousemove", this.handleMouseMove.bind(this))
 		window.addEventListener("wheel", this.handleWheel.bind(this))
 
@@ -245,6 +252,21 @@ export class GallerySketch {
 
 		this.total = posts.length
 
+		const url = "https://placehold.co/600x400/black/white?text=hi%20there"
+
+		try {
+			const response = await fetch(url)
+			const blob = await response.blob()
+			const objUrl = URL.createObjectURL(blob)
+
+			this.textureLoader.load(objUrl, (texture) => {
+				this.placeholderTexture = texture
+				URL.revokeObjectURL(objUrl) // Revoke the Object URL here
+			})
+		} catch (error) {
+			console.error(`Error: ${error}`)
+		}
+
 		this.integratedScenes = []
 		const scenes = [
 			LyapunovScene,
@@ -277,9 +299,8 @@ export class GallerySketch {
 			document.body.appendChild(loaderContainerEl)
 		}
 
-		const textureLoader = new THREE.TextureLoader()
-		const texture_1 = textureLoader.load("locked_door.jpg")
-		const texture_2 = textureLoader.load("opened_door.jpg")
+		const texture_1 = this.textureLoader.load("locked_door.jpg")
+		const texture_2 = this.textureLoader.load("opened_door.jpg")
 		const aspectRatio = window.innerWidth / window.innerHeight
 		const loader = new THREE.Mesh(
 			new THREE.PlaneGeometry(3.5, 3.5 * aspectRatio),
@@ -337,7 +358,6 @@ export class GallerySketch {
 			const Scene = scenes[i]
 			const scene = new Scene(null, {
 				renderToTarget: true,
-				targetRenderer: this.renderer,
 			})
 
 			const renderTarget = new THREE.WebGLRenderTarget(
@@ -353,7 +373,7 @@ export class GallerySketch {
 
 			this.integratedScenes.push(scene)
 
-			await new Promise((resolve) => setTimeout(resolve, 300))
+			await new Promise((resolve) => setTimeout(resolve, 50))
 
 			const itemsLoaded = i + 1
 			const progressInPercent = (itemsLoaded / this.total) * 100
@@ -455,50 +475,6 @@ export class GallerySketch {
 			}),
 		} as Record<string, IntegratedScene>
 
-		// this.renderTargets = this.integratedScenes.map(
-		// 	() => new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight),
-		// )
-
-		// const vor = this.integratedScenesDict["/voronoi"] as VoronoiScene
-		// if (vor) {
-		// 	vor.targetRenderer = this.renderer
-		// 	vor.camera.position.z += 4
-		// 	vor.raycastOffsetX = -500.5
-		// 	vor.raycastOffsetY = 0
-		// }
-
-		// const partInter = this.integratedScenesDict[
-		// 	"/particles-interactive"
-		// ] as ParticlesInteractiveScene
-		// if (partInter) {
-		// 	partInter.targetRenderer = this.renderer
-		// }
-
-		// const lines = this.integratedScenesDict["/lines"] as LinesScene
-		// if (lines) {
-		// 	lines.group.position.z = -0.6
-		// 	const gui = new GUI()
-		// 	const linesFolder = gui.addFolder("Lines Scene")
-		// 	linesFolder
-		// 		.add(lines.group.position, "x", -10, 10, 0.1)
-		// 		.name("Lines Position X")
-		// 	linesFolder
-		// 		.add(lines.group.position, "y", -10, 10, 0.1)
-		// 		.name("Lines Position Y")
-		// 	linesFolder
-		// 		.add(lines.group.position, "z", -10, 10, 0.1)
-		// 		.name("Lines Position Z")
-
-		// 	linesFolder
-		// 		.add(lines.depthCamera.position, "z", 0, 10, 0.1)
-		// 		.name("Camera Depth")
-		// }
-
-		// const gpgpu = this.integratedScenesDict["/gpgpu"] as GPGPUScene
-		// if (partInter) {
-		// 	gpgpu.targetRenderer = this.renderer
-		// }
-
 		const slugSetTexture = this.getSlugSet()
 		this.slugSetTexture = slugSetTexture
 
@@ -512,6 +488,10 @@ export class GallerySketch {
 			if (!this.material || !this.geometry) return
 
 			const mat = this.material.clone()
+			mat.uniforms.uPlaceholderTexture = { value: this.placeholderTexture }
+			mat.uniforms.uWithoutTexture = {
+				value: post.slug === "/voronoi" || post.slug === "/gpgpu",
+			}
 
 			try {
 				const group = new THREE.Group()
@@ -543,7 +523,6 @@ export class GallerySketch {
 			}
 		}
 		this.groups.forEach((group) => {
-			// group.scale.set(1.5, 1.5, 1.5)
 			gsap.fromTo(
 				group.scale,
 				{
@@ -621,8 +600,11 @@ export class GallerySketch {
 		// here we start scene render loop and set it render dependency in current loop
 		const post = this.posts[this.currentIndex]
 		const scene = this.integratedScenesDict[post.slug]
+
 		if (scene && !scene?.rafId) {
-			scene.animate()
+			if (!(scene instanceof GPGPUScene || scene instanceof VoronoiScene)) {
+				scene.animate()
+			}
 			this.addColorToBGShader(this.currentIndex)
 
 			const content = this.contentElements[this.currentIndex]
@@ -695,10 +677,6 @@ export class GallerySketch {
 
 		// Renders part
 		if (this.renderer) {
-			// Render the main scene
-			this.renderer.setRenderTarget(null)
-			this.renderer.render(this.scene, this.camera)
-
 			if (this.hamburger) {
 				// // this.hamburger.rotation.y += 0.01
 				this.hamburger.scale.set(
@@ -715,6 +693,12 @@ export class GallerySketch {
 					) {
 						hamChild.material.uniforms.time.value = this.time
 					}
+				})
+			}
+
+			if (this.meshes.length) {
+				this.meshes.forEach((mesh) => {
+					mesh.material.uniforms.time.value = this.time
 				})
 			}
 
@@ -752,14 +736,22 @@ export class GallerySketch {
 						iScene.fbo = iScene.fbo1
 						iScene.fbo1 = temp
 					}
+					if (
+						!(iScene instanceof GPGPUScene || iScene instanceof VoronoiScene)
+					) {
+						this.renderer.setRenderTarget(renderTarget)
+						this.renderer.render(iScene.scene, iScene.camera)
+					}
 
-					this.renderer.setRenderTarget(renderTarget)
-					this.renderer.render(iScene.scene, iScene.camera)
 					this.renderer.setRenderTarget(null) // Ensure rendering returns to the default framebuffer
 				} catch (err) {
 					console.error(`Error rendering scene: `, err)
 				}
 			}
+
+			// Render the main scene
+			this.renderer.setRenderTarget(null)
+			this.renderer.render(this.scene, this.camera)
 		}
 	}
 
@@ -767,6 +759,9 @@ export class GallerySketch {
 		window.removeEventListener("resize", this.handleResize)
 		window.removeEventListener("mousemove", this.handleMouseMove)
 		window.removeEventListener("wheel", this.handleWheel)
+		window.removeEventListener("click", this.onClick)
+		window.removeEventListener("touchmove", this.handleTouchMove)
+		window.removeEventListener("keypress", this.handleKeyPress.bind(this))
 
 		if (this.rafId) {
 			cancelAnimationFrame(this.rafId)
@@ -949,7 +944,7 @@ export class GallerySketch {
 
 				const circles: THREE.Mesh[] = []
 				this.hamburgerCircles = new THREE.Group()
-				for (let i = 0; i < this.posts.length - 1; i++) {
+				for (let i = 0; i < this.posts.length; i++) {
 					const hamMat = new CustomShaderMaterial({
 						baseMaterial: THREE.MeshPhysicalMaterial,
 						uniforms: {
@@ -1006,14 +1001,20 @@ export class GallerySketch {
 					const post = this.posts[i]
 					const geo = new THREE.TetrahedronGeometry(0.25, 0)
 					const circle = new THREE.Mesh(geo, hamMat)
+					circle.post = post
 
 					// create a responsive list of circles around the hamburger
-					const angle = (i / this.posts.length) * Math.PI * 2.1
-					const gap = 0.35
+					const angle = (i / this.posts.length) * Math.PI * 2
+					const gap = 0.45
 					const radius = 3
 
 					const x = Math.cos(angle) * radius * gap
 					const y = Math.sin(angle) * radius * gap
+
+					// const x = i * 0.2
+					// const y = 1
+
+					console.log(i, "hamb")
 
 					circle.name = `${post.slug}|hamburger`
 
@@ -1038,6 +1039,91 @@ export class GallerySketch {
 		} catch (err) {
 			console.error(err)
 		}
+	}
+	prevPos = 0
+	lastInteraction = 0
+	handleTouchMove(e: TouchEvent) {
+		if (Date.now() - this.lastInteraction > 100) {
+			this.prevPos = e.touches[0].clientY
+		}
+		const touch = e.touches[0]
+		const diff = touch.clientY - this.prevPos
+		this.speed += diff * 0.003
+		this.prevPos = touch.clientY
+		this.lastInteraction = Date.now()
+	}
+
+	handleKeyPress(e: KeyboardEvent) {
+		if (e.key === "ArrowUp" && this.attractTo <= this.posts.length - 1) {
+			this.attractTo =
+				this.attractTo + 1 > this.posts.length - 1
+					? this.posts.length - 1
+					: this.attractTo + 1
+		} else if (e.key === "ArrowDown" && this.attractTo >= 0) {
+			this.attractTo = this.attractTo - 1 > 0 ? this.attractTo - 1 : 0
+		}
+	}
+
+	animateTransition(idx: number) {
+		const tl = gsap.timeline({})
+		const currentMesh = this.groups[idx]
+
+		tl.to(
+			currentMesh.position,
+
+			{
+				x: 0,
+				y: 0,
+				z: -1,
+				duration: 1,
+				ease: "power2.inOut",
+			},
+			"=",
+		)
+
+		const aspect = window.innerWidth / window.innerHeight
+		tl.to(
+			currentMesh.scale,
+			{
+				x: 2 * aspect,
+				y: 2 * aspect,
+				z: 2,
+				duration: 1,
+				ease: "power2.inOut",
+			},
+			"=",
+		)
+
+		tl.to(
+			currentMesh.rotation,
+			{
+				x: 0,
+				y: 0,
+				z: 0,
+				duration: 1,
+				ease: "power2.inOut",
+			},
+			"=",
+		)
+		return tl
+	}
+
+	onClick(e: MouseEvent) {
+		this.intersected.forEach((hit) => {
+			const obj = hit.object as THREE.Mesh
+
+			const meshIndex = this.meshes.findIndex((mesh) => mesh.uuid === obj.uuid)
+			if (obj.material instanceof THREE.ShaderMaterial && meshIndex !== -1) {
+				if (e.target instanceof HTMLElement && e.target.closest("nav")) {
+					return
+				}
+
+				const tl = this.animateTransition(meshIndex)
+				tl.eventCallback("onComplete", () => {
+					if (this.onClickEvent) this.onClickEvent(meshIndex)
+				})
+			}
+		})
 	}
 }
 
