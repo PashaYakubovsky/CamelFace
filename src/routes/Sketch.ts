@@ -566,9 +566,10 @@ export class GallerySketch {
 		this.contentElements = contentElements
 
 		this.attractTo = Number(localStorage.getItem("attractTo") || 0)
+		this.attractMode = true
 		this.currentIndex = this.attractTo
-
 		this.handleChangeSelection()
+		setTimeout(() => (this.attractMode = false), 300)
 	}
 
 	handleWheel(e: WheelEvent) {
@@ -613,7 +614,7 @@ export class GallerySketch {
 			this.renderedIntegratedScene = scene
 		}
 
-		localStorage.setItem("attractTo", String(this.attractTo))
+		localStorage.setItem("attractTo", String(this.currentIndex))
 	}
 
 	renderedIntegratedScene: IntegratedScene | null = null
