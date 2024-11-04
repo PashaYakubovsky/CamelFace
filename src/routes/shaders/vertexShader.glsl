@@ -1,10 +1,14 @@
 uniform float time;
-varying vec2 vUv;
-varying vec3 vPosition;
 uniform vec2 pixels;
-float PI = 3.141592653589793238;
 uniform float distanceFromCenter;
 uniform bool isMobile;
+
+varying vec2 vUv;
+varying vec3 vPosition;
+varying float vTime;
+
+
+float PI = 3.141592653589793238;
 
 vec3 noise() {
     return vec3(
@@ -25,5 +29,7 @@ void main() {
         vUv.y += sin(time*0.3)*0.05;
     }
 
+    vPosition = position;
+    vTime = time;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }

@@ -53,9 +53,12 @@ class ParticlesScene {
 	controls: OrbitControls | undefined
 	videoTexture: THREE.VideoTexture | undefined
 
+	width = 0
+	height = 0
+
 	constructor(
 		canvasElement: HTMLCanvasElement | null,
-		opt?: { renderToTarget: boolean }
+		opt?: { renderToTarget: boolean },
 	) {
 		if (!opt?.renderToTarget && canvasElement) {
 			this.renderer = new THREE.WebGLRenderer({
@@ -88,11 +91,16 @@ class ParticlesScene {
 
 		this.addObjects()
 
+		if (typeof window !== "undefined") {
+			this.width = window.innerWidth
+			this.height = window.innerHeight
+		}
+
 		this.camera = new THREE.PerspectiveCamera(
 			75,
-			window.innerWidth / window.innerHeight,
+			this.width / this.height,
 			0.1,
-			1000
+			1000,
 		)
 		this.camera.position.set(0, 0, 15)
 
@@ -158,7 +166,7 @@ class ParticlesScene {
 	}
 
 	applySizeFromImage(img: HTMLImageElement) {
-		const isMobile = window.innerWidth < 768
+		const isMobile = this.width < 768
 		const aspectRatio = img.width / img.height
 		// if (isMobile) aspectRatio = 1 / aspectRatio;
 		const d = this.params.size
@@ -179,7 +187,7 @@ class ParticlesScene {
 			this.particles.position.set(
 				-this.params.particlesWidth * 5.5,
 				this.params.particlesHeight * 5,
-				isMobile ? -150 : -50
+				isMobile ? -150 : -50,
 			)
 		}
 	}
@@ -230,12 +238,12 @@ class ParticlesScene {
 
 		particlesGeo.setAttribute(
 			"position",
-			new THREE.BufferAttribute(positions, 3)
+			new THREE.BufferAttribute(positions, 3),
 		)
 		particlesGeo.setAttribute("color", new THREE.BufferAttribute(color, 3))
 		particlesGeo.setAttribute(
 			"index",
-			new THREE.Float32BufferAttribute(indices, 1)
+			new THREE.Float32BufferAttribute(indices, 1),
 		)
 
 		const material = new THREE.ShaderMaterial({
@@ -246,7 +254,7 @@ class ParticlesScene {
 				uTexture: { value: this.videoTexture || this.texture },
 				uThreshold: { value: this.params.threshold },
 				uMouse: { value: new THREE.Vector2() },
-				screenWidth: { value: window.innerWidth },
+				screenWidth: { value: this.width },
 				mouseUVCoords: { value: new THREE.Vector2() },
 				uRadius: { value: this.params.hoverRadius },
 				uScale: { value: this.params.hoverScale },
@@ -286,7 +294,7 @@ class ParticlesScene {
 				this.params.particlesWidth * 3.2,
 				this.params.particlesHeight * 3.2,
 				1,
-				1
+				1,
 			),
 			new THREE.MeshBasicMaterial({
 				wireframe: false,
@@ -294,7 +302,7 @@ class ParticlesScene {
 				side: THREE.DoubleSide,
 				transparent: true,
 				opacity: 0,
-			})
+			}),
 		)
 		this.raycasetPlane.position.x = -2
 		this.scene.add(this.raycasetPlane)
@@ -318,7 +326,7 @@ class ParticlesScene {
 					this.particles.position.set(
 						-this.params.particlesWidth * 5,
 						this.params.particlesHeight * 5,
-						-50
+						-50,
 					)
 				}
 			})
@@ -345,7 +353,7 @@ class ParticlesScene {
 					this.particles.position.set(
 						-this.params.particlesWidth * 5,
 						this.params.particlesHeight * 5,
-						-50
+						-50,
 					)
 
 				// this.addObjects();
@@ -365,7 +373,7 @@ class ParticlesScene {
 					this.particles.position.set(
 						-this.params.particlesWidth * 5,
 						this.params.particlesHeight * 5,
-						-50
+						-50,
 					)
 				}
 			})
@@ -381,7 +389,7 @@ class ParticlesScene {
 					this.particles.position.set(
 						-this.params.particlesWidth * 5,
 						this.params.particlesHeight * 5,
-						-50
+						-50,
 					)
 				}
 			})
@@ -451,17 +459,16 @@ class ParticlesScene {
 	}
 
 	onWindowResize(): void {
-		this.camera.aspect = window.innerWidth / window.innerHeight
+		this.camera.aspect = this.width / this.height
 		this.camera.updateProjectionMatrix()
-		if (this.renderer)
-			this.renderer.setSize(window.innerWidth, window.innerHeight)
+		if (this.renderer) this.renderer.setSize(this.width, this.height)
 	}
 
 	onMouseMove(event: MouseEvent): void {
 		// raycasting
 		this.mouse = new THREE.Vector2(
-			(event.clientX / window.innerWidth) * 2 - 1,
-			-(event.clientY / window.innerHeight) * 2 + 1
+			(event.clientX / this.width) * 2 - 1,
+			-(event.clientY / this.height) * 2 + 1,
 		)
 		this.raycaster.setFromCamera(this.mouse, this.camera)
 		const intersects = this.raycaster.intersectObject(this.raycasetPlane)

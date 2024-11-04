@@ -13,22 +13,30 @@ const options = {
 
 class LyapunovScene {
 	scene: THREE.Scene = new THREE.Scene()
-	camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
-		75,
-		window.innerWidth / window.innerHeight,
-		0.1,
-		1000
-	)
+	camera: THREE.PerspectiveCamera
 	renderer: THREE.WebGLRenderer | null = null
 	material: THREE.ShaderMaterial | null = null
 	geometry: THREE.PlaneGeometry | null = null
 	gui: GUI | null = null
 	rafId: number | null = null
+	width = 0
+	height = 0
 
 	constructor(
 		el: HTMLCanvasElement | null,
-		opts?: { renderToTarget: boolean }
+		opts?: { renderToTarget: boolean },
 	) {
+		if (typeof window !== "undefined") {
+			this.width = window.innerWidth
+			this.height = window.innerHeight
+		}
+		this.camera = new THREE.PerspectiveCamera(
+			55,
+			this.width / this.height,
+			0.1,
+			1000,
+		)
+
 		this.camera.position.z = 1
 		if (!opts?.renderToTarget && el) {
 			this.renderer = new THREE.WebGLRenderer({
@@ -39,7 +47,7 @@ class LyapunovScene {
 
 			this.renderer.toneMapping = THREE.ReinhardToneMapping
 			this.renderer.setClearColor("#000000")
-			this.renderer.setSize(window.innerWidth, window.innerHeight)
+			this.renderer.setSize(this.width, this.height)
 
 			window.addEventListener("mousemove", this.onMouseMove.bind(this))
 			window.addEventListener("resize", this.onResize.bind(this))
@@ -58,17 +66,19 @@ class LyapunovScene {
 	}
 
 	public setInitialValues() {
-		const mouseMode = localStorage.getItem("mouseMode")
-		const mousePosition = localStorage.getItem("mousePosition")
+		if (typeof window !== "undefined") {
+			const mouseMode = localStorage.getItem("mouseMode")
+			const mousePosition = localStorage.getItem("mousePosition")
 
-		if (mouseMode) {
-			options["Mouse mode"] = mouseMode === "true"
-		}
-		if (mousePosition) {
-			const [x, y] = mousePosition.split(" ")
-			if (this.material) {
-				this.material.uniforms.u_mouse.value.x = parseFloat(x)
-				this.material.uniforms.u_mouse.value.y = parseFloat(y)
+			if (mouseMode) {
+				options["Mouse mode"] = mouseMode === "true"
+			}
+			if (mousePosition) {
+				const [x, y] = mousePosition.split(" ")
+				if (this.material) {
+					this.material.uniforms.u_mouse.value.x = parseFloat(x)
+					this.material.uniforms.u_mouse.value.y = parseFloat(y)
+				}
 			}
 		}
 	}
@@ -114,7 +124,7 @@ class LyapunovScene {
 	public init() {
 		// convert window.innerWidth and window.innerHeight to floats
 		// and pass them to the shader as a vector3
-		const dif = window.innerWidth / window.innerHeight
+		const dif = this.width / this.height
 		this.geometry = new THREE.PlaneGeometry(2 * dif, 2, 10, 10)
 
 		this.material = new THREE.ShaderMaterial({
@@ -122,7 +132,7 @@ class LyapunovScene {
 			uniforms: {
 				u_time: { value: 0 },
 				u_resolution: {
-					value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1),
+					value: new THREE.Vector3(this.width, this.height, 1),
 				},
 				u_mouse: { value: new THREE.Vector2() },
 				u_color: { value: new THREE.Color(options.Color) },
@@ -176,14 +186,14 @@ class LyapunovScene {
 
 	onResize() {
 		if (this.material) {
-			this.material.uniforms.u_resolution.value.x = window.innerWidth
-			this.material.uniforms.u_resolution.value.y = window.innerHeight
+			this.material.uniforms.u_resolution.value.x = this.width
+			this.material.uniforms.u_resolution.value.y = this.height
 		}
 
-		this.camera.aspect = window.innerWidth / window.innerHeight
+		this.camera.aspect = this.width / this.height
 		this.camera.updateProjectionMatrix()
 
-		this.renderer?.setSize(window.innerWidth, window.innerHeight)
+		this.renderer?.setSize(this.width, this.height)
 	}
 
 	destroy() {
