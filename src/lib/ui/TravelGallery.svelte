@@ -16,7 +16,6 @@
 	let attractMode = $state(false)
 
 	let scene: TravelGalleryScene = $state(null)
-	let goBackButtonElement: HTMLButtonElement
 	let initHappen = $state(false)
 	let showInfoBlocks = $state(false)
 	let allTextureLoaded = $state(false)
@@ -92,15 +91,6 @@
 			const scene = new TravelGalleryScene(canvasElement, $posts)
 			await scene.addGallery()
 
-			goBackButtonElement = document.querySelector(
-				"#goBackButton",
-			) as HTMLButtonElement
-
-			contentElements = Array.from(
-				document.querySelectorAll(".post-info"),
-			) as HTMLElement[]
-			scene.contentElements = contentElements
-
 			scene.handleHoverIn = () => {
 				handleHoverIn({
 					color: scene?.textColors[scene.currentIndex] || "",
@@ -161,14 +151,15 @@
 						}
 					}}
 				>
-					<h2
+					<a
 						id="postTitle"
 						data-content={post.title}
-						class={`text-[5.6vw] leading-normal font-bold whitespace-nowrap`}
+						class={`text-[5.6vw] leading-normal font-bold whitespace-nowrap hover:underline`}
 						style={`color: ${post.textColor};`}
+						href={`${post.slug}`}
 					>
 						{post.title}
-					</h2>
+					</a>
 				</button>
 
 				<p
@@ -277,7 +268,7 @@
 	}
 	@keyframes slideIn {
 		from {
-			transform: translateY(100%);
+			transform: translateY(30%);
 			opacity: 0;
 		}
 		to {

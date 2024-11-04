@@ -5,4 +5,5 @@ export type IntegratedScene = {
 	rafId?: number | null
 	animate: () => void
 	renderer?: THREE.WebGLRenderer | null
+	renderTarget: THREE.WebGLRenderTarget
 }

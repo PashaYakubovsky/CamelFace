@@ -32,6 +32,7 @@ import { gsap } from "gsap"
 import debounce from "debounce"
 import CustomShaderMaterial from "three-custom-shader-material/vanilla"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
+import GUI from "lil-gui"
 
 export class GallerySketch {
 	private worker!: Worker
@@ -136,15 +137,15 @@ export class GallerySketch {
 		this.clock = new THREE.Clock()
 
 		this.addObjects()
-
 		this.handleResize()
+
 		// init events
 		window.addEventListener("resize", this.handleResize.bind(this))
 		window.addEventListener("mousemove", this.handleMouseMove.bind(this))
 		window.addEventListener("wheel", this.handleWheel.bind(this))
 
 		// render loop
-		gsap.ticker.fps(60)
+		// gsap.ticker.fps(60)
 		gsap.ticker.add(this.animate.bind(this))
 	}
 
@@ -264,7 +265,7 @@ export class GallerySketch {
 			FresnelScene,
 			WobblyScene,
 			VoronoiScene,
-			// GPGPUScene,
+			GPGPUScene,
 		]
 
 		let isComplied = false
@@ -336,7 +337,19 @@ export class GallerySketch {
 			const Scene = scenes[i]
 			const scene = new Scene(null, {
 				renderToTarget: true,
+				targetRenderer: this.renderer,
 			})
+
+			const renderTarget = new THREE.WebGLRenderTarget(
+				window.innerWidth,
+				window.innerHeight,
+				{
+					minFilter: THREE.LinearFilter,
+					magFilter: THREE.LinearFilter,
+					format: THREE.RGBAFormat,
+				},
+			)
+			scene.renderTarget = renderTarget
 
 			this.integratedScenes.push(scene)
 
@@ -442,24 +455,44 @@ export class GallerySketch {
 			}),
 		} as Record<string, IntegratedScene>
 
-		this.renderTargets = this.integratedScenes.map(
-			() => new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight),
-		)
+		// this.renderTargets = this.integratedScenes.map(
+		// 	() => new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight),
+		// )
 
-		const vor = this.integratedScenesDict["/voronoi"] as VoronoiScene
-		if (vor) {
-			vor.targetRenderer = this.renderer
-			vor.camera.position.z += 4
-			vor.raycastOffsetX = -500.5
-			vor.raycastOffsetY = 0
-		}
+		// const vor = this.integratedScenesDict["/voronoi"] as VoronoiScene
+		// if (vor) {
+		// 	vor.targetRenderer = this.renderer
+		// 	vor.camera.position.z += 4
+		// 	vor.raycastOffsetX = -500.5
+		// 	vor.raycastOffsetY = 0
+		// }
 
-		const partInter = this.integratedScenesDict[
-			"/particles-interactive"
-		] as ParticlesInteractiveScene
-		if (partInter) {
-			partInter.targetRenderer = this.renderer
-		}
+		// const partInter = this.integratedScenesDict[
+		// 	"/particles-interactive"
+		// ] as ParticlesInteractiveScene
+		// if (partInter) {
+		// 	partInter.targetRenderer = this.renderer
+		// }
+
+		// const lines = this.integratedScenesDict["/lines"] as LinesScene
+		// if (lines) {
+		// 	lines.group.position.z = -0.6
+		// 	const gui = new GUI()
+		// 	const linesFolder = gui.addFolder("Lines Scene")
+		// 	linesFolder
+		// 		.add(lines.group.position, "x", -10, 10, 0.1)
+		// 		.name("Lines Position X")
+		// 	linesFolder
+		// 		.add(lines.group.position, "y", -10, 10, 0.1)
+		// 		.name("Lines Position Y")
+		// 	linesFolder
+		// 		.add(lines.group.position, "z", -10, 10, 0.1)
+		// 		.name("Lines Position Z")
+
+		// 	linesFolder
+		// 		.add(lines.depthCamera.position, "z", 0, 10, 0.1)
+		// 		.name("Camera Depth")
+		// }
 
 		// const gpgpu = this.integratedScenesDict["/gpgpu"] as GPGPUScene
 		// if (partInter) {
@@ -510,6 +543,7 @@ export class GallerySketch {
 			}
 		}
 		this.groups.forEach((group) => {
+			// group.scale.set(1.5, 1.5, 1.5)
 			gsap.fromTo(
 				group.scale,
 				{
@@ -547,12 +581,15 @@ export class GallerySketch {
 			this.scene.add(group)
 		})
 
-		self.postMessage({
-			type: "init",
-			data: {
-				posts,
-			},
-		})
+		const contentElements = Array.from(
+			document.querySelectorAll(".post-info"),
+		) as HTMLElement[]
+		this.contentElements = contentElements
+
+		this.attractTo = Number(localStorage.getItem("attractTo") || 0)
+		this.currentIndex = this.attractTo
+
+		this.handleChangeSelection()
 	}
 
 	handleWheel(e: WheelEvent) {
@@ -581,7 +618,7 @@ export class GallerySketch {
 		})
 		this.contentElements.forEach((c) => c.classList.add("hidden"))
 
-		// handle enter to viewport
+		// here we start scene render loop and set it render dependency in current loop
 		const post = this.posts[this.currentIndex]
 		const scene = this.integratedScenesDict[post.slug]
 		if (scene && !scene?.rafId) {
@@ -590,9 +627,14 @@ export class GallerySketch {
 
 			const content = this.contentElements[this.currentIndex]
 			content.classList.remove("hidden")
+
+			this.renderedIntegratedScene = scene
 		}
+
+		localStorage.setItem("attractTo", String(this.attractTo))
 	}
 
+	renderedIntegratedScene: IntegratedScene | null = null
 	animate() {
 		this.time = this.clock.getElapsedTime()
 		// Slider raf
@@ -653,72 +695,71 @@ export class GallerySketch {
 
 		// Renders part
 		if (this.renderer) {
-			// Render the secondary scene to the render target
-			if (
-				this.renderTargets.length > 0 &&
-				this.integratedScenes.length === this.renderTargets.length
-			) {
-				for (let i = 0; i < this.integratedScenes.length; i++) {
-					try {
-						const iScene = this.integratedScenes[i]
-						if (!iScene) continue
+			// Render the main scene
+			this.renderer.setRenderTarget(null)
+			this.renderer.render(this.scene, this.camera)
 
-						if (!iScene.rafId) continue
+			if (this.hamburger) {
+				// // this.hamburger.rotation.y += 0.01
+				this.hamburger.scale.set(
+					Math.sin(this.time) * 0.1 + 1,
+					Math.sin(this.time) * 0.1 + 1,
+					Math.sin(this.time) * 0.1 + 1,
+				)
 
-						const renderTarget = this.renderTargets[i]
-
-						if (
-							iScene instanceof GPGPUScene ||
-							iScene instanceof ParticlesInteractiveScene
-						) {
-							continue
-						}
-						this.renderer.setRenderTarget(renderTarget)
-						this.renderer.render(iScene.scene, iScene.camera)
-						this.renderer.setRenderTarget(null) // Ensure rendering returns to the default framebuffer
-
-						if (iScene instanceof LinesScene) {
-							if (!iScene.target) {
-								continue
-							}
-							let temp = iScene.target
-							temp = iScene.secondTarget
-							iScene.secondTarget = temp
-
-							this.renderer.setRenderTarget(temp)
-							this.renderer.render(iScene.scene, iScene.depthCamera)
-							if (iScene.material) {
-								iScene.material.uniforms.uDepths.value = temp.depthTexture
-							}
-							this.renderer.setRenderTarget(null)
-						}
-					} catch (err) {
-						console.error(`Error rendering scene ${i}:`, err)
+				this.hamburger.children.forEach((hamChild) => {
+					if (
+						hamChild instanceof THREE.Mesh &&
+						hamChild?.material?.uniforms &&
+						"time" in hamChild.material.uniforms
+					) {
+						hamChild.material.uniforms.time.value = this.time
 					}
+				})
+			}
+
+			// Render the secondary scene to the render target
+			if (this.renderedIntegratedScene) {
+				try {
+					const iScene = this.renderedIntegratedScene
+					const renderTarget = iScene.renderTarget
+
+					// ping pong targets for fbo scene
+					if (iScene instanceof LinesScene) {
+						let temp = iScene.target
+						temp = iScene.secondTarget
+						iScene.secondTarget = temp
+
+						this.renderer.setRenderTarget(temp)
+						this.renderer.render(iScene.scene, iScene.depthCamera)
+						if (iScene.material) {
+							iScene.material.uniforms.uDepths.value = temp.depthTexture
+							temp.depthTexture.needsUpdate = true
+						}
+						this.renderer.setRenderTarget(null)
+					} else if (iScene instanceof ParticlesInteractiveScene) {
+						// render to fbo
+						if (iScene.fboMaterial)
+							iScene.fboMaterial.uniforms.uPositions.value = iScene.fbo1.texture
+						if (iScene.material)
+							iScene.material.uniforms.uPositions.value = iScene.fbo1.texture
+
+						this.renderer.setRenderTarget(iScene.fbo)
+						this.renderer.render(iScene.fboScene, iScene.fboCamera)
+
+						// swap render targets
+						const temp = iScene.fbo
+						iScene.fbo = iScene.fbo1
+						iScene.fbo1 = temp
+					}
+
+					this.renderer.setRenderTarget(renderTarget)
+					this.renderer.render(iScene.scene, iScene.camera)
+					this.renderer.setRenderTarget(null) // Ensure rendering returns to the default framebuffer
+				} catch (err) {
+					console.error(`Error rendering scene: `, err)
 				}
 			}
-		}
-
-		// Render the main scene
-		this.renderer.render(this.scene, this.camera)
-
-		if (this.hamburger) {
-			// // this.hamburger.rotation.y += 0.01
-			this.hamburger.scale.set(
-				Math.sin(this.time) * 0.1 + 1,
-				Math.sin(this.time) * 0.1 + 1,
-				Math.sin(this.time) * 0.1 + 1,
-			)
-
-			this.hamburger.children.forEach((hamChild) => {
-				if (
-					hamChild instanceof THREE.Mesh &&
-					hamChild?.material?.uniforms &&
-					"time" in hamChild.material.uniforms
-				) {
-					hamChild.material.uniforms.time.value = this.time
-				}
-			})
 		}
 	}
 
@@ -734,65 +775,31 @@ export class GallerySketch {
 
 	getSlugSet() {
 		const slugSetTexture: Record<string, THREE.Texture | undefined> = {
-			"/lyapunov": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof LyapunovScene) return i
-			})?.texture,
-			"/particles-noise": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof NoiseInteractiveScene)
-					return i
-			})?.texture,
-			"/boids": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof BoidsScene) return i
-			})?.texture,
-			"/mutual-attraction": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof AttractionScene) return i
-			})?.texture,
-			"/lines": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof LinesScene) return i
-			})?.texture,
-			"/particles-interactive": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof ParticlesInteractiveScene)
-					return i
-			})?.texture,
-			"/hologram": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof HologramScene) return i
-			})?.texture,
-			"/morphing": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof MorphScene) return i
-			})?.texture,
-			"/land": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof LandScene) return i
-			})?.texture,
-			"/particles": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof ParticlesScene) return i
-			})?.texture,
-			"/mandelbrot": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof MandelbrotScene) return i
-			})?.texture,
-			"/fbm": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof FBMScene) return i
-			})?.texture,
-			"/cardioid": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof CardioidScene) return i
-			})?.texture,
-			"/galaxy": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof GalaxyScene) return i
-			})?.texture,
-			"/eye": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof EyeScene) return i
-			})?.texture,
-			"/fresnel": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof FresnelScene) return i
-			})?.texture,
-			"/wobbly": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof WobblyScene) return i
-			})?.texture,
-			"/gpgpu": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof GPGPUScene) return i
-			})?.texture,
-			"/voronoi": this.renderTargets.find((i, idx) => {
-				if (this.integratedScenes[idx] instanceof VoronoiScene) return i
-			})?.texture,
+			"/lyapunov": this.integratedScenesDict["/lyapunov"].renderTarget.texture,
+			"/particles-noise":
+				this.integratedScenesDict["/particles-noise"].renderTarget.texture,
+			"/boids": this.integratedScenesDict["/boids"].renderTarget.texture,
+			"/mutual-attraction":
+				this.integratedScenesDict["/mutual-attraction"].renderTarget.texture,
+			"/lines": this.integratedScenesDict["/lines"].renderTarget.texture,
+			"/particles-interactive":
+				this.integratedScenesDict["/particles-interactive"].renderTarget
+					.texture,
+			"/hologram": this.integratedScenesDict["/hologram"].renderTarget.texture,
+			"/morphing": this.integratedScenesDict["/morphing"].renderTarget.texture,
+			"/land": this.integratedScenesDict["/land"].renderTarget.texture,
+			"/particles":
+				this.integratedScenesDict["/particles"].renderTarget.texture,
+			"/mandelbrot":
+				this.integratedScenesDict["/mandelbrot"].renderTarget.texture,
+			"/fbm": this.integratedScenesDict["/fbm"].renderTarget.texture,
+			"/cardioid": this.integratedScenesDict["/cardioid"].renderTarget.texture,
+			"/galaxy": this.integratedScenesDict["/galaxy"].renderTarget.texture,
+			"/eye": this.integratedScenesDict["/eye"].renderTarget.texture,
+			"/fresnel": this.integratedScenesDict["/fresnel"].renderTarget.texture,
+			"/wobbly": this.integratedScenesDict["/wobbly"].renderTarget.texture,
+			"/gpgpu": this.integratedScenesDict["/gpgpu"]?.renderTarget?.texture,
+			"/voronoi": this.integratedScenesDict["/voronoi"].renderTarget.texture,
 		}
 		return slugSetTexture
 	}
@@ -1058,5 +1065,5 @@ const calculatePosition = () => {
 const createGeometry = () => {
 	const geometry = [2.5, 2.2]
 
-	return new THREE.PlaneGeometry(geometry[0], geometry[1], 1, 1)
+	return new THREE.PlaneGeometry(geometry[0], geometry[1], 16, 16)
 }

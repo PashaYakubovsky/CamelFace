@@ -70,17 +70,22 @@ class VoronoiScene {
 		el: HTMLCanvasElement | null,
 		opts?: {
 			renderToTarget?: boolean
-		}
+			targetRenderer?: THREE.WebGLRenderer
+		},
 	) {
 		this.camera = new THREE.PerspectiveCamera(
 			75,
 			window.innerWidth / window.innerHeight,
 			0.1,
-			10000
+			10000,
 		)
 		this.camera.position.z = 5
 		this.camera.aspect = window.innerWidth / window.innerHeight
 		this.camera.updateProjectionMatrix()
+
+		if (opts?.targetRenderer) {
+			this.targetRenderer = opts.targetRenderer
+		}
 
 		this.scene = new THREE.Scene()
 
@@ -143,11 +148,11 @@ class VoronoiScene {
 		const sample = this.samples[this.index]
 		this.initialGeo.setAttribute(
 			"position",
-			new THREE.Float32BufferAttribute(sample.points, 3)
+			new THREE.Float32BufferAttribute(sample.points, 3),
 		)
 		this.initialGeo.setAttribute(
 			"reference",
-			new THREE.Float32BufferAttribute(sample.references, 2)
+			new THREE.Float32BufferAttribute(sample.references, 2),
 		)
 
 		this.initialPoint = new THREE.Points(this.initialGeo, this.material)
@@ -265,7 +270,7 @@ class VoronoiScene {
 		this.raycaster = new THREE.Raycaster()
 		this.raycastPlane = new THREE.Mesh(
 			new THREE.PlaneGeometry(this.size.x * 2, this.size.z * 2),
-			new THREE.MeshBasicMaterial({ visible: false, color: 0xff0000 })
+			new THREE.MeshBasicMaterial({ visible: false, color: 0xff0000 }),
 		)
 		const aspect = window.innerWidth / window.innerHeight
 		this.raycastPlane.scale.y = aspect
@@ -288,7 +293,7 @@ class VoronoiScene {
 		if (this.renderer) {
 			this.renderer.domElement.removeEventListener(
 				"click",
-				this.handleClick.bind(this)
+				this.handleClick.bind(this),
 			)
 		}
 
@@ -331,14 +336,14 @@ class VoronoiScene {
 				0,
 				sample.canvas.width,
 				-this.size.x,
-				this.size.x
+				this.size.x,
 			)
 			const ny = THREE.MathUtils.mapLinear(
 				y,
 				0,
 				sample.canvas.height,
 				-this.size.z,
-				this.size.z
+				this.size.z,
 			)
 
 			// Set position
@@ -374,12 +379,12 @@ class VoronoiScene {
 		this.velocityVariable = this.gpuCompute.addVariable(
 			"texturePosition",
 			fragmentShaderPosition,
-			dtVelocity
+			dtVelocity,
 		)
 		this.positionVariable = this.gpuCompute.addVariable(
 			"textureVelocity",
 			fragmentShaderVelocity,
-			dtPosition
+			dtPosition,
 		)
 
 		this.gpuCompute.setVariableDependencies(this.velocityVariable, [
@@ -399,10 +404,10 @@ class VoronoiScene {
 		this.positionUniforms["deltaTime"] = new THREE.Uniform(0.0)
 		this.velocityUniforms["deltaTime"] = new THREE.Uniform(0.0)
 		this.velocityUniforms["uTarget"] = new THREE.Uniform(
-			this.targets[this.index]
+			this.targets[this.index],
 		)
 		this.positionUniforms["uTarget"] = new THREE.Uniform(
-			this.targets[this.index]
+			this.targets[this.index],
 		)
 		this.positionUniforms["uTexture"] = new THREE.Uniform(this.canvasTexture)
 		this.velocityUniforms["uTexture"] = new THREE.Uniform(this.canvasTexture)
@@ -418,7 +423,7 @@ class VoronoiScene {
 
 		targetRenderer.domElement.addEventListener(
 			"click",
-			this.handleClick.bind(this)
+			this.handleClick.bind(this),
 		)
 	}
 	clock = new THREE.Clock()
