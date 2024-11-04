@@ -685,6 +685,10 @@ export class GallerySketch {
 					Math.sin(this.time) * 0.1 + 1,
 				)
 
+				if (this.hamburgerMesh) {
+					this.hamburgerMesh.rotation.set(0, this.time, 0)
+				}
+
 				this.hamburger.children.forEach((hamChild) => {
 					if (
 						hamChild instanceof THREE.Mesh &&
@@ -880,49 +884,14 @@ export class GallerySketch {
 		try {
 			const { scene } = await this.gltfLoader.loadAsync("Hamburger.glb")
 			const hamburgerGroup = scene.getObjectByName("Circle003_Circle004")
-
-			const hamMatBase = new CustomShaderMaterial({
-				baseMaterial: THREE.MeshPhysicalMaterial,
-				uniforms: {
-					time: { value: 0 },
-					uColor: { value: new THREE.Color("white") },
-				},
-				vertexShader: `
-					varying vec2 vUv;
-					void main() {
-						gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-						vUv = uv;
-					}
-				`,
-				fragmentShader: `
-					varying vec2 vUv;
-					uniform float time;
-					uniform vec3 uColor;
-
-
-					void main() {
-						// fresnel effect
-						vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
-						float fresnel = 1.0 - dot(vNormal, viewDir);
-						fresnel = pow(fresnel, 2.0);
-
-						// color
-						vec3 color = vec3(1.0, 1.0, 1.0);
-
-						csm_DiffuseColor = vec4(color * fresnel, 1.0);
-					}
-
-				`,
+			const hamburgerMeshWrapper = new THREE.Group()
+			hamburgerMeshWrapper.name = "MeshWrapper"
+			hamburgerGroup?.add(hamburgerMeshWrapper)
+			const matcap = this.textureLoader.load("/matcap.webp")
+			const hamMatBase = new THREE.MeshMatcapMaterial({
 				depthTest: false,
 				depthWrite: false,
-				ior: 2.2,
-				reflectivity: 1,
-				clearcoat: 1,
-				clearcoatRoughness: 0.1,
-				roughness: 0.01,
-				metalness: 0.9,
-				transparent: true,
-				opacity: 0.2,
+				matcap: matcap,
 			})
 			this.hamburgerMaterial = hamMatBase
 
@@ -931,72 +900,63 @@ export class GallerySketch {
 					const child = hamburgerGroup.children[i] as THREE.Mesh
 					child.material = hamMatBase
 					child.position.y -= 0.3
-					child.scale.set(0.07, 0.07, 0.07)
+					child.scale.set(0.3, 0.3, 0.3)
+					if (child.name !== "MeshWrapper") {
+						hamburgerMeshWrapper.add(child)
+					}
 				}
+
+				this.hamburgerMesh = hamburgerMeshWrapper
 
 				hamburgerGroup.rotation.x = Math.PI / 10
 				hamburgerGroup.rotation.y += 0.5
 				const aspect = window.innerWidth / window.innerHeight
 				hamburgerGroup.position.set(-1 - aspect * 4.5, 5.5, -10)
 
-				const ambLight = new THREE.AmbientLight(0xffffff, 5)
+				const ambLight = new THREE.AmbientLight(0xffffff, 0.5)
 				this.scene.add(ambLight)
 
 				const circles: THREE.Mesh[] = []
 				this.hamburgerCircles = new THREE.Group()
+
 				for (let i = 0; i < this.posts.length; i++) {
 					const hamMat = new CustomShaderMaterial({
-						baseMaterial: THREE.MeshPhysicalMaterial,
+						baseMaterial: THREE.MeshBasicMaterial,
 						uniforms: {
 							time: { value: 0 },
 							uColor: { value: new THREE.Color("white") },
 							uColorActive: { value: new THREE.Color("red") },
 							uActive: { value: false },
 						},
+						map: matcap,
 						vertexShader: `
-							varying vec2 vUv;
-							void main() {
-								gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-								vUv = uv;
-							}
-						`,
-						fragmentShader: `
-							varying vec2 vUv;
-							uniform float time;
-							uniform vec3 uColor;
-							uniform vec3 uColorActive;
-							uniform bool uActive;
-		
-							void main() {
-								// fresnel effect
-								vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
-								float fresnel = 1.0 - dot(vNormal, viewDir);
-								fresnel = pow(fresnel, 2.0);
-		
-								// color
-								vec3 color = vec3(1.0, 1.0, 1.0);
-		
-								
-								if(uActive) {
-									color = uColorActive;
-									} else {
-										color = uColor;
+								varying vec2 vUv;
+
+								void main() {
+									gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+									vUv = uv;
 								}
-								
-								csm_DiffuseColor = vec4(color * fresnel, 1.0);
-							}
-		
-						`,
+							`,
+						fragmentShader: `
+								varying vec2 vUv;
+
+								uniform float time;
+								uniform vec3 uColor;
+								uniform vec3 uColorActive;
+								uniform bool uActive;
+
+								void main() {
+									// color
+									vec3 color = vec3(1.0, 0.3, .3);
+
+									if(uActive) {
+										csm_DiffuseColor.rgb = color;
+									}
+								}
+
+							`,
 						depthTest: false,
 						depthWrite: false,
-						ior: 2.2,
-						reflectivity: 1,
-						clearcoat: 1,
-						clearcoatRoughness: 0.1,
-						roughness: 0.01,
-						metalness: 0.9,
-						transparent: true,
-						opacity: 0.2,
 					})
 					const post = this.posts[i]
 					const geo = new THREE.TetrahedronGeometry(0.25, 0)
@@ -1010,11 +970,6 @@ export class GallerySketch {
 
 					const x = Math.cos(angle) * radius * gap
 					const y = Math.sin(angle) * radius * gap
-
-					// const x = i * 0.2
-					// const y = 1
-
-					console.log(i, "hamb")
 
 					circle.name = `${post.slug}|hamburger`
 
