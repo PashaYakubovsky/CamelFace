@@ -17,25 +17,11 @@
 </script>
 
 <svelte:head>
-	<title>Galaxy</title>
-	<meta name="description" content="Galaxy simulation three.js" />
+	<title>Galaxy WebGPU</title>
+	<meta name="description" content="Galaxy simulation three.js webgpu" />
 </svelte:head>
 
 <canvas bind:this={canvasElem}></canvas>
-
-<button
-	on:click={() => {
-		scene.fadeOut(scene)
-		loadingAnimation = true
-		setTimeout(() => {
-			loadingAnimation = false
-			goto("/")
-		}, 6000)
-	}}
-	class={`absolute hover:scale-110 hover:shadow-lg shadow-slate-100 transition-all left-[50%] bottom-5 translate-x-[-50%] z-10 rounded px-4 py-2 cursor-pointer bg-gray-50 text-slate-950 ${
-		loadingAnimation ? "cursor-progress" : ""
-	}`}>Explore</button
->
 
 <style>
 	canvas {

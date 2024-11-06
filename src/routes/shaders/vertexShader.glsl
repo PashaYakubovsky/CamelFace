@@ -1,11 +1,21 @@
+precision mediump float;
+
+
 uniform float time;
 uniform vec2 pixels;
 uniform float distanceFromCenter;
 uniform bool isMobile;
+uniform vec2 uMouse;
+uniform vec2 uResolution;
+uniform bool uActive;
 
 varying vec2 vUv;
 varying vec3 vPosition;
 varying float vTime;
+
+attribute vec3 aVertexPosition;
+
+
 
 
 float PI = 3.141592653589793238;
@@ -28,6 +38,25 @@ void main() {
         pos.y += sin(time*0.3)*0.05;
         vUv.y += sin(time*0.3)*0.05;
     }
+
+    // get the distance between our vertex and the mouse position
+    vec2 disPos = pos.xy;
+    float distanceFromMouse = distance(uMouse.xy, disPos);
+
+    // calculate our wave effect
+    float waveSinusoid = cos(3.0 * (distanceFromMouse - (time / 100.0)));
+
+    // attenuate the effect based on mouse distance
+    float distanceStrength = (0.1 / (distanceFromMouse + 0.5));
+
+    // calculate our distortion effect
+    float distortionEffect = distanceStrength * waveSinusoid * 2.4;
+
+    // apply the distortion effect to our vertex position
+    if(uActive) {
+        pos.z += distortionEffect;
+    }
+
 
     vPosition = position;
     vTime = time;

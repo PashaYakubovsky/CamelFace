@@ -6,12 +6,12 @@ uniform sampler2D uTexture;
 uniform sampler2D uPlaceholderTexture;
 uniform sampler2D videoTexture;
 uniform vec2 uMouse;
-precision highp float;
 uniform float distanceFromCenter;
 uniform vec4 resolution;
 varying vec2 vUv;
 varying vec3 vPosition;
 varying float vTime;
+
 float PI = 3.141592653589793238;
 
 float random (vec2 st) {

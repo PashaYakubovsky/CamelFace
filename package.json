@@ -15,6 +15,7 @@
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.2.9",
 		"@sveltejs/vite-plugin-svelte": "^4.0.0",
+		"@tweakpane/core": "^2.0.5",
 		"@types/animejs": "^3.1.7",
 		"@types/d3-delaunay": "^6.0.4",
 		"@types/noisejs": "^0.0.31",
@@ -71,6 +72,7 @@
 		"tailwindcss": "^3.3.3",
 		"three": "^0.160.1",
 		"three-custom-shader-material": "^5.4.0",
+		"tweakpane": "^4.0.5",
 		"uuid": "^9.0.1",
 		"virtual-scroll": "^2.2.1"
 	}

@@ -598,6 +598,17 @@ export class GallerySketch {
 		})
 		this.contentElements.forEach((c) => c.classList.add("hidden"))
 
+		this.meshes.forEach((mesh, idx) => {
+			const mat = mesh.material as THREE.ShaderMaterial
+			if (mat.uniforms.uActive) {
+				mat.uniforms.uActive.value = false
+			}
+
+			if (this.currentIndex === idx) {
+				mat.uniforms.uActive.value = true
+			}
+		})
+
 		// here we start scene render loop and set it render dependency in current loop
 		const post = this.posts[this.currentIndex]
 		const scene = this.integratedScenesDict[post.slug]
@@ -701,10 +712,9 @@ export class GallerySketch {
 				})
 			}
 
-			if (this.meshes.length) {
-				this.meshes.forEach((mesh) => {
-					mesh.material.uniforms.time.value = this.time
-				})
+			const curMesh = this.meshes[this.currentIndex]?.material
+			if (curMesh) {
+				curMesh.uniforms.time.value = this.time
 			}
 
 			// Render the secondary scene to the render target
@@ -813,10 +823,11 @@ export class GallerySketch {
 				resolutions: { value: new THREE.Vector4() },
 				distanceFromCenter: { value: 0.0 },
 				mouse: { value: new THREE.Vector2(0, 0) },
-				uResolution: { value: new THREE.Vector2(1, 1) },
+				uResolution: { value: new THREE.Vector2(this.width, this.height) },
 				uMouse: { value: new THREE.Vector2(0, 0) },
 				isMobile: { value: this.width < 768 },
 				videoTexture: { value: null },
+				uActive: { value: false },
 			},
 			vertexShader,
 			fragmentShader,
@@ -843,6 +854,7 @@ export class GallerySketch {
 		})
 		const aspectRatio = this.width / this.height
 		this.bgGeometry = new THREE.PlaneGeometry(100, 100, 1, 1)
+
 		this.bgGeometry.scale(aspectRatio, 1, 1)
 		this.bgPlane = new THREE.Mesh(this.bgGeometry, this.bgMaterial)
 		this.bgPlane.position.z = 3.2
@@ -1107,5 +1119,23 @@ const calculatePosition = () => {
 const createGeometry = () => {
 	const geometry = [2.5, 2.2]
 
-	return new THREE.PlaneGeometry(geometry[0], geometry[1], 16, 16)
+	const geo = new THREE.PlaneGeometry(geometry[0], geometry[1], 16, 16)
+
+	geo.computeVertexNormals()
+	const aVertexPosition = new Float32Array(geo.attributes.position.count * 2)
+	for (let i = 0; i < geo.attributes.position.count; i++) {
+		const x = geo.attributes.position.getX(i)
+		const y = geo.attributes.position.getY(i)
+
+		aVertexPosition[i * 3 + 0] = x
+		aVertexPosition[i * 3 + 1] = y
+		aVertexPosition[i * 3 + 2] = 1
+	}
+
+	geo.setAttribute(
+		"aVertexPosition",
+		new THREE.BufferAttribute(aVertexPosition, 3),
+	)
+
+	return geo
 }
