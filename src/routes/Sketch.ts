@@ -228,7 +228,7 @@ export class GallerySketch {
 
 				// Update shader uniforms with correct mouse position
 				if (obj.material.uniforms.uMouse) {
-					obj.material.uniforms.uMouse.value = this.mouse
+					obj.material.uniforms.uMouse.value = hit.uv
 				}
 			}
 
@@ -490,7 +490,10 @@ export class GallerySketch {
 			const mat = this.material.clone()
 			mat.uniforms.uPlaceholderTexture = { value: this.placeholderTexture }
 			mat.uniforms.uWithoutTexture = {
-				value: post.slug === "/voronoi" || post.slug === "/gpgpu",
+				value:
+					post.slug === "/voronoi" ||
+					post.slug === "/gpgpu" ||
+					post.slug === "/galaxy-v2",
 			}
 
 			try {
@@ -713,10 +716,12 @@ export class GallerySketch {
 				})
 			}
 
-			const curMesh = this.meshes[this.currentIndex]?.material
-			if (curMesh) {
-				curMesh.uniforms.time.value = this.time
-			}
+			this.meshes.forEach((mesh, idx) => {
+				const mat = mesh.material as THREE.ShaderMaterial
+				if (mat.uniforms.time) {
+					mat.uniforms.time.value = this.time
+				}
+			})
 
 			// Render the secondary scene to the render target
 			if (this.renderedIntegratedScene) {
@@ -1120,7 +1125,7 @@ const calculatePosition = () => {
 const createGeometry = () => {
 	const geometry = [2.5, 2.2]
 
-	const geo = new THREE.PlaneGeometry(geometry[0], geometry[1], 16, 16)
+	const geo = new THREE.PlaneGeometry(geometry[0], geometry[1], 32, 32)
 
 	geo.computeVertexNormals()
 	const aVertexPosition = new Float32Array(geo.attributes.position.count * 2)

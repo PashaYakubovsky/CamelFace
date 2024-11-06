@@ -40,17 +40,17 @@ void main() {
     }
 
     // get the distance between our vertex and the mouse position
-    vec2 disPos = pos.xy;
+    vec2 disPos = uv;
     float distanceFromMouse = distance(uMouse.xy, disPos);
 
     // calculate our wave effect
-    float waveSinusoid = cos(3.0 * (distanceFromMouse - (time / 100.0)));
+    float waveSinusoid = cos(4.0 * (distanceFromMouse - (time / 100.0)));
 
     // attenuate the effect based on mouse distance
-    float distanceStrength = (0.1 / (distanceFromMouse + 0.5));
+    float distanceStrength = (0.1 / (distanceFromMouse + 0.3));
 
     // calculate our distortion effect
-    float distortionEffect = distanceStrength * waveSinusoid * 2.4;
+    float distortionEffect = distanceStrength * waveSinusoid * 1.4;
 
     // apply the distortion effect to our vertex position
     if(uActive) {

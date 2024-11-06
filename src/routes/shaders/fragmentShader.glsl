@@ -43,11 +43,11 @@ void main() {
 
     float bw = (t.r + t.g + t.b) / 3.0;
 
-    float d = sdfCircle(uMouse, vec2(uv.x, uv.y - 0.5), .001);
+    float d = sdfCircle(uMouse, vec2(uv.x, uv.y ), .0005);
     
     // apply the distance field to the color
     vec4 circle = vec4(vec3(1.0 - d), 1.0);
-    t = mix(t, circle, 0.2);
+    t = mix(t, circle, 0.1);
     
     // Assign a random value based on the integer coord
     vec3 color = vec3(random( ipos ));
