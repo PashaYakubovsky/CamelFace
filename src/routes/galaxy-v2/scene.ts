@@ -621,7 +621,7 @@ class GalaxySketch {
 		if (this.audio) this.audio.pause()
 		if (this.renderer) this.renderer.dispose()
 		this.scene.clear()
-		this.gui?.destroy()
+		if (this.gui) this.gui.dispose
 	}
 }
 

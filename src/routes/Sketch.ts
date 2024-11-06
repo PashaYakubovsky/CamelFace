@@ -617,13 +617,14 @@ export class GallerySketch {
 			if (!(scene instanceof GPGPUScene || scene instanceof VoronoiScene)) {
 				scene.animate()
 			}
-			this.addColorToBGShader(this.currentIndex)
-
-			const content = this.contentElements[this.currentIndex]
-			content.classList.remove("hidden")
 
 			this.renderedIntegratedScene = scene
 		}
+
+		this.addColorToBGShader(this.currentIndex)
+
+		const content = this.contentElements[this.currentIndex]
+		content.classList.remove("hidden")
 
 		localStorage.setItem("attractTo", String(this.currentIndex))
 	}
