@@ -622,6 +622,7 @@ class GalaxySketch {
 		if (this.renderer) this.renderer.dispose()
 		this.scene.clear()
 		if (this.gui) this.gui.dispose
+		if (this.stats) this.stats.dom.remove()
 	}
 }
 
