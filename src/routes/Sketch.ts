@@ -1125,7 +1125,7 @@ const calculatePosition = () => {
 const createGeometry = () => {
 	const geometry = [2.5, 2.2]
 
-	const geo = new THREE.PlaneGeometry(geometry[0], geometry[1], 32, 32)
+	const geo = new THREE.PlaneGeometry(geometry[0], geometry[1], 12, 12)
 
 	geo.computeVertexNormals()
 	const aVertexPosition = new Float32Array(geo.attributes.position.count * 2)

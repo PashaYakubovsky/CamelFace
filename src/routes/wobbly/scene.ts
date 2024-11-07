@@ -1,14 +1,14 @@
+import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils"
 import vertexShader from "./vertexShader.glsl"
 import fragmentShader from "./fragmentShader.glsl"
 import Stats from "stats.js"
 
 import * as THREE from "three"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
 import GUI from "lil-gui"
 import CustomShaderMaterial from "three-custom-shader-material/vanilla"
-import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils"
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js"
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 
 class WobblyScene {
 	renderer: THREE.WebGLRenderer | null = null
@@ -29,19 +29,19 @@ class WobblyScene {
 	controls: OrbitControls
 	debugObject = {
 		clearColor: "#000",
-		color: "#ddded2",
-		color2: "#fff",
+		color: "#006eff",
+		color2: "#000000",
 		color3: "#050505",
 		orbitControls: true,
 		metalness: 0,
-		roughness: 1,
-		transmission: 0,
-		ior: 1.0,
-		thickness: 1.5,
+		roughness: 0,
+		transmission: 0.78,
+		ior: 1.17,
+		thickness: 0.96,
 		positionFrequency: 0.5,
-		timeFrequency: 0.4,
-		strength: 0.3,
-		warpPositionFrequency: 0.38,
+		timeFrequency: 0.656,
+		strength: 0.907,
+		warpPositionFrequency: 0,
 		warpTimeFrequency: 0.12,
 		warpStrength: 1.7,
 	}
@@ -56,8 +56,8 @@ class WobblyScene {
 		uResolution: new THREE.Uniform(
 			new THREE.Vector2(
 				this.width * this.pixelRatio,
-				this.height * this.pixelRatio
-			)
+				this.height * this.pixelRatio,
+			),
 		),
 		uMouse: new THREE.Uniform(new THREE.Vector2()),
 		uColor: new THREE.Uniform(new THREE.Color(this.debugObject.color)),
@@ -72,7 +72,7 @@ class WobblyScene {
 		canvasElement: HTMLCanvasElement | null,
 		opt?: {
 			renderToTarget: boolean
-		}
+		},
 	) {
 		this.height = window.innerHeight
 		this.width = window.innerWidth
@@ -120,7 +120,7 @@ class WobblyScene {
 			35,
 			this.width / this.height,
 			0.0001,
-			10000
+			10000,
 		)
 
 		this.scene.add(this.camera)
@@ -137,6 +137,19 @@ class WobblyScene {
 
 		// Mouse
 		this.mouse = new THREE.Vector2()
+
+		new THREE.TextureLoader().load("/matcap.png", (texture) => {
+			texture.mapping = THREE.EquirectangularReflectionMapping
+			texture.magFilter = THREE.LinearFilter
+			texture.minFilter = THREE.LinearMipmapLinearFilter
+			texture.flipY = false
+			texture.generateMipmaps = true
+			texture.wrapS = THREE.ClampToEdgeWrapping
+			texture.wrapT = THREE.ClampToEdgeWrapping
+			texture.repeat.set(1, 1)
+
+			this.scene.environment = texture
+		})
 
 		// Controls
 		if (this.renderer) {
@@ -422,7 +435,7 @@ class WobblyScene {
 					["Circle"]: new THREE.CircleGeometry(2.5, 50),
 				}
 				this.geometry = mergeVertices(
-					shapeCreate[value as keyof typeof shapeCreate]
+					shapeCreate[value as keyof typeof shapeCreate],
 				)
 				this.geometry.computeTangents()
 
@@ -512,7 +525,7 @@ class WobblyScene {
 		if (this.material) {
 			this.uniforms.uResolution.value = new THREE.Vector2(
 				this.width * this.pixelRatio,
-				this.height * this.pixelRatio
+				this.height * this.pixelRatio,
 			)
 		}
 	}
