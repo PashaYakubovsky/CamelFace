@@ -143,55 +143,6 @@ export class GallerySketch {
 		this.addObjects()
 		this.handleResize()
 
-		// Check if the browser supports the Sensor API
-		if (
-			typeof window.DeviceMotionEvent !== "undefined" &&
-			typeof window.DeviceMotionEvent.requestPermission === "function"
-		) {
-			// Request permission to access the accelerometer and gyroscope
-			window.DeviceMotionEvent.requestPermission()
-				.then((response) => {
-					if (response === "granted") {
-						// Permission granted, add event listeners
-						window.addEventListener("devicemotion", handleMotionEvent)
-						window.addEventListener("deviceorientation", handleOrientationEvent)
-					} else {
-						console.log(
-							"Permission to access the accelerometer and gyroscope was denied.",
-						)
-					}
-				})
-				.catch(console.error)
-		} else {
-			console.log("Your browser does not support the Sensor API.")
-		}
-
-		function handleMotionEvent(event) {
-			// Access accelerometer data
-			const { acceleration, accelerationIncludingGravity } = event
-			console.log("Acceleration:", acceleration)
-			console.log(
-				"Acceleration including gravity:",
-				accelerationIncludingGravity,
-			)
-
-			// Access rotation data
-			const { rotationRate } = event
-			console.log("Rotation rate:", rotationRate)
-
-			this.speed += accelerationIncludingGravity.x * 0.01
-		}
-		handleMotionEvent.bind(this)
-
-		function handleOrientationEvent(event) {
-			// Access gyroscope data
-			const { alpha, beta, gamma } = event
-			console.log("Alpha:", alpha)
-			console.log("Beta:", beta)
-			console.log("Gamma:", gamma)
-		}
-		handleOrientationEvent.bind(this)
-
 		// init events
 		window.addEventListener("resize", this.handleResize.bind(this))
 		window.addEventListener("touchmove", this.handleTouchMove.bind(this))
@@ -201,7 +152,7 @@ export class GallerySketch {
 		window.addEventListener("wheel", this.handleWheel.bind(this))
 
 		// render loop
-		// gsap.ticker.fps(60)
+		gsap.ticker.fps(60)
 		gsap.ticker.add(this.animate.bind(this))
 	}
 
@@ -965,15 +916,35 @@ export class GallerySketch {
 			this.hamburgerMaterial = hamMatBase
 
 			if (hamburgerGroup) {
-				for (let i = 0; i < hamburgerGroup.children.length; i++) {
-					const child = hamburgerGroup.children[i] as THREE.Mesh
-					child.material = hamMatBase
-					child.position.y -= 0.3
-					child.scale.set(0.3, 0.3, 0.3)
-					if (child.name !== "MeshWrapper") {
-						hamburgerMeshWrapper.add(child)
-					}
+				const applyToMesh = (mesh: THREE.Mesh) => {
+					console.log(mesh, "mesh")
+
+					const mat = hamMatBase.clone()
+					mesh.material = mat
+
+					mesh.scale.set(0.09, 0.09, 0.09)
+					mesh.position.y = -0.5
+					hamburgerMeshWrapper.add(mesh)
 				}
+				const goIntoGroup = (group: THREE.Group) => {
+					console.log(group, "group")
+					hamburgerMeshWrapper.add(group)
+
+					group.children.forEach((child) => {
+						if (child instanceof THREE.Mesh) {
+							applyToMesh(child)
+						} else if (child instanceof THREE.Group) {
+							goIntoGroup(child)
+						}
+					})
+				}
+				scene.children.forEach((child) => {
+					if (child instanceof THREE.Mesh) {
+						applyToMesh(child)
+					} else if (child instanceof THREE.Group) {
+						goIntoGroup(child)
+					}
+				})
 
 				this.hamburgerMesh = hamburgerMeshWrapper
 

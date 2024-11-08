@@ -240,5 +240,11 @@
 		canvas {
 			height: 100vh !important;
 		}
+		.post-info {
+			max-height: 200px;
+			flex-direction: column;
+			justify-content: center;
+			align-items: flex-start;
+		}
 	}
 </style>
