@@ -106,11 +106,13 @@ class WobblyScene {
 		const ambientLight = new THREE.AmbientLight(0xffffff, 0.2)
 		this.scene.add(ambientLight)
 		const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-		directionalLight.castShadow = true
-		directionalLight.shadow.mapSize.set(1024, 1024)
-		directionalLight.shadow.camera.far = 20
-		directionalLight.shadow.normalBias = 0.05
-		directionalLight.position.set(0.25, 2, -2.25)
+		if (this.renderer) {
+			directionalLight.castShadow = true
+			directionalLight.shadow.mapSize.set(1024, 1024)
+			directionalLight.shadow.camera.far = 20
+			directionalLight.shadow.normalBias = 0.05
+			directionalLight.position.set(0.25, 2, -2.25)
+		}
 		this.scene.add(directionalLight)
 
 		/**

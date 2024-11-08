@@ -61,16 +61,20 @@ class LinesScene {
 			this.renderer.toneMappingExposure = 1
 			this.renderer.shadowMap.enabled = true
 			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+			window.addEventListener("ondeviceorientation", (e) => {
+				console.log(e)
+			})
 		}
 
 		this.scene = new THREE.Scene()
 		this.camera = new THREE.PerspectiveCamera(
-			75,
+			50,
 			this.width / this.height,
 			0.01,
 			20,
 		)
-		this.camera.position.z = 1.4
+		this.camera.position.z = 2.4
 
 		this.directionalLight = new THREE.DirectionalLight(
 			new THREE.Color("#24e06d"),
@@ -79,12 +83,14 @@ class LinesScene {
 		this.directionalLight.position.set(0, 0, 1)
 		this.scene.add(this.directionalLight)
 
-		this.depthCamera = new THREE.PerspectiveCamera(
-			75,
-			this.width / this.height,
-			0.01,
-			1,
-		)
+		this.depthCamera = new THREE.PerspectiveCamera(75, 1, 0.01, 1)
+		if (this.width > 768) {
+			this.depthCamera.aspect = this.width / this.height
+			this.depthCamera.updateProjectionMatrix()
+		} else {
+			this.depthCamera.aspect = 1
+			this.depthCamera.updateProjectionMatrix()
+		}
 		this.depthCamera.position.z = 0.5
 
 		if (this.renderer) {
@@ -235,8 +241,13 @@ class LinesScene {
 		this.height = window.innerHeight
 		this.camera.aspect = this.width / this.height
 		this.camera.updateProjectionMatrix()
-		this.depthCamera.aspect = this.width / this.height
-		this.depthCamera.updateProjectionMatrix()
+		if (this.width > 768) {
+			this.depthCamera.aspect = this.width / this.height
+			this.depthCamera.updateProjectionMatrix()
+		} else {
+			this.depthCamera.aspect = 1
+			this.depthCamera.updateProjectionMatrix()
+		}
 	}
 
 	onMouseMove(event: MouseEvent): void {

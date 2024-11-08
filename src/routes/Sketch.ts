@@ -1025,6 +1025,10 @@ export class GallerySketch {
 		this.speed += diff * 0.003
 		this.prevPos = touch.clientY
 		this.lastInteraction = Date.now()
+
+		debounce(() => {
+			this.handleChangeSelection()
+		}, 500)()
 	}
 
 	handleKeyPress(e: KeyboardEvent) {
