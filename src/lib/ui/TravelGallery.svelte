@@ -62,6 +62,9 @@
 				scene.attractMode = false
 			}
 			scene.onClickEvent = (meshIndex: number) => {
+				if (window.innerWidth < 768) {
+					return
+				}
 				// reverse the index
 				const rI = meshIndex
 				goto($posts[rI].slug)

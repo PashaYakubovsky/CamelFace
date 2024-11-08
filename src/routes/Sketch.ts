@@ -143,6 +143,55 @@ export class GallerySketch {
 		this.addObjects()
 		this.handleResize()
 
+		// Check if the browser supports the Sensor API
+		if (
+			typeof window.DeviceMotionEvent !== "undefined" &&
+			typeof window.DeviceMotionEvent.requestPermission === "function"
+		) {
+			// Request permission to access the accelerometer and gyroscope
+			window.DeviceMotionEvent.requestPermission()
+				.then((response) => {
+					if (response === "granted") {
+						// Permission granted, add event listeners
+						window.addEventListener("devicemotion", handleMotionEvent)
+						window.addEventListener("deviceorientation", handleOrientationEvent)
+					} else {
+						console.log(
+							"Permission to access the accelerometer and gyroscope was denied.",
+						)
+					}
+				})
+				.catch(console.error)
+		} else {
+			console.log("Your browser does not support the Sensor API.")
+		}
+
+		function handleMotionEvent(event) {
+			// Access accelerometer data
+			const { acceleration, accelerationIncludingGravity } = event
+			console.log("Acceleration:", acceleration)
+			console.log(
+				"Acceleration including gravity:",
+				accelerationIncludingGravity,
+			)
+
+			// Access rotation data
+			const { rotationRate } = event
+			console.log("Rotation rate:", rotationRate)
+
+			this.speed += accelerationIncludingGravity.x * 0.01
+		}
+		handleMotionEvent.bind(this)
+
+		function handleOrientationEvent(event) {
+			// Access gyroscope data
+			const { alpha, beta, gamma } = event
+			console.log("Alpha:", alpha)
+			console.log("Beta:", beta)
+			console.log("Gamma:", gamma)
+		}
+		handleOrientationEvent.bind(this)
+
 		// init events
 		window.addEventListener("resize", this.handleResize.bind(this))
 		window.addEventListener("touchmove", this.handleTouchMove.bind(this))
@@ -1043,9 +1092,14 @@ export class GallerySketch {
 		}
 	}
 
+	animatedTransitionIndex = -1
 	animateTransition(idx: number) {
 		const tl = gsap.timeline({})
 		const currentMesh = this.groups[idx]
+
+		if (this.animatedTransitionIndex !== -1) {
+			this.removeTransition(this.animatedTransitionIndex)
+		}
 
 		tl.to(
 			currentMesh.position,
@@ -1053,7 +1107,7 @@ export class GallerySketch {
 			{
 				x: 0,
 				y: 0,
-				z: -1,
+				z: window.innerWidth < 768 ? -1.5 : -1,
 				duration: 1,
 				ease: "power2.inOut",
 			},
@@ -1084,7 +1138,35 @@ export class GallerySketch {
 			},
 			"=",
 		)
+
+		this.animatedTransitionIndex = idx
+
 		return tl
+	}
+
+	removeTransition(idx: number) {
+		const mesh = this.groups[idx]
+		if (mesh) {
+			gsap.to(mesh.scale, {
+				x: 1,
+				y: 1,
+				z: 1,
+				duration: 1,
+				ease: "power2.inOut",
+			})
+
+			gsap.to(mesh.position, {
+				...this.positionValues,
+				duration: 1,
+				ease: "power2.inOut",
+			})
+
+			gsap.to(mesh.rotation, {
+				...this.eulerValues,
+				duration: 1,
+				ease: "power2.inOut",
+			})
+		}
 	}
 
 	onClick(e: MouseEvent) {
