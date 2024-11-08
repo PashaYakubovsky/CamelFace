@@ -4,8 +4,7 @@
 	import { goto } from "$app/navigation"
 
 	let canvasElem: HTMLCanvasElement
-	let scene: GalaxySketch
-	let loadingAnimation = false
+	let scene: GalaxySketch = $state()
 
 	onMount(() => {
 		scene = new GalaxySketch(canvasElem)

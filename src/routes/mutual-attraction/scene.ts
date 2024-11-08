@@ -3,13 +3,14 @@ import vertexShader from "./vertexShader.glsl"
 import fragmentShader from "./fragmentShader.glsl"
 import { GUI } from "lil-gui"
 import gsap from "$gsap"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
+
 import Mover from "./Mover"
 import type { IMover } from "./Mover"
 import Stats from "stats.js"
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 
 const options = {
-	count: 5000,
+	count: 1000,
 	glowingIntensity: 2.5,
 	color: "#00bfff",
 	attractorMass: 1,
@@ -25,7 +26,7 @@ class AttractionScene {
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
-		1000
+		1000,
 	)
 	renderer: THREE.WebGLRenderer | null = null
 	material: THREE.ShaderMaterial | null = null
@@ -165,12 +166,12 @@ class AttractionScene {
 			this.movers[0].position.x = THREE.MathUtils.lerp(
 				this.movers[0].position.x,
 				(event.clientX / window.innerWidth) * 2 - 1,
-				0.1
+				0.1,
 			)
 			this.movers[0].position.y = THREE.MathUtils.lerp(
 				this.movers[0].position.y,
 				-(event.clientY / window.innerHeight) * 2 + 1,
-				0.1
+				0.1,
 			)
 		}
 	}
@@ -304,7 +305,7 @@ class AttractionScene {
 						this.init()
 					},
 				},
-				"reset"
+				"reset",
 			)
 			.name("Reset")
 
