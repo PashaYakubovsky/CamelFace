@@ -902,7 +902,7 @@ export class GallerySketch {
 	async addHamburger() {
 		try {
 			const { scene } = await this.gltfLoader.loadAsync("Hamburger.glb")
-			const hamburgerGroup = scene.getObjectByName("Circle003_Circle004")
+			const hamburgerGroup = scene.children[0] as THREE.Group
 			const hamburgerMeshWrapper = new THREE.Group()
 			hamburgerMeshWrapper.name = "MeshWrapper"
 			hamburgerGroup?.add(hamburgerMeshWrapper)
@@ -911,6 +911,7 @@ export class GallerySketch {
 				depthTest: false,
 				depthWrite: false,
 				matcap: matcap,
+				side: THREE.DoubleSide,
 			})
 			this.hamburgerMaterial = hamMatBase
 
