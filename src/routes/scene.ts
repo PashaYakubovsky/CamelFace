@@ -670,7 +670,7 @@ class TravelGalleryScene {
 
 	async addHamburger() {
 		try {
-			const { scene } = await this.gltfLoader.loadAsync("Hamburger.glb")
+			const { scene } = await this.gltfLoader.loadAsync("/models/Hamburger.glb")
 			const hamburgerGroup = scene.getObjectByName("Circle003_Circle004")
 
 			const hamMat = new CustomShaderMaterial({
