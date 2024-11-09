@@ -17,7 +17,7 @@ class BoidsScene {
 		75,
 		window.innerWidth / window.innerHeight,
 		0.1,
-		1000
+		1000,
 	)
 	renderer: THREE.WebGLRenderer | null = null
 	material: THREE.ShaderMaterial | null = null
@@ -73,7 +73,7 @@ class BoidsScene {
 		this.addSky()
 
 		this.loaderGltf = new GLTFLoader()
-		this.loaderGltf.load("/Hummingbird.glb", (gltf) => {
+		this.loaderGltf.load("/models/Hummingbird.glb", (gltf) => {
 			const mesh = gltf.scene.children[0] as THREE.Mesh
 			this.birdGeometry = mesh.geometry
 			this.birdGeometry.scale(0.0005, 0.0005, 0.0005)
@@ -81,7 +81,7 @@ class BoidsScene {
 			const quaternion = new THREE.Quaternion()
 			quaternion.setFromUnitVectors(
 				new THREE.Vector3(0, 1, 0),
-				this.config.velocity.clone().normalize()
+				this.config.velocity.clone().normalize(),
 			)
 			mesh.setRotationFromQuaternion(quaternion)
 
@@ -345,7 +345,7 @@ class BoidsScene {
 				const dir = new THREE.Vector3().subVectors(mouse, boid.position)
 				dir.normalize()
 				boid.acceleration.add(
-					dir.multiplyScalar(this.config.mouseBehaviorForce)
+					dir.multiplyScalar(this.config.mouseBehaviorForce),
 				)
 			}
 
@@ -358,7 +358,7 @@ class BoidsScene {
 				boid.position = new THREE.Vector3(
 					gsap.utils.random(0, 0.2),
 					gsap.utils.random(0, 0.2),
-					gsap.utils.random(0, 0.2)
+					gsap.utils.random(0, 0.2),
 				)
 			}
 		})
@@ -476,7 +476,7 @@ class BoidsScene {
 					boid.velocity = new THREE.Vector3(
 						gsap.utils.random(0, this.config.velocity.x),
 						gsap.utils.random(0, this.config.velocity.y),
-						gsap.utils.random(0, this.config.velocity.z)
+						gsap.utils.random(0, this.config.velocity.z),
 					)
 				})
 			})
@@ -489,7 +489,7 @@ class BoidsScene {
 					boid.velocity = new THREE.Vector3(
 						gsap.utils.random(0, this.config.velocity.x),
 						gsap.utils.random(0, this.config.velocity.y),
-						gsap.utils.random(0, this.config.velocity.z)
+						gsap.utils.random(0, this.config.velocity.z),
 					)
 				})
 			})
@@ -502,7 +502,7 @@ class BoidsScene {
 					boid.velocity = new THREE.Vector3(
 						gsap.utils.random(0, this.config.velocity.x),
 						gsap.utils.random(0, this.config.velocity.y),
-						gsap.utils.random(0, this.config.velocity.z)
+						gsap.utils.random(0, this.config.velocity.z),
 					)
 				})
 			})

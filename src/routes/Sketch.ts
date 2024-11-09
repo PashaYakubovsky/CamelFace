@@ -901,7 +901,7 @@ export class GallerySketch {
 
 	async addHamburger() {
 		try {
-			const { scene } = await this.gltfLoader.loadAsync("Hamburger.glb")
+			const { scene } = await this.gltfLoader.loadAsync("/models/Hamburger.glb")
 			const hamburgerGroup = scene.children[0] as THREE.Group
 			const hamburgerMeshWrapper = new THREE.Group()
 			hamburgerMeshWrapper.name = "MeshWrapper"
