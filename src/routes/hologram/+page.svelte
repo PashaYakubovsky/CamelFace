@@ -29,7 +29,7 @@
 </svelte:head>
 
 <div bind:this={parentElem} class="parent">
-	<canvas bind:this={canvasElem} />
+	<canvas bind:this={canvasElem}></canvas>
 </div>
 
 <style>

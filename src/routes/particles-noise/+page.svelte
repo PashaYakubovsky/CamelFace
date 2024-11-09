@@ -22,7 +22,7 @@
 	<meta name="description" content="Particles simulation three.js" />
 </svelte:head>
 
-<canvas bind:this={canvasElem} />
+<canvas bind:this={canvasElem}></canvas>
 
 <input
 	accept="image/*"
