@@ -28,7 +28,7 @@
 	}}>webgpu version</button
 >
 
-<canvas bind:this={canvasElement} />
+<canvas bind:this={canvasElement}></canvas>
 
 <style>
 	canvas {

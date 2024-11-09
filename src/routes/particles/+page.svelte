@@ -20,7 +20,7 @@
 	<meta name="description" content="Particles simulation three.js" />
 </svelte:head>
 
-<canvas bind:this={canvasElement} />
+<canvas bind:this={canvasElement}></canvas>
 
 <style>
 	canvas {

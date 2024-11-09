@@ -84,7 +84,7 @@
 
 <div class="pageWrapper transition-colors" bind:this={pageWrapperElement}>
 	<!-- svelte-ignore element_invalid_self_closing_tag -->
-	<canvas bind:this={canvasElement} />
+	<canvas bind:this={canvasElement}></canvas>
 
 	<!-- loop over posts -->
 	{#each $posts as post, index (post.id)}

@@ -20,7 +20,7 @@
 	<meta name="description" content="Cardioid webgl" />
 </svelte:head>
 
-<canvas bind:this={canvasElement} />
+<canvas bind:this={canvasElement}></canvas>
 
 <style>
 	canvas {

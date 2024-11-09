@@ -18,7 +18,7 @@
 
 <title>Fluid</title>
 
-<canvas bind:this={canvasElement} />
+<canvas bind:this={canvasElement}></canvas>
 
 <style>
 </style>

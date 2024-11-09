@@ -20,7 +20,7 @@
 	<meta name="description" content="Lyapunov fractal" />
 </svelte:head>
 
-<canvas bind:this={canvasElement} />
+<canvas bind:this={canvasElement}></canvas>
 
 <style>
 	canvas {

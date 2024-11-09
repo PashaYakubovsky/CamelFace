@@ -27,7 +27,7 @@
 	}}>Birds in the sky</button
 >
 
-<canvas bind:this={canvasElement} />
+<canvas bind:this={canvasElement}></canvas>
 
 <style>
 	canvas {
