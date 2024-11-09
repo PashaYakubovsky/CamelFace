@@ -54,7 +54,7 @@ class MorphingScene {
 		canvasElement: HTMLCanvasElement | null,
 		opt?: {
 			renderToTarget?: boolean
-		}
+		},
 	) {
 		if (!opt?.renderToTarget && canvasElement) {
 			this.renderer = new THREE.WebGLRenderer({
@@ -84,7 +84,7 @@ class MorphingScene {
 			35,
 			this.width / this.height,
 			0.1,
-			100
+			100,
 		)
 		this.camera.position.set(0, 0, 20)
 		this.scene.add(this.camera)
@@ -113,7 +113,7 @@ class MorphingScene {
 		const aspectRatio = this.width / this.height
 		this.raycastPlane = new THREE.Mesh(
 			new THREE.PlaneGeometry(aspectRatio * 10, 10, 1, 1),
-			new THREE.MeshBasicMaterial({ visible: false })
+			new THREE.MeshBasicMaterial({ visible: false }),
 		)
 		this.scene.add(this.raycastPlane)
 
@@ -137,14 +137,14 @@ class MorphingScene {
 	async addObjects() {
 		// Load models
 		// this.gltfLoader.load('/models.glb', (gltf: GLTF) => {
-		const gltf = await this.gltfLoader.loadAsync("/models.glb")
+		const gltf = await this.gltfLoader.loadAsync("/models/models.glb")
 		// Positions
 		const { children } = gltf.scene
 		const maxCount = Math.max(
 			...children.map(
 				(child) =>
-					(child as THREE.Mesh).geometry.getAttribute("position")?.count || 0
-			)
+					(child as THREE.Mesh).geometry.getAttribute("position")?.count || 0,
+			),
 		)
 
 		this.particles = {
@@ -155,7 +155,7 @@ class MorphingScene {
 
 		children.forEach((child) => {
 			const position = (child as THREE.Mesh).geometry.getAttribute(
-				"position"
+				"position",
 			) as THREE.BufferAttribute
 			const original = position.array
 			const newArr = new Float32Array(maxCount * 3)
@@ -169,12 +169,12 @@ class MorphingScene {
 
 			if (this.particles.positions)
 				this.particles.positions.push(
-					new THREE.Float32BufferAttribute(newArr, 3)
+					new THREE.Float32BufferAttribute(newArr, 3),
 				)
 		})
 
 		this.particles.sizes = Float32Array.from({ length: maxCount }, () =>
-			Math.random()
+			Math.random(),
 		)
 
 		// Geometry
@@ -182,18 +182,18 @@ class MorphingScene {
 		if (this.particles.positions) {
 			this.particles.geometry.setAttribute(
 				"position",
-				this.particles.positions[this.particles.index]
+				this.particles.positions[this.particles.index],
 			)
 
 			this.particles.geometry.setAttribute(
 				"aPositionTarget",
-				this.particles.positions[this.particles.targetIndex]
+				this.particles.positions[this.particles.targetIndex],
 			)
 		}
 
 		this.particles.geometry.setAttribute(
 			"aSize",
-			new THREE.BufferAttribute(this.particles.sizes, 1)
+			new THREE.BufferAttribute(this.particles.sizes, 1),
 		)
 
 		// Material
@@ -208,8 +208,8 @@ class MorphingScene {
 				uResolution: new THREE.Uniform(
 					new THREE.Vector2(
 						this.width * this.pixelRatio,
-						this.height * this.pixelRatio
-					)
+						this.height * this.pixelRatio,
+					),
 				),
 				uMorphMergeSize: new THREE.Uniform(this.debugObject.morphMergeSize),
 				uMorphDuration: new THREE.Uniform(this.debugObject.morphDuration),
@@ -223,7 +223,7 @@ class MorphingScene {
 		// Points
 		this.particles.points = new THREE.Points(
 			this.particles.geometry,
-			this.particles.material
+			this.particles.material,
 		)
 		// Disable frustum culling for preventing points to be culled
 		this.particles.points.frustumCulled = false
@@ -241,11 +241,11 @@ class MorphingScene {
 		if (this.particles.geometry && this.particles.positions) {
 			this.particles.geometry.setAttribute(
 				"position",
-				this.particles.positions[this.particles.index]
+				this.particles.positions[this.particles.index],
 			)
 			this.particles.geometry.setAttribute(
 				"aPositionTarget",
-				this.particles.positions[this.particles.targetIndex]
+				this.particles.positions[this.particles.targetIndex],
 			)
 		}
 	}
@@ -308,7 +308,7 @@ class MorphingScene {
 		this.gui.addColor(this.debugObject, "color1").onChange(() => {
 			if (this.particles.material) {
 				this.particles.material.uniforms.uColor1.value = new THREE.Color(
-					this.debugObject.color1
+					this.debugObject.color1,
 				)
 			}
 		})
@@ -316,7 +316,7 @@ class MorphingScene {
 		this.gui.addColor(this.debugObject, "color2").onChange(() => {
 			if (this.particles.material) {
 				this.particles.material.uniforms.uColor2.value = new THREE.Color(
-					this.debugObject.color2
+					this.debugObject.color2,
 				)
 			}
 		})
@@ -340,7 +340,7 @@ class MorphingScene {
 		if (this.particles.material) {
 			this.particles.material.uniforms.uResolution.value = new THREE.Vector2(
 				this.width * this.pixelRatio,
-				this.height * this.pixelRatio
+				this.height * this.pixelRatio,
 			)
 		}
 	}
@@ -393,24 +393,24 @@ class MorphingScene {
 			this.particles.points.position.x = gsap.utils.interpolate(
 				this.particles.points.position.x,
 				this.mouse.x,
-				0.01
+				0.01,
 			)
 			this.particles.points.position.y = gsap.utils.interpolate(
 				this.particles.points.position.y,
 				this.mouse.y,
-				0.01
+				0.01,
 			)
 		}
 		if (this.raycastPlane) {
 			this.raycastPlane.position.x = gsap.utils.interpolate(
 				this.raycastPlane.position.x,
 				this.mouse.x,
-				0.01
+				0.01,
 			)
 			this.raycastPlane.position.y = gsap.utils.interpolate(
 				this.raycastPlane.position.y,
 				this.mouse.y,
-				0.01
+				0.01,
 			)
 		}
 
@@ -438,7 +438,7 @@ class MorphingScene {
 				this.particles.material.uniforms.uProgress.value = THREE.MathUtils.lerp(
 					this.particles.material.uniforms.uProgress.value,
 					Math.sin(this.time * 0.5),
-					0.5
+					0.5,
 				)
 			}
 		}

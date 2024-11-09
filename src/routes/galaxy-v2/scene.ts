@@ -119,7 +119,7 @@ class GalaxySketch {
 		gsap.ticker.fps(60)
 
 		this.audio = new Audio()
-		this.audio.src = "/galaxy.mp3"
+		this.audio.src = "/sounds/galaxy.mp3"
 	}
 
 	gui: Pane | undefined
@@ -291,7 +291,7 @@ class GalaxySketch {
 	initObjects() {
 		// load spacemap
 		this.textureLoader = new THREE.TextureLoader()
-		this.textureLoader.load("/spacemap2.png", (texture) => {
+		this.textureLoader.load("/textures/spacemap2.png", (texture) => {
 			texture.wrapS = THREE.RepeatWrapping
 			texture.wrapT = THREE.RepeatWrapping
 			texture.anisotropy = 16

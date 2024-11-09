@@ -109,7 +109,7 @@ class LinesScene {
 
 		this.mouse = new THREE.Vector2()
 
-		this.loader.load("/Skull.glb", (gltf) => {
+		this.loader.load("/models/Skull.glb", (gltf) => {
 			this.skull = gltf.scene.getObjectByName("Prop_Skull") as THREE.Mesh
 
 			if (this.skull) {

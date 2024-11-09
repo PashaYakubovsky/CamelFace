@@ -33,7 +33,7 @@ class LandScene {
 		35,
 		window.innerWidth / window.innerHeight,
 		0.1,
-		500
+		500,
 	)
 	renderer: THREE.WebGLRenderer | null = null
 	material: CustomShaderMaterial | null = null
@@ -55,7 +55,7 @@ class LandScene {
 		el: HTMLCanvasElement | null,
 		opt?: {
 			renderToTarget: boolean
-		}
+		},
 	) {
 		this.camera.position.z = 1
 
@@ -126,7 +126,7 @@ class LandScene {
 		this.scene.add(ambientLight)
 		const directionalLight = new THREE.DirectionalLight(
 			new THREE.Color("white"),
-			1
+			1,
 		)
 		directionalLight.position.set(0, 0, 1)
 
@@ -144,8 +144,8 @@ class LandScene {
 		this.geometry?.computeVertexNormals()
 
 		const textureLoader = new THREE.TextureLoader()
-		const matcapTexture = textureLoader.load("/matcap.png")
-		const matcapTexture2 = textureLoader.load("/matcap2.png")
+		const matcapTexture = textureLoader.load("/textures/matcap.png")
+		const matcapTexture2 = textureLoader.load("/textures/matcap2.png")
 		matcapTexture.colorSpace = THREE.SRGBColorSpace
 
 		const material = new CustomShaderMaterial({
@@ -393,7 +393,7 @@ class LandScene {
 					// this.spheres.push(textMesh1);
 					this.scene.add(textMesh1)
 					this.textMeshes.push(textMesh1)
-				}
+				},
 			)
 
 			// const controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -524,12 +524,12 @@ class LandScene {
 	onMouseMove(event: MouseEvent) {
 		this.mouse = new THREE.Vector2(
 			(event.clientX / window.innerWidth) * 2 - 1,
-			-(event.clientY / window.innerHeight) * 2 + 1
+			-(event.clientY / window.innerHeight) * 2 + 1,
 		)
 		if (this.customPass) {
 			const uvMouse = new THREE.Vector2(
 				event.clientX / window.innerWidth - 0.5,
-				-(event.clientY / window.innerHeight - 0.5)
+				-(event.clientY / window.innerHeight - 0.5),
 			)
 			this.customPass.uniforms["uMouse"].value = uvMouse
 		}
@@ -570,7 +570,7 @@ class LandScene {
 			const delta = event.deltaY * 0.0001
 			this.material.uniforms.iZoom.value = Math.max(
 				minZoom,
-				Math.min(maxZoom, this.material.uniforms.iZoom.value + delta)
+				Math.min(maxZoom, this.material.uniforms.iZoom.value + delta),
 			)
 		}
 	}
@@ -626,7 +626,7 @@ class LandScene {
 						bevelSize: 0.1,
 						bevelEnabled: false,
 					}),
-					this.textMeshes[2].material
+					this.textMeshes[2].material,
 				)
 				this.raycastTextId = this.textMeshes[3].id
 				this.textMeshes[3].position.copy(pos)
@@ -654,7 +654,7 @@ class LandScene {
 			this.customPass.uniforms["uBlurAmount"].value = THREE.MathUtils.lerp(
 				this.customPass.uniforms["uBlurAmount"].value,
 				0,
-				0.1
+				0.1,
 			)
 			this.customPass.uniforms["time"].value = time * 2
 		}

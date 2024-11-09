@@ -140,7 +140,7 @@ class WobblyScene {
 		// Mouse
 		this.mouse = new THREE.Vector2()
 
-		new THREE.TextureLoader().load("/matcap.png", (texture) => {
+		new THREE.TextureLoader().load("/textures/matcap.png", (texture) => {
 			texture.mapping = THREE.EquirectangularReflectionMapping
 			texture.magFilter = THREE.LinearFilter
 			texture.minFilter = THREE.LinearMipmapLinearFilter

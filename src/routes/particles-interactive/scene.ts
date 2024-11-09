@@ -41,7 +41,7 @@ class ParticlesInteractiveScene {
 
 	constructor(
 		canvasElement: HTMLCanvasElement | null,
-		opt?: { renderToTarget: boolean }
+		opt?: { renderToTarget: boolean },
 	) {
 		if (!opt?.renderToTarget && canvasElement) {
 			this.renderer = new THREE.WebGLRenderer({
@@ -128,7 +128,7 @@ class ParticlesInteractiveScene {
 			this.params.size,
 			this.params.size,
 			THREE.RGBAFormat,
-			THREE.FloatType
+			THREE.FloatType,
 		)
 		this.fboTexture.needsUpdate = true
 		this.fboTexture.magFilter = THREE.NearestFilter
@@ -167,7 +167,7 @@ class ParticlesInteractiveScene {
 			this.params.size,
 			this.params.size,
 			THREE.RGBAFormat,
-			THREE.FloatType
+			THREE.FloatType,
 		)
 
 		this.fboMaterial.uniforms.uInfo.value = this.info
@@ -217,7 +217,9 @@ class ParticlesInteractiveScene {
 				uPositions: { value: null },
 				uTime: { value: 0 },
 				uMouse: { value: new THREE.Vector2(0, 0) },
-				uTexture: { value: new THREE.TextureLoader().load("/particle2.jpeg") },
+				uTexture: {
+					value: new THREE.TextureLoader().load("/textures/particle2.jpeg"),
+				},
 				uForce: { value: this.params.noiseForce },
 				uHoverRadius: { value: this.params.hoverRadius },
 				uRadar: { value: this.params.radar },

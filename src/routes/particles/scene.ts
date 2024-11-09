@@ -179,7 +179,7 @@ class Particles {
 			new THREE.BufferAttribute(anglesArray, 1),
 		)
 		this.textureLoader = new THREE.TextureLoader()
-		const texture = this.textureLoader.load("/bg.jpg")
+		const texture = this.textureLoader.load("/textures/bg.jpg")
 
 		const particlesMaterial = new THREE.ShaderMaterial({
 			vertexShader: vertexShader,

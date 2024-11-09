@@ -36,7 +36,7 @@ class ParticlesScene {
 
 	constructor(
 		canvasElement: HTMLCanvasElement | null,
-		opt?: { renderToTarget: boolean }
+		opt?: { renderToTarget: boolean },
 	) {
 		if (!opt?.renderToTarget && canvasElement) {
 			this.renderer = new THREE.WebGLRenderer({
@@ -60,7 +60,7 @@ class ParticlesScene {
 			75,
 			window.innerWidth / window.innerHeight,
 			0.1,
-			1000
+			1000,
 		)
 		this.camera.position.set(0, -4, 10)
 
@@ -98,7 +98,9 @@ class ParticlesScene {
 				uColor1: { value: new THREE.Color("pink") },
 				uColor2: { value: new THREE.Color("white") },
 				uColor3: { value: new THREE.Color("blue") },
-				uTexture: { value: new THREE.TextureLoader().load("/particle2.jpeg") },
+				uTexture: {
+					value: new THREE.TextureLoader().load("/textures/particle2.jpeg"),
+				},
 				uResolution: {
 					value: new THREE.Vector2(window.innerWidth, window.innerHeight),
 				},
@@ -126,7 +128,7 @@ class ParticlesScene {
 		this.animate()
 
 		this.audio = new Audio()
-		this.audio.src = "/galaxy.mp3"
+		this.audio.src = "/sounds/galaxy.mp3"
 	}
 
 	addDebug() {
@@ -216,15 +218,15 @@ class ParticlesScene {
 
 			this.geometry.setAttribute(
 				"position",
-				new THREE.BufferAttribute(this.positions, 3)
+				new THREE.BufferAttribute(this.positions, 3),
 			)
 			this.geometry.setAttribute(
 				"color",
-				new THREE.BufferAttribute(this.colors, 3)
+				new THREE.BufferAttribute(this.colors, 3),
 			)
 			this.geometry.setAttribute(
 				"aSize",
-				new THREE.BufferAttribute(this.sizes, 1)
+				new THREE.BufferAttribute(this.sizes, 1),
 			)
 
 			const randoms = new Float32Array(this.params.randomness / 3)
@@ -232,11 +234,11 @@ class ParticlesScene {
 
 			this.geometry.setAttribute(
 				"aRandom",
-				new THREE.BufferAttribute(randoms, 1)
+				new THREE.BufferAttribute(randoms, 1),
 			)
 			this.geometry.setAttribute(
 				"aColorRandom",
-				new THREE.BufferAttribute(colorRandom, 1)
+				new THREE.BufferAttribute(colorRandom, 1),
 			)
 		}
 
@@ -274,7 +276,7 @@ class ParticlesScene {
 				z: 10,
 				ease: "power0",
 			},
-			"start"
+			"start",
 		)
 		tl.to(
 			this.camera.position,
@@ -285,7 +287,7 @@ class ParticlesScene {
 				z: 0,
 				ease: "power2.inOut",
 			},
-			"end"
+			"end",
 		)
 		if (instance.group) {
 			tl.to(
@@ -297,7 +299,7 @@ class ParticlesScene {
 					z: 0,
 					ease: "power0",
 				},
-				"start"
+				"start",
 			)
 		}
 
@@ -312,7 +314,7 @@ class ParticlesScene {
 					b: 0.1,
 					ease: "power0",
 				},
-				"start"
+				"start",
 			)
 			tl.to(
 				instance.material.uniforms.uColor1.value,
@@ -323,7 +325,7 @@ class ParticlesScene {
 					b: 0.4,
 					ease: "power0",
 				},
-				"start"
+				"start",
 			)
 			tl.to(
 				instance.material.uniforms.uColor1.value,
@@ -334,7 +336,7 @@ class ParticlesScene {
 					b: 1,
 					ease: "power0",
 				},
-				"start"
+				"start",
 			)
 		}
 

@@ -159,8 +159,8 @@ class TravelGalleryScene {
 		document.body.appendChild(loaderContainerEl)
 
 		const textureLoader = new THREE.TextureLoader()
-		const texture_1 = textureLoader.load("locked_door.jpg")
-		const texture_2 = textureLoader.load("opened_door.jpg")
+		const texture_1 = textureLoader.load("/textures/locked_door.jpg")
+		const texture_2 = textureLoader.load("/textures/opened_door.jpg")
 		const aspectRatio = window.innerWidth / window.innerHeight
 		const loader = new THREE.Mesh(
 			new THREE.PlaneGeometry(3.5, 3.5 * aspectRatio),

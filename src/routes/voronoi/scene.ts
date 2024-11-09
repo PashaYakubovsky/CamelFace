@@ -154,15 +154,20 @@ class VoronoiScene {
 		this.initialPoint.rotateX(Math.PI)
 		this.scene.add(this.initialPoint)
 
-		this.material.uniforms.uSample.value =
-			this.textureLoader.load("/garold.jpg")
+		this.material.uniforms.uSample.value = this.textureLoader.load(
+			"/textures/garold.jpg",
+		)
 
 		this.initComputeRenderer()
 	}
 
 	async getSamples() {
 		this.isSampling = true
-		const srcs = ["/garold.jpg", "/inyan.png", "/sigma.png"]
+		const srcs = [
+			"/textures/garold.jpg",
+			"/textures/inyan.png",
+			"/textures/sigma.png",
+		]
 
 		const wait = (ms: number) =>
 			new Promise((resolve) => setTimeout(resolve, ms))
@@ -203,9 +208,9 @@ class VoronoiScene {
 					references: refs,
 					threshold:
 						{
-							"/garold.jpg": 200,
-							"/inyan.png": 200,
-							"/sigma.png": 90,
+							"/textures/garold.jpg": 200,
+							"/textures/inyan.png": 200,
+							"/textures/sigma.png": 90,
 						}[src] || 200,
 				})
 			}

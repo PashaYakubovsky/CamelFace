@@ -67,7 +67,7 @@ class GPGPUScene {
 		canvasElement: HTMLCanvasElement | null,
 		opt?: {
 			renderToTarget?: boolean
-		}
+		},
 	) {
 		if (!opt?.renderToTarget && canvasElement) {
 			this.renderer = new THREE.WebGLRenderer({
@@ -93,7 +93,7 @@ class GPGPUScene {
 			35,
 			this.width / this.height,
 			0.1,
-			100
+			100,
 		)
 		this.camera.position.set(0, 0, 20)
 		this.scene.add(this.camera)
@@ -141,7 +141,7 @@ class GPGPUScene {
 
 	async addObjects() {
 		// Load models
-		const gltf = await this.gltfLoader.loadAsync("/ship.glb")
+		const gltf = await this.gltfLoader.loadAsync("/models/ship.glb")
 		/**
 		 * Geometry
 		 */
@@ -169,7 +169,7 @@ class GPGPUScene {
 				this.gpgpu.size,
 				this.gpgpu.size,
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				this.targetRenderer! || this.renderer!
+				this.targetRenderer! || this.renderer!,
 			)
 		}
 		// Base particles
@@ -197,13 +197,13 @@ class GPGPUScene {
 		this.gpgpu.particlesVariable = this.gpgpu.computation.addVariable(
 			"uParticles",
 			gpgpuParticlesFragmentShader,
-			baseParticlesTexture
+			baseParticlesTexture,
 		)
 
 		// Uniforms
 		this.gpgpu.particlesVariable.material.uniforms.uTime = new THREE.Uniform(0)
 		this.gpgpu.particlesVariable.material.uniforms.uBase = new THREE.Uniform(
-			baseParticlesTexture
+			baseParticlesTexture,
 		)
 		this.gpgpu.particlesVariable.material.uniforms.uDeltaTime =
 			new THREE.Uniform(0)
@@ -221,7 +221,7 @@ class GPGPUScene {
 		// Set dependencies
 		this.gpgpu.computation.setVariableDependencies(
 			this.gpgpu.particlesVariable,
-			[this.gpgpu.particlesVariable]
+			[this.gpgpu.particlesVariable],
 		)
 
 		// Init
@@ -229,7 +229,7 @@ class GPGPUScene {
 
 		// Debug
 		const pTexture = this.gpgpu.computation.getCurrentRenderTarget(
-			this.gpgpu.particlesVariable
+			this.gpgpu.particlesVariable,
 		).texture
 		this.gpgpu.debug = new THREE.Mesh(
 			new THREE.PlaneGeometry(1, 1),
@@ -237,7 +237,7 @@ class GPGPUScene {
 				map: pTexture,
 				side: THREE.DoubleSide,
 				visible: this.debugObject.debug,
-			})
+			}),
 		)
 		this.gpgpu.debug.position.set(5, 0, 0)
 		this.scene.add(this.gpgpu.debug)
@@ -270,15 +270,15 @@ class GPGPUScene {
 			if (this.baseGeometry.instance) {
 				this.particles.geometry.setAttribute(
 					"aParticlesUv",
-					new THREE.BufferAttribute(particlesUVArray, 2)
+					new THREE.BufferAttribute(particlesUVArray, 2),
 				)
 				this.particles.geometry.setAttribute(
 					"aColor",
-					this.baseGeometry.instance.attributes.color
+					this.baseGeometry.instance.attributes.color,
 				)
 				this.particles.geometry.setAttribute(
 					"aSize",
-					new THREE.BufferAttribute(sizesArray, 1)
+					new THREE.BufferAttribute(sizesArray, 1),
 				)
 			}
 		}
@@ -293,8 +293,8 @@ class GPGPUScene {
 				uResolution: new THREE.Uniform(
 					new THREE.Vector2(
 						this.width * this.pixelRatio,
-						this.height * this.pixelRatio
-					)
+						this.height * this.pixelRatio,
+					),
 				),
 				uMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
 				uTime: new THREE.Uniform(0),
@@ -307,7 +307,7 @@ class GPGPUScene {
 		// Points
 		this.particles.points = new THREE.Points(
 			this.particles.geometry,
-			this.particles.material
+			this.particles.material,
 		)
 		// Disable frustum culling for preventing points to be culled
 		this.particles.points.frustumCulled = false
@@ -318,7 +318,7 @@ class GPGPUScene {
 			this.raycastBox = new THREE.Mesh(
 				// take the bounding box of the ship
 				new THREE.BoxGeometry(4, 5, 13),
-				new THREE.MeshBasicMaterial({ visible: true, wireframe: true })
+				new THREE.MeshBasicMaterial({ visible: true, wireframe: true }),
 			)
 			this.raycastBox.visible = this.debugObject.showRaycastBox
 
@@ -362,7 +362,7 @@ class GPGPUScene {
 					if (this.gpgpu.particlesVariable)
 						this.gpgpu.debug.material = new THREE.MeshBasicMaterial({
 							map: this.gpgpu.computation.getCurrentRenderTarget(
-								this.gpgpu.particlesVariable
+								this.gpgpu.particlesVariable,
 							).texture,
 							side: THREE.DoubleSide,
 							visible: this.debugObject.debug,
@@ -448,7 +448,7 @@ class GPGPUScene {
 		if (this.particles.material) {
 			this.particles.material.uniforms.uResolution.value = new THREE.Vector2(
 				this.width * this.pixelRatio,
-				this.height * this.pixelRatio
+				this.height * this.pixelRatio,
 			)
 		}
 	}
@@ -510,7 +510,7 @@ class GPGPUScene {
 			if (this.particles.material && this.gpgpu.particlesVariable) {
 				this.particles.material.uniforms.uParticlesTexture.value =
 					this.gpgpu.computation.getCurrentRenderTarget(
-						this.gpgpu.particlesVariable
+						this.gpgpu.particlesVariable,
 					).texture
 			}
 		}
@@ -539,17 +539,17 @@ class GPGPUScene {
 			this.camera.position.x = THREE.MathUtils.lerp(
 				this.camera.position.x,
 				cameraX,
-				0.02
+				0.02,
 			)
 			this.camera.position.y = THREE.MathUtils.lerp(
 				this.camera.position.y,
 				cameraY,
-				0.02
+				0.02,
 			)
 			this.camera.position.z = THREE.MathUtils.lerp(
 				this.camera.position.z,
 				cameraZ,
-				0.02
+				0.02,
 			)
 
 			// Calculate a point for the camera to look at

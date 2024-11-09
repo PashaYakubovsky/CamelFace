@@ -101,7 +101,9 @@ class AttractionScene {
 				uResolution: {
 					value: new THREE.Vector2(window.innerWidth, window.innerHeight),
 				},
-				uTexture: { value: new THREE.TextureLoader().load("/particle.png") },
+				uTexture: {
+					value: new THREE.TextureLoader().load("/textures/particle.png"),
+				},
 				uColor: { value: new THREE.Color(options.color) },
 				uIntensity: { value: options.glowingIntensity },
 			},

@@ -105,14 +105,14 @@ class ParticlesScene {
 		this.camera.position.set(0, 0, 15)
 
 		this.textureLoader = new THREE.TextureLoader()
-		this.textureLoader.load("/hand.jpg", (texture) => {
+		this.textureLoader.load("/textures/hand.jpg", (texture) => {
 			if (this.material) {
 				this.texture = texture
 				this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping
 
 				// get width and height of texture and set particlesWidth and particlesHeight
 				const img = new Image()
-				img.src = "/hand.jpg"
+				img.src = "/textures/hand.jpg"
 				img.onload = () => {
 					this.applySizeFromImage(img)
 				}

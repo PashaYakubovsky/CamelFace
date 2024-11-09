@@ -299,8 +299,8 @@ export class GallerySketch {
 			document.body.appendChild(loaderContainerEl)
 		}
 
-		const texture_1 = this.textureLoader.load("locked_door.jpg")
-		const texture_2 = this.textureLoader.load("opened_door.jpg")
+		const texture_1 = this.textureLoader.load("/textures/locked_door.jpg")
+		const texture_2 = this.textureLoader.load("/textures/opened_door.jpg")
 		const aspectRatio = window.innerWidth / window.innerHeight
 		const loader = new THREE.Mesh(
 			new THREE.PlaneGeometry(3.5, 3.5 * aspectRatio),
@@ -906,7 +906,7 @@ export class GallerySketch {
 			const hamburgerMeshWrapper = new THREE.Group()
 			hamburgerMeshWrapper.name = "MeshWrapper"
 			hamburgerGroup?.add(hamburgerMeshWrapper)
-			const matcap = this.textureLoader.load("/matcap.webp")
+			const matcap = this.textureLoader.load("/textures/matcap.webp")
 			const hamMatBase = new THREE.MeshMatcapMaterial({
 				depthTest: false,
 				depthWrite: false,
@@ -1181,7 +1181,11 @@ const calculatePosition = () => {
 }
 
 const createGeometry = () => {
-	const geometry = [2.5, 2.2]
+	const geometry = [3, 3]
+
+	const aspect = window.innerWidth / window.innerHeight
+
+	geometry[0] = aspect * geometry[0]
 
 	const geo = new THREE.PlaneGeometry(geometry[0], geometry[1], 12, 12)
 

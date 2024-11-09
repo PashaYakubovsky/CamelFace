@@ -49,6 +49,7 @@
 				const ctx = handleHoverOut({ start: $pageTransition.start })
 			}
 			scene.handleHoverNavItem = (post) => {
+				if (!scene) return
 				const index = scene.posts.findIndex((p) => p.slug === post.slug)
 				if (index !== -1) {
 					scene.attractTo = index
@@ -59,7 +60,7 @@
 				}
 			}
 			scene.handleHoverOutNavItem = () => {
-				scene.attractMode = false
+				if (scene) scene.attractMode = false
 			}
 			scene.onClickEvent = (meshIndex: number) => {
 				if (window.innerWidth < 768) {
@@ -124,7 +125,7 @@
 </div>
 
 <style>
-	h2 {
+	#postTitle {
 		overflow: hidden;
 		transition: clip-path 0.3s ease-in-out;
 		position: relative;
@@ -234,7 +235,7 @@
 	}
 
 	@media (max-width: 768px) {
-		h2 {
+		#postTitle {
 			-webkit-text-fill-color: currentColor;
 		}
 		canvas {

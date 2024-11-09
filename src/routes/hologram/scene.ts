@@ -46,7 +46,7 @@ class MophingScene {
 
 	constructor(
 		canvasElement: HTMLCanvasElement | null,
-		opt?: { renderToTarget: boolean }
+		opt?: { renderToTarget: boolean },
 	) {
 		if (!opt?.renderToTarget && canvasElement) {
 			this.renderer = new THREE.WebGLRenderer({
@@ -76,7 +76,7 @@ class MophingScene {
 			35,
 			this.width / this.height,
 			0.0001,
-			10000
+			10000,
 		)
 		this.camera.position.set(0, 0, 20)
 		this.scene.add(this.camera)
@@ -160,7 +160,7 @@ class MophingScene {
 
 	addObjects() {
 		// Load models
-		this.gltfLoader.load("/AnimatedHuman.glb", (gltf: GLTF) => {
+		this.gltfLoader.load("/models/AnimatedHuman.glb", (gltf: GLTF) => {
 			/**
 			 * Setup objects
 			 */
@@ -180,19 +180,19 @@ class MophingScene {
 					uResolution: new THREE.Uniform(
 						new THREE.Vector2(
 							this.width * this.pixelRatio,
-							this.height * this.pixelRatio
-						)
+							this.height * this.pixelRatio,
+						),
 					),
 					uMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
 					uTime: new THREE.Uniform(0),
 					uColor: new THREE.Uniform(new THREE.Color(this.debugObject.color)),
 					uFolloff: new THREE.Uniform(this.debugObject.falloff),
 					uStripeMultiplier: new THREE.Uniform(
-						this.debugObject.stripeMultiplier
+						this.debugObject.stripeMultiplier,
 					),
 					uFresnelPower: new THREE.Uniform(this.debugObject.fresnelPower),
 					uHolographicMultiplier: new THREE.Uniform(
-						this.debugObject.holographicMultiplier
+						this.debugObject.holographicMultiplier,
 					),
 				},
 			})
@@ -207,7 +207,7 @@ class MophingScene {
 			this.clips = gltf.animations
 			this.clip = THREE.AnimationClip.findByName(
 				this.clips,
-				"Human Armature|Working"
+				"Human Armature|Working",
 			)
 			this.action = this.mixer.clipAction(this.clip)
 			this.action.play()
@@ -220,7 +220,7 @@ class MophingScene {
 					side: THREE.DoubleSide,
 					roughness: 1,
 					metalness: 0.1,
-				})
+				}),
 			)
 			this.floorPlane.rotation.x = Math.PI / 2
 			this.floorPlane.position.y = -2
@@ -249,7 +249,7 @@ class MophingScene {
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
 			this.floorPlane.material.color = new THREE.Color(
-				this.debugObject.floorColor
+				this.debugObject.floorColor,
 			)
 		})
 
@@ -285,7 +285,7 @@ class MophingScene {
 		hologramFolder.addColor(this.debugObject, "color").onChange(() => {
 			if (this.material) {
 				this.material.uniforms.uColor.value = new THREE.Color(
-					this.debugObject.color
+					this.debugObject.color,
 				)
 			}
 		})
@@ -348,7 +348,7 @@ class MophingScene {
 			.add(
 				this.clips,
 				this.clip.name,
-				this.clips.map((clip) => clip.name)
+				this.clips.map((clip) => clip.name),
 			)
 			.name("Animation")
 			.onChange((value: string) => {
@@ -380,7 +380,7 @@ class MophingScene {
 		if (this.material) {
 			this.material.uniforms.uResolution.value = new THREE.Vector2(
 				this.width * this.pixelRatio,
-				this.height * this.pixelRatio
+				this.height * this.pixelRatio,
 			)
 		}
 	}
@@ -425,12 +425,12 @@ class MophingScene {
 		this.camera.rotation.y = THREE.MathUtils.lerp(
 			this.camera.rotation.y,
 			this.mouse.x,
-			0.05
+			0.05,
 		)
 		this.camera.rotation.x = THREE.MathUtils.lerp(
 			this.camera.rotation.x,
 			this.mouse.y,
-			0.05
+			0.05,
 		)
 
 		// Render normal scene
