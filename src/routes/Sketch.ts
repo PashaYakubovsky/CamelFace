@@ -398,9 +398,9 @@ export class GallerySketch {
 						loaded: true,
 						loading: false,
 					}))
-					if (!this.isMobile) {
-						this.addHamburger()
-					}
+					// if (!this.isMobile) {
+					// 	this.addHamburger()
+					// }
 				}
 
 				isComplied = true

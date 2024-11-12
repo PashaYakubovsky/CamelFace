@@ -9,6 +9,7 @@ import CustomShaderMaterial from "three-custom-shader-material/vanilla"
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
+import {} from "three-stdlib"
 
 class WobblyScene {
 	renderer: THREE.WebGLRenderer | null = null
@@ -84,6 +85,7 @@ class WobblyScene {
 				antialias: true,
 				alpha: true,
 				powerPreference: "high-performance",
+				logarithmicDepthBuffer: true,
 			})
 			this.renderer.shadowMap.enabled = true
 			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -108,7 +110,7 @@ class WobblyScene {
 		const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
 		if (this.renderer) {
 			directionalLight.castShadow = true
-			directionalLight.shadow.mapSize.set(1024, 1024)
+			directionalLight.shadow.mapSize.set(256, 256)
 			directionalLight.shadow.camera.far = 20
 			directionalLight.shadow.normalBias = 0.05
 			directionalLight.position.set(0.25, 2, -2.25)
@@ -135,12 +137,20 @@ class WobblyScene {
 			this.stats.dom.style.top = "auto"
 			this.stats.dom.style.bottom = "0"
 			document.body.appendChild(this.stats.dom)
+
+			// Create render target for reflections
+			this.renderTarget = new THREE.WebGLRenderTarget(512, 512)
+
+			// Virtual camera for reflections
+			this.virtualCamera = this.camera.clone()
+			this.virtualCamera.position.set(0, 10, 6)
+			this.virtualCamera.lookAt(new THREE.Vector3(0, 0, 0))
 		}
 
 		// Mouse
 		this.mouse = new THREE.Vector2()
 
-		new THREE.TextureLoader().load("/textures/matcap.png", (texture) => {
+		new THREE.TextureLoader().load("/textures/spacemap2.png", (texture) => {
 			texture.mapping = THREE.EquirectangularReflectionMapping
 			texture.magFilter = THREE.LinearFilter
 			texture.minFilter = THREE.LinearMipmapLinearFilter
@@ -151,6 +161,7 @@ class WobblyScene {
 			texture.repeat.set(1, 1)
 
 			this.scene.environment = texture
+			this.scene.background = texture
 		})
 
 		// Controls
@@ -230,8 +241,18 @@ class WobblyScene {
 
 		// Add floor
 		const floorGeometry = new THREE.PlaneGeometry(50, 50)
-		const floorMaterial = new THREE.MeshStandardMaterial()
-		this.floorPlane = new THREE.Mesh(floorGeometry, floorMaterial)
+		this.floorPlane = new THREE.Mesh(floorGeometry)
+
+		const floorMaterial = new THREE.MeshPhysicalMaterial({
+			roughness: 0.1,
+			metalness: 0.5,
+			envMapIntensity: 1,
+			reflectivity: 1,
+			transparent: true,
+			envMap: this.scene.environment,
+			map: this.renderTarget.texture,
+		})
+		this.floorPlane.material = floorMaterial
 		this.floorPlane.receiveShadow = true
 		this.floorPlane.position.y = -6
 		this.floorPlane.rotation.x = -Math.PI / 2
@@ -467,19 +488,6 @@ class WobblyScene {
 			const file = inputFile.files?.[0]
 			if (file) {
 				const gltf = await this.gltfLoader.loadAsync(URL.createObjectURL(file))
-				// find first mesh
-				// const recursiveFindMesh = (object: THREE.Object3D): THREE.Mesh | undefined => {
-				// 	if (object instanceof THREE.Mesh) {
-				// 		return object;
-				// 	}
-				// 	for (const child of object.children) {
-				// 		const mesh = recursiveFindMesh(child);
-				// 		if (mesh) {
-				// 			return mesh;
-				// 		}
-				// 	}
-				// };
-				// const mesh = recursiveFindMesh(gltf.scene);
 
 				const recursiveAddMaterial = (object: THREE.Object3D) => {
 					if (object instanceof THREE.Mesh) {
@@ -572,8 +580,26 @@ class WobblyScene {
 			this.depthMaterial.uniforms = this.uniforms
 		}
 
-		// Render normal scene
-		if (this.renderer) this.renderer.render(this.scene, this.camera)
+		if (this.renderer && this.floorPlane) {
+			// Hide floor
+			this.floorPlane.visible = false
+
+			// Update virtual camera
+			this.virtualCamera.position.copy(this.camera.position)
+			this.virtualCamera.rotation.copy(this.camera.rotation)
+
+			// Render reflection
+			const currentRenderTarget = this.renderer.getRenderTarget()
+			this.renderer.setRenderTarget(this.renderTarget)
+			this.renderer.render(this.scene, this.virtualCamera)
+			this.renderer.setRenderTarget(currentRenderTarget)
+
+			// Show floor
+			this.floorPlane.visible = true
+
+			// Render scene
+			this.renderer.render(this.scene, this.camera)
+		}
 
 		// animate camera if this preview scene
 		if (!this.renderer) {
@@ -596,7 +622,6 @@ class WobblyScene {
 
 		if (this.renderer) {
 			this.renderer.dispose()
-			this.renderer.forceContextLoss()
 		}
 		if (this.gui) this.gui.destroy()
 
