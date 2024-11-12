@@ -250,7 +250,7 @@ class WobblyScene {
 			reflectivity: 1,
 			transparent: true,
 			envMap: this.scene.environment,
-			map: this.renderTarget.texture,
+			map: this.renderTarget?.texture,
 		})
 		this.floorPlane.material = floorMaterial
 		this.floorPlane.receiveShadow = true

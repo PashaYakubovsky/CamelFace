@@ -177,9 +177,8 @@ export class GallerySketch {
 		// 2. Update the raycaster
 		this.raycaster.setFromCamera(this.mouse, this.camera)
 
-		// 3. Adjust raycaster parameters if needed
-		this.raycaster.params.Line!.threshold = 0.1 // Adjust threshold if needed
-		this.raycaster.params.Points!.threshold = 0.1
+		this.raycaster.params.Line.threshold = 0.1
+		this.raycaster.params.Points.threshold = 0.1
 
 		// 4. Perform intersection test
 		this.intersected = this.raycaster.intersectObjects(
@@ -516,7 +515,7 @@ export class GallerySketch {
 
 				group.add(mesh)
 
-				mesh.name = `Gallery card N${i}`
+				mesh.name = post.title || ""
 
 				this.meshes[i] = mesh
 				this.materials[i] = mat
@@ -1183,9 +1182,9 @@ const calculatePosition = () => {
 const createGeometry = () => {
 	const geometry = [3, 3]
 
-	const aspect = window.innerWidth / window.innerHeight
+	// const aspect = window.innerWidth / window.innerHeight
 
-	geometry[0] = aspect * geometry[0]
+	// geometry[0] = aspect * geometry[0]
 
 	const geo = new THREE.PlaneGeometry(geometry[0], geometry[1], 12, 12)
 

@@ -39,7 +39,7 @@ class Particles {
 		pixelRatio: window.devicePixelRatio,
 	}
 	rafId: number | null = null
-	displacement: Partial<{
+	displacement: {
 		canvas: HTMLCanvasElement
 		context: CanvasRenderingContext2D
 		glowImage: HTMLImageElement
@@ -49,7 +49,7 @@ class Particles {
 		canvasCursor: THREE.Vector2
 		canvasCursorPrevious: THREE.Vector2
 		texture: THREE.CanvasTexture
-	}> = {}
+	} = {}
 	textureLoader: THREE.TextureLoader | null = null
 	composer: EffectComposer | null = null
 	waterTexture: WaterTexture | null = null
@@ -85,8 +85,6 @@ class Particles {
 		this.setInitialValues()
 		this.animate()
 
-		window.addEventListener("pointermove", this.handlePointerMove.bind(this))
-
 		if (this.renderer) {
 			this.addDebug()
 			this.controls = new OrbitControls(this.camera, this.renderer.domElement)
@@ -97,8 +95,10 @@ class Particles {
 			this.controls.autoRotate = true
 			this.controls.autoRotateSpeed = 0.5
 			this.controls.enablePan = true
-			window.addEventListener("resize", this.onResize.bind(this))
 		}
+
+		window.addEventListener("resize", this.onResize.bind(this))
+		window.addEventListener("pointermove", this.handlePointerMove.bind(this))
 	}
 
 	handlePointerMove(event: PointerEvent) {
@@ -109,10 +109,18 @@ class Particles {
 		)
 			return
 
-		const point = {
+		let point = {
 			x: event.clientX / this.sizes.width,
 			y: event.clientY / this.sizes.height,
 		}
+
+		if (!this.renderer) {
+			point = {
+				x: event.clientX / (this.sizes.width + window.innerWidth / 2),
+				y: event.clientY / this.sizes.height,
+			}
+		}
+
 		this.displacement.screenCursor.x = point.x
 		this.displacement.screenCursor.y = point.y
 
@@ -241,7 +249,9 @@ class Particles {
 	onResize() {
 		this.camera.aspect = window.innerWidth / window.innerHeight
 		this.camera.updateProjectionMatrix()
-		this.renderer?.setSize(window.innerWidth, window.innerHeight)
+		if (this.renderer) {
+			this.renderer.setSize(window.innerWidth, window.innerHeight)
+		}
 	}
 
 	addDebug() {
