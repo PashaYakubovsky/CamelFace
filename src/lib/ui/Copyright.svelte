@@ -1,5 +1,5 @@
 <script>
-	export let githubLink = "https://github.com/PashaYakubovsky?tab=repositories"
+	export let githubLink = "https://github.com/pashaydev?tab=repositories"
 </script>
 
 <footer>
